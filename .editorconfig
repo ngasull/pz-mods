@@ -1,0 +1,2 @@
+[*.lua]
+align_continuous_assign_statement = false

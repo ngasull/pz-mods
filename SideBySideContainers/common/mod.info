@@ -1,0 +1,7 @@
+id=SideBySideContainers
+name=Side-by-Side Containers 
+description=Put loot window containers on the left side
+pzversion=42
+modversion=1.1
+versionMin=42.0.0
+author=ngasull

@@ -1,0 +1,7 @@
+id=StaticBackpacks
+name=Static Backpacks
+description=The containers you carry won't move any more
+pzversion=42
+modversion=1.1
+versionMin=42.0.0
+author=ngasull
