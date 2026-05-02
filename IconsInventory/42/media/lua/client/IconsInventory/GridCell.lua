@@ -120,7 +120,6 @@ function GridCell:drawBackground(x, y)
     elseif self:isHovered() and heat == 1 then
         if native.doController then
             native:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
-            native:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
         else
             native:drawRect(x, y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
         end
@@ -147,6 +146,10 @@ function GridCell:drawBackground(x, y)
         else
             native:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
         end
+    end
+
+    if native.doController and self:isHovered() then
+        native:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
     end
 
     if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
