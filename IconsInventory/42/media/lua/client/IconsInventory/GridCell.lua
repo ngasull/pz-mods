@@ -25,8 +25,8 @@ function GridCell.new(pane, item, index, stack, category)
     self.stack = stack
     self.category = category or self
 
-    if pane.hoveredCell and self:isCategory() == pane.hoveredCell:isCategory() and item:getID() == pane.hoveredCell.item:getID() then
-        pane.hoveredCell = self
+    if pane.focusedCell and self:isCategory() == pane.focusedCell:isCategory() and item:getID() == pane.focusedCell.item:getID() then
+        pane.focusedCell = self
     end
 
     local player = getSpecificPlayer(pane.native.player)
@@ -52,8 +52,8 @@ function GridCell:isCollapsed()
     return self:isCategory() and self.pane.native.collapsed[self.stack.name] and self:getStackSize() > 1
 end
 
-function GridCell:isHovered()
-    return self.pane.hoveredCell == self
+function GridCell:isFocused()
+    return self.pane.focusedCell == self
 end
 
 function GridCell:isSelected()
@@ -117,7 +117,7 @@ function GridCell:drawBackground(x, y)
             native:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
             native:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
         end
-    elseif self:isHovered() and heat == 1 then
+    elseif self:isFocused() and heat == 1 then
         if native.doController then
             native:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
         else
@@ -140,7 +140,7 @@ function GridCell:drawBackground(x, y)
             end
         end
     elseif heat ~= 1 then
-        local alpha = self:isHovered() and 0.45 or 0.3
+        local alpha = self:isFocused() and 0.45 or 0.3
         if heat > 1 then
             native:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
         else
@@ -148,7 +148,7 @@ function GridCell:drawBackground(x, y)
         end
     end
 
-    if native.doController and self:isHovered() then
+    if native.doController and self:isFocused() then
         native:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
     end
 

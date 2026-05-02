@@ -1,30 +1,5 @@
 local M = require("IconsInventory/mod")
 
-local default = {
-    collapseItemsUnder = 0.3,
-    alwaysCollapseOver = 3,
-    maxJoypadColumns = 10,
-}
-
-local collapseItemsUnder = M.options:addSlider(
-    "collapseItemsUnder", "An item is \"small\" under this weight (excluded)",
-    0, 1, 0.05, 0.3,
-    "Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
-M.options:addDescription("Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
-
-local alwaysCollapseOver = M.options:addSlider(
-    "alwaysCollapseOver", "Always collapse stacks bigger than",
-    1, 20, 1, 3,
-    "1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
-M.options:addDescription("1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
-
-M.options:addTitle("Gamepad")
-local maxJoypadColumns = M.options:addSlider(
-    "maxJoypadColumns", "Maximum columns",
-    4, 20, 1, 10,
-    "Default: " .. tostring(default.maxJoypadColumns))
-M.options:addDescription("Default: " .. tostring(default.maxJoypadColumns))
-
 local minXPadding = 16
 local minYPadding = 8
 
@@ -34,12 +9,12 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@field page ISInventoryPage
 ---@field native IconsInventory_ISInventoryPaneOverride
 ---@field grid IconsInventory_GridLayout<IconsInventory_GridCell>
----@field hoveredCell? IconsInventory_GridCell
+---@field focusedCell? IconsInventory_GridCell
 ---@field prevContainer? ItemContainer
 ---@field touched table<string, boolean>
 ---@field mouseDown? { x: integer, y: integer }
----@field fakeX? number
----@field fakeY? number
+---@field _fakeX? number
+---@field _fakeY? number
 local Pane = {}
 Pane.__index = Pane
 M.Pane = Pane
@@ -62,9 +37,9 @@ end
 ---@param stack ContextMenuItemStack
 function Pane.shouldCollapse(stack)
     local stackSize = #stack.items - 1
-    return alwaysCollapseOver:getValue() > 1 and (
-        stackSize > alwaysCollapseOver:getValue()
-        or stackSize > 1 and stack.weight / stackSize < collapseItemsUnder:getValue()
+    return M.option.alwaysCollapseOver:getValue() > 1 and (
+        stackSize > M.option.alwaysCollapseOver:getValue()
+        or stackSize > 1 and stack.weight / stackSize < M.option.collapseItemsUnder:getValue()
     )
 end
 
@@ -92,8 +67,8 @@ function Pane:refresh()
     self.native.items = vanillaItems
 
     -- Matters on joypad after refreshes
-    local prevHovered = self.hoveredCell
-    local _, prevRow, prevCol = self.grid:locateCell(prevHovered)
+    local prevFocused = self.focusedCell
+    local _, prevRow, prevCol = self.grid:locateCell(prevFocused)
 
     local cells = {}
     local hotbarCells ---@type IconsInventory_GridCell[]?
@@ -137,7 +112,7 @@ function Pane:refresh()
     local maxWidth = self.native.width - 2 * minXPadding
     local gridWidth = math.floor(maxWidth / M.ItemIcon.cellSize)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
-        gridWidth = math.min(maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
+        gridWidth = math.min(M.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
     end
 
     self.grid:set(groups, gridWidth)
@@ -145,24 +120,16 @@ function Pane:refresh()
     -- Make sure it's an integer to avoid half-pixel renders
     self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
 
-    -- If hoveredCell is has not been forwarded (by GridCell.new)
-    if self.hoveredCell == prevHovered then
-        self.hoveredCell = nil
+    -- If focusedCell is has not been forwarded (by GridCell.new)
+    if self.focusedCell == prevFocused then
+        self.focusedCell = nil
     end
-    if not self.hoveredCell and prevRow and prevCol then
-        self.hoveredCell = self.grid:getCellAt(prevRow, prevCol)
+    if not self.focusedCell and prevRow and prevCol then
+        self.focusedCell = self.grid:getCellAt(prevRow, prevCol)
     end
     -- NB: doController check if current pane is *active*
-    if self.native.doController and not self.hoveredCell then
-        self.hoveredCell = self.grid:getCellAt(1, 1)
-    end
-
-    if self.hoveredCell then
-        self.native.mouseOverOption = self.hoveredCell.index
-        self.native.joyselection = self.hoveredCell.index - 1
-    else
-        self.native.mouseOverOption = 0
-        self.native.joyselection = nil
+    if self.native.doController and not self.focusedCell then
+        self.focusedCell = self.grid:getCellAt(1, 1)
     end
 
     self.native:setScrollHeight(2 * minYPadding + self.grid.height)
@@ -170,46 +137,32 @@ function Pane:refresh()
     self.native:updateScrollbars()
 end
 
-function Pane:syncMouse()
-    if not self.native.doController then
-        local hoveredCell = self.grid:hitTest(
-            self.native:getMouseX() - self.xPadding,
-            self.native:getMouseY() - self.yPadding
-        )
-        if hoveredCell then
-            self.hoveredCell = hoveredCell
-            self.native.mouseOverOption = self.hoveredCell.index
-        else
-            self.hoveredCell = nil
-            self.native.mouseOverOption = 0
-        end
-    end
+function Pane:syncJoypad()
+    -- joyselection index starts at zero for some reason
+    self.native.joyselection = self.focusedCell and self.focusedCell.index - 1 or nil
 end
 
-function Pane:joypadSelect(hoveredCell)
-    if hoveredCell then
-        self.hoveredCell = hoveredCell
-        self.native.mouseOverOption = hoveredCell.index
-        -- joyselection index starts at zero for some reason
-        self.native.joyselection = hoveredCell.index - 1
+function Pane:joypadSelect(focusedCell)
+    if focusedCell then
+        self.focusedCell = focusedCell
         return true
     end
 end
 
 function Pane:joypadRight()
-    return self:joypadSelect(self.grid:getCellRight(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellRight(self.focusedCell))
 end
 
 function Pane:joypadLeft()
-    return self:joypadSelect(self.grid:getCellLeft(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellLeft(self.focusedCell))
 end
 
 function Pane:joypadDown()
-    return self:joypadSelect(self.grid:getCellDown(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellDown(self.focusedCell))
 end
 
 function Pane:joypadUp()
-    return self:joypadSelect(self.grid:getCellUp(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellUp(self.focusedCell))
 end
 
 function Pane:isDragging()
@@ -307,33 +260,34 @@ end
 
 ---@param x? number
 ---@param y? number
-function Pane:_stubMouse(x, y)
-    if self.native.mouseOverOption or (x and y) then
+function Pane:stubMouse(x, y)
+    if self.focusedCell or (x and y) then
         if x and y then
-            self.fakeX = x
-            self.fakeY = y
+            self._fakeX = x
+            self._fakeY = y
         end
         self.native.getMouseX = self._mouseStubX
         self.native.getMouseY = self._mouseStubY
         return true
     end
+    self.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
 end
 
-function Pane:_restoreMouse()
+function Pane:restoreMouse()
     self.native.getMouseX = ISUIElement.getMouseX
     self.native.getMouseY = ISUIElement.getMouseY
-    self.fakeX = nil
-    self.fakeY = nil
+    self._fakeX = nil
+    self._fakeY = nil
 end
 
 ---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubX(native)
     local mod = native._IconsInventory
-    return mod.fakeX or native.column2 + 1 -- To the right of collapse area
+    return mod._fakeX or native.column2 + 1 -- To the right of collapse area
 end
 
 ---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubY(native)
     local mod = native._IconsInventory
-    return mod.fakeY or native.headerHgt + (native.mouseOverOption - 1) * native.itemHgt + 2
+    return mod._fakeY or native.headerHgt + (mod.focusedCell.index - 1) * native.itemHgt + 2
 end

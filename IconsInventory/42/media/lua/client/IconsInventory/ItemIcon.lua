@@ -61,7 +61,6 @@ end
 ---@field player IsoPlayer
 ---@field ui ISUIElement
 ---@field item InventoryItem
----@field hovered? boolean
 local ItemIcon = {}
 ItemIcon.__index = ItemIcon
 M.ItemIcon = ItemIcon

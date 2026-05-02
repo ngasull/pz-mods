@@ -28,37 +28,23 @@ function Override:createChildren()
 end
 
 function Override:refreshContainer()
-    local prevSelected = {}
-    for k, v in pairs(self.selected) do
-        prevSelected[v] = k
-    end
-
     vanilla.refreshContainer(self)
-
-    -- Vanilla refreshContainer sadly is not to be trusted to preserve selection
-    table.wipe(self.selected)
-    for k, v in ipairs(self.items) do
-        if prevSelected[v] then
-            self.selected[k] = v
-        end
-    end
-
     self._IconsInventory:refreshContainer()
 end
 
 function Override:doJoypadExpandCollapse()
     local mod = self._IconsInventory
-    if mod.hoveredCell then
-        mod.touched[mod.hoveredCell.stack.name] = true
+    if mod.focusedCell then
+        mod.touched[mod.focusedCell.stack.name] = true
     end
     return vanilla.doJoypadExpandCollapse(self)
 end
 
 function Override:update()
     local mod = self._IconsInventory
-    mod:_stubMouse()
+    mod:stubMouse()
     vanilla.update(self)
-    mod:_restoreMouse()
+    mod:restoreMouse()
 
     if self.doController and self.toolRender and self.toolRender.anchorBottomLeft then
         self.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + mod.xPadding
@@ -103,16 +89,23 @@ end
 function Override:onMouseMove(dx, dy)
     local mod = self._IconsInventory
 
-    mod:syncMouse()
+    if self.doController then
+        mod.focusedCell = nil
+    else
+        mod.focusedCell = mod.grid:hitTest(
+            self:getMouseX() - mod.xPadding,
+            self:getMouseY() - mod.yPadding
+        )
+    end
 
     -- Only forward on drag: hover is handled by this pane
     if mod.mouseDown and self.downX and self.downY then
-        mod:_stubMouse(
+        mod:stubMouse(
             self.downX + self:getMouseX() - mod.mouseDown.x,
             self.downY + self:getMouseY() - mod.mouseDown.y
         )
         local handled = vanilla.onMouseMove(self, dx, dy)
-        mod:_restoreMouse()
+        mod:restoreMouse()
         if self.draggingMarquis then self.draggingMarquis = false end
         return handled
     end
@@ -120,7 +113,7 @@ end
 
 function Override:onMouseMoveOutside(dx, dy)
     if not self.doController then
-        self._IconsInventory.hoveredCell = nil
+        self._IconsInventory.focusedCell = nil
     end
     return vanilla.onMouseMoveOutside(self, dx, dy)
 end
@@ -128,13 +121,13 @@ end
 function Override:onMouseDown(x, y)
     local mod = self._IconsInventory
 
-    if mod:_stubMouse() then
+    if mod:stubMouse() then
         mod.mouseDown = { x = x, y = y }
         local handled = vanilla.onMouseDown(self, self:getMouseX(), self:getMouseY())
-        mod:_restoreMouse()
+        mod:restoreMouse()
 
-        if mod.hoveredCell and not mod.hoveredCell:isCategory() then
-            local category = mod.hoveredCell.category
+        if mod.focusedCell and not mod.focusedCell:isCategory() then
+            local category = mod.focusedCell.category
 
             if self.selected[category.index] then
                 -- Unselect category if it has unselected elements (=> non-vanilla)
@@ -157,13 +150,13 @@ function Override:onMouseUp(x, y)
     mod.mouseDown = nil
     mod._dirty = true
 
-    if mod:_stubMouse() then
+    if mod:stubMouse() then
         x = self:getMouseX()
         y = self:getMouseY()
     end
 
     local handled = vanilla.onMouseUp(self, self:getMouseX(), self:getMouseY())
-    mod:_restoreMouse()
+    mod:restoreMouse()
     return handled
 end
 
@@ -176,7 +169,7 @@ end
 function Override:onRightMouseUp(x, y)
     local mod = self._IconsInventory
 
-    if mod:_stubMouse() then
+    if mod:stubMouse() then
         local handled = M.Pane.stubContextMenuXY(
             function()
                 local ctxX = self:getAbsoluteX() + x
@@ -185,7 +178,7 @@ function Override:onRightMouseUp(x, y)
             end,
             vanilla.onRightMouseUp, self, self:getMouseX(), self:getMouseY()
         )
-        mod:_restoreMouse()
+        mod:restoreMouse()
         mod._dirty = true
         return handled
     end
@@ -199,18 +192,15 @@ function Override:onMouseDoubleClick(x, y)
     if self.vscroll and self:isMouseOverScrollBar() then
         return self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
     elseif -- Expand/collapse
-        not self.dragStarted and mod.hoveredCell and mod.hoveredCell:isCategory()
+        not self.dragStarted and mod.focusedCell and mod.focusedCell:isCategory()
     then
-        local stackName = mod.hoveredCell.stack.name
+        local stackName = mod.focusedCell.stack.name
         self.collapsed[stackName] = not self.collapsed[stackName];
         mod.touched[stackName] = true
         self:refreshContainer();
-        -- Vanilla will interpret leftmost clicks as expand/collapse hovered option
-        -- vanilla.onMouseDown(self, 1, -1)
-        -- return vanilla.onMouseUp(self, 1, -1)
-    elseif mod:_stubMouse() then
+    elseif mod:stubMouse() then
         local handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
-        mod:_restoreMouse()
+        mod:restoreMouse()
         return handled
     end
 end

@@ -33,6 +33,7 @@ function Override:update()
 
         -- onJoypadUp is not working: do it manually
         if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
+            self.inventoryPane._IconsInventory:syncJoypad()
             vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
             self._IconsInventory_pressedBumper = nil
         end
@@ -104,6 +105,7 @@ end
 function Override:onJoypadDown(button)
     local pane = self.inventoryPane
     local mod = pane._IconsInventory
+    mod:syncJoypad()
 
     if button == Joypad.LBumper or button == Joypad.RBumper then
         -- If re-pressed before update
@@ -112,11 +114,11 @@ function Override:onJoypadDown(button)
         end
 
         self._IconsInventory_pressedBumper = button
-    elseif button == Joypad.AButton and mod.hoveredCell then
-        local _, row, col = mod.grid:locateCell(mod.hoveredCell)
+    elseif button == Joypad.AButton and mod.focusedCell then
+        local _, row, col = mod.grid:locateCell(mod.focusedCell)
 
         if row and col then
-            return M.Pane.stubContextMenuXY(
+            M.Pane.stubContextMenuXY(
                 function()
                     local x = pane:getAbsoluteX() + mod.xPadding + (col - 1) * M.ItemIcon.cellSize
                     local y = pane:getAbsoluteY() + mod.yPadding + row * M.ItemIcon.cellSize + mod.native:getYScroll()
