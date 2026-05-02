@@ -1,8 +1,7 @@
 local M = require("IconsInventory/mod")
 
 if M.isDebugEnabled then
-    local options = PZAPI.ModOptions:create("IconsInventory", "Icons Inventory")
-    local debugOption = options:addTickBox("debug", "Debug", false)
+    local debugOption = M.options:addTickBox("debug", "Debug", false)
 
     local w = 450
     local h = 120
@@ -48,6 +47,6 @@ if M.isDebugEnabled then
         end
     end
 
-    Events.OnCreatePlayer.Add(init)
-    options.apply = init
+    Events.OnGameStart.Add(init)
+    M.addApply(init)
 end

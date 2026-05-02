@@ -1,10 +1,30 @@
 local M = require("IconsInventory/mod")
 
-local putHotbarInEquipped = true
-local collapseItemsUnder = 0.3
-local alwaysCollapseOver = 3
-local showSmallCategory = false
-local maxColumns = 10
+local default = {
+    collapseItemsUnder = 0.3,
+    alwaysCollapseOver = 3,
+    maxJoypadColumns = 10,
+}
+
+local collapseItemsUnder = M.options:addSlider(
+    "collapseItemsUnder", "An item is \"small\" under this weight (excluded)",
+    0, 1, 0.05, 0.3,
+    "Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
+M.options:addDescription("Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
+
+local alwaysCollapseOver = M.options:addSlider(
+    "alwaysCollapseOver", "Always collapse stacks bigger than",
+    1, 20, 1, 3,
+    "1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
+M.options:addDescription("1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
+
+M.options:addTitle("Gamepad")
+local maxJoypadColumns = M.options:addSlider(
+    "maxJoypadColumns", "Maximum columns",
+    4, 20, 1, 10,
+    "Default: " .. tostring(default.maxJoypadColumns))
+M.options:addDescription("Default: " .. tostring(default.maxJoypadColumns))
+
 local minXPadding = 16
 local minYPadding = 8
 
@@ -42,8 +62,10 @@ end
 ---@param stack ContextMenuItemStack
 function Pane.shouldCollapse(stack)
     local stackSize = #stack.items - 1
-    return stackSize > alwaysCollapseOver
-        or stackSize > 1 and stack.weight / stackSize < collapseItemsUnder
+    return alwaysCollapseOver:getValue() > 1 and (
+        stackSize > alwaysCollapseOver:getValue()
+        or stackSize > 1 and stack.weight / stackSize < collapseItemsUnder:getValue()
+    )
 end
 
 function Pane:refreshContainer()
@@ -94,7 +116,7 @@ function Pane:refresh()
                 if stack.equipped then
                     if not equippedCells then equippedCells = {} end
                     table.insert(equippedCells, cell)
-                elseif putHotbarInEquipped and cell:isInHotbar() then
+                elseif cell:isInHotbar() then
                     if not hotbarCells then hotbarCells = {} end
                     table.insert(hotbarCells, cell)
                 else
@@ -115,7 +137,7 @@ function Pane:refresh()
     local maxWidth = self.native.width - 2 * minXPadding
     local gridWidth = math.floor(maxWidth / M.ItemIcon.cellSize)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
-        gridWidth = math.min(maxColumns, gridWidth)
+        gridWidth = math.min(maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
     end
 
     self.grid:set(groups, gridWidth)
