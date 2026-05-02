@@ -139,22 +139,18 @@ function Override:onMouseDown(x, y)
             end
         end
 
-        mod._dirty = true
         return handled
     end
 end
 
 function Override:onMouseUp(x, y)
     local mod = self._IconsInventory
-
     mod.mouseDown = nil
-    mod._dirty = true
 
     if mod:stubMouse() then
         x = self:getMouseX()
         y = self:getMouseY()
     end
-
     local handled = vanilla.onMouseUp(self, self:getMouseX(), self:getMouseY())
     mod:restoreMouse()
     return handled
@@ -179,7 +175,6 @@ function Override:onRightMouseUp(x, y)
             vanilla.onRightMouseUp, self, self:getMouseX(), self:getMouseY()
         )
         mod:restoreMouse()
-        mod._dirty = true
         return handled
     end
 
@@ -196,7 +191,7 @@ function Override:onMouseDoubleClick(x, y)
     then
         local stackName = mod.focusedCell.stack.name
         mod.expanded[stackName] = not mod.expanded[stackName];
-        self:refreshContainer();
+        mod._dirty = true
     elseif mod:stubMouse() then
         local handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
         mod:restoreMouse()
