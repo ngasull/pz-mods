@@ -37,9 +37,19 @@ function Override:onBackpackMouseUp()
 end
 
 function Override:refreshBackpacks()
+    -- Restore choice as understood internally (only for joypad somehow)
+    if self._StaticBackpacks_overridenChoices then
+        self.backpackChoice = self._StaticBackpacks_overridenChoices[self.inventoryPane.inventory]
+    end
+
     vanilla.refreshBackpacks(self)
 
     if self.onCharacter then
+        self._StaticBackpacks_overridenChoices = {}
+        for i, button in ipairs(self.backpacks) do
+            self._StaticBackpacks_overridenChoices[button.inventory] = i
+        end
+
         local y = self.backpacks[1]:getY()
         local player = getSpecificPlayer(self.player)
         local wornItems = player:getWornItems()
@@ -96,13 +106,8 @@ M.options.apply = function()
     end
 end
 
-if M.clean then
-    M.clean()
-    install()
-    M.options.apply()
-else
-    Events.OnGameStart.Add(function()
-        install()
-        M.options.apply()
-    end)
-end
+if M.clean then M.clean() end
+install()
+M.options.apply()
+
+Events.OnGameStart.Add(M.options.apply)
