@@ -64,7 +64,9 @@ function Override:onJoypadDirDown(...)
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        self.inventoryPane._IconsInventory:joypadDown()
+        if not self.inventoryPane._IconsInventory:joypadDown() then
+            self:selectNextContainer()
+        end
     end
 end
 
@@ -81,7 +83,9 @@ function Override:onJoypadDirUp(...)
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        self.inventoryPane._IconsInventory:joypadUp()
+        if not self.inventoryPane._IconsInventory:joypadUp() then
+            self:selectPrevContainer()
+        end
     end
 end
 
@@ -100,21 +104,14 @@ function Override:onJoypadDown(button)
         local _, row, col = mod.grid:locateCell(mod.hoveredCell)
 
         if row and col then
-            local vanilla_createMenu = ISInventoryPaneContextMenu.createMenu
-            local vanilla_createMenuTutorial = Tutorial1.createInventoryContextMenu
-
-            ISInventoryPaneContextMenu.createMenu = function(player, isInPlayerInventory, items, _x, _y, ...)
-                local x = pane:getAbsoluteX() + mod.xPadding + (col - 1) * M.ItemIcon.cellSize
-                local y = pane:getAbsoluteY() + mod.yPadding + row * M.ItemIcon.cellSize + self:getYScroll()
-                return vanilla_createMenu(player, isInPlayerInventory, items, x, y, ...)
-            end
-            Tutorial1.createInventoryContextMenu = ISInventoryPaneContextMenu.createMenu
-
-            local ok, message = pcall(vanilla.onJoypadDown, self, button)
-
-            ISInventoryPaneContextMenu.createMenu = vanilla_createMenu
-            Tutorial1.createInventoryContextMenu = vanilla_createMenuTutorial
-            if not ok then error(message) end
+            return M.Pane.stubContextMenuXY(
+                function()
+                    local x = pane:getAbsoluteX() + mod.xPadding + (col - 1) * M.ItemIcon.cellSize
+                    local y = pane:getAbsoluteY() + mod.yPadding + row * M.ItemIcon.cellSize + mod.native:getYScroll()
+                    return x, y
+                end,
+                vanilla.onJoypadDown, self, button
+            )
         else
             return vanilla.onJoypadDown(self, button)
         end

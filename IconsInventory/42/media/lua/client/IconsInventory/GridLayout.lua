@@ -124,13 +124,9 @@ function GridLayout:getCellRight(cell)
     if row and col then
         local cols = rows[row]
         return cols[(col % #cols) + 1]
-    else
+    elseif #rows > 0 then
         -- Find first leftmost cell if any
-        for r = 1, #rows do
-            for c = 1, #rows[r] do
-                return rows[r][c]
-            end
-        end
+        return rows[1][1]
     end
 end
 
@@ -140,13 +136,9 @@ function GridLayout:getCellLeft(cell)
     if row and col then
         local cols = rows[row]
         return cols[((col - 2 + #cols) % #cols) + 1]
-    else
+    elseif #rows > 0 then
+        return rows[1][#rows[1]]
         -- Find first rightmost cell if any
-        for r = 1, #rows do
-            for c = #rows[r], 1 do
-                return rows[r][c]
-            end
-        end
     end
 end
 
@@ -154,15 +146,14 @@ end
 function GridLayout:getCellDown(cell)
     local rows, row, col = self:locateCell(cell)
     if row and col then
-        local nextRow = rows[(row % #rows) + 1]
-        return nextRow[math.min(#nextRow, col)]
-    else
-        -- Find first upmost cell if any
-        for r = 1, #rows do
-            for c = 1, #rows[r] do
-                return rows[r][c]
-            end
+        -- local nextRow = rows[(row % #rows) + 1]
+        local nextRow = rows[row + 1]
+        if nextRow then
+            return nextRow[math.min(#nextRow, col)]
         end
+    elseif #rows > 0 then
+        -- Find first upmost cell if any
+        return rows[1][1]
     end
 end
 
@@ -170,14 +161,12 @@ end
 function GridLayout:getCellUp(cell)
     local rows, row, col = self:locateCell(cell)
     if row and col then
-        local prevRow = rows[((row - 2 + #rows) % #rows) + 1]
-        return prevRow[math.min(#prevRow, col)]
-    else
-        -- Find first downmost cell if any
-        for r = #rows, 1 do
-            for c = 1, #rows[r] do
-                return rows[r][c]
-            end
+        local prevRow = rows[row - 1]
+        if prevRow then
+            return prevRow[math.min(#prevRow, col)]
         end
+    elseif #rows > 0 then
+        -- Get first downmost cell if any
+        return rows[#rows][1]
     end
 end

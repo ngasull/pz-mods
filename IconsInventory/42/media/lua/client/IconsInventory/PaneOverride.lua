@@ -173,17 +173,14 @@ function Override:onRightMouseUp(x, y)
     local mod = self._IconsInventory
 
     if mod:_stubMouse() then
-        local stub = ISInventoryPaneContextMenu.createMenu
-        ISInventoryPaneContextMenu.createMenu = function(player, isInPlayerInventory, items, _x, _y, ...)
-            return stub(player, isInPlayerInventory, items,
-                self:getAbsoluteX() + x,
-                self:getAbsoluteY() + y + self:getYScroll(),
-                ...)
-        end
-
-        local handled = vanilla.onRightMouseUp(self, self:getMouseX(), self:getMouseY())
-
-        ISInventoryPaneContextMenu.createMenu = stub
+        local handled = M.Pane.stubContextMenuXY(
+            function()
+                local ctxX = self:getAbsoluteX() + x
+                local ctxY = self:getAbsoluteY() + y + self:getYScroll()
+                return ctxX, ctxY
+            end,
+            vanilla.onRightMouseUp, self, self:getMouseX(), self:getMouseY()
+        )
         mod:_restoreMouse()
         mod._dirty = true
         return handled

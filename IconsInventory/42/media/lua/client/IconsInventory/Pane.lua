@@ -167,23 +167,24 @@ function Pane:joypadSelect(hoveredCell)
         self.native.mouseOverOption = hoveredCell.index
         -- joyselection index starts at zero for some reason
         self.native.joyselection = hoveredCell.index - 1
+        return true
     end
 end
 
 function Pane:joypadRight()
-    self:joypadSelect(self.grid:getCellRight(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellRight(self.hoveredCell))
 end
 
 function Pane:joypadLeft()
-    self:joypadSelect(self.grid:getCellLeft(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellLeft(self.hoveredCell))
 end
 
 function Pane:joypadDown()
-    self:joypadSelect(self.grid:getCellDown(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellDown(self.hoveredCell))
 end
 
 function Pane:joypadUp()
-    self:joypadSelect(self.grid:getCellUp(self.hoveredCell))
+    return self:joypadSelect(self.grid:getCellUp(self.hoveredCell))
 end
 
 function Pane:isDragging()
@@ -252,6 +253,31 @@ end
 
 function Pane:desiredWidth()
     return self.native.parent:getWidth() - self.native.parent.buttonSize
+end
+
+local vanilla_createMenu = ISInventoryPaneContextMenu.createMenu
+
+local _stubContextMenu_calcXY
+local function _stubContextMenu(player, isInPlayerInventory, items, _x, _y, ...)
+    local x, y = _stubContextMenu_calcXY()
+    return vanilla_createMenu(player, isInPlayerInventory, items, x, y, ...)
+end
+
+---@generic R
+---@param calcXY fun(): number, number
+---@param cb fun(...): R
+---@return R
+function Pane.stubContextMenuXY(calcXY, cb, ...)
+    _stubContextMenu_calcXY = calcXY
+    ISInventoryPaneContextMenu.createMenu = _stubContextMenu
+    local ok, result = pcall(cb, ...)
+    ISInventoryPaneContextMenu.createMenu = vanilla_createMenu
+
+    if ok then
+        return result
+    else
+        error(result)
+    end
 end
 
 ---@param x? number
