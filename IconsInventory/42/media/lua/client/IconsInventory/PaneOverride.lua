@@ -59,6 +59,10 @@ function Override:update()
     mod:_stubMouse()
     vanilla.update(self)
     mod:_restoreMouse()
+
+    if self.doController and self.toolRender and self.toolRender.anchorBottomLeft then
+        self.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + mod.xPadding
+    end
 end
 
 function Override:prerender()
