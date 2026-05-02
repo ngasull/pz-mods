@@ -37,6 +37,12 @@ local Override = {}
 ---@class SideBySideContainers_ISInventoryPage: ISInventoryPage
 local vanilla = {}
 
+function Override:prerender()
+    -- More reliable to hook on prerender to react to structural changes like plugged controller
+    initPage(self)
+    vanilla.prerender(self)
+end
+
 -- Intercept drawRect and drawRectBorder for container button panel
 function Override:drawRect(x, y, w, h, a, r, g, b)
     if shallMoveLeft(self) and w == self.buttonSize and x == self:getWidth() - self.buttonSize then
@@ -67,23 +73,5 @@ local function install()
     end
 end
 
-M.options.apply = function()
-    for i = 0, getNumActivePlayers() - 1 do
-        local pd = getPlayerData(i)
-        if pd then
-            initPage(pd.playerInventory)
-            initPage(pd.lootInventory)
-        end
-    end
-end
-
-if M.clean then
-    M.clean()
-    install()
-    M.options.apply()
-else
-    Events.OnGameStart.Add(function()
-        install()
-        M.options.apply()
-    end)
-end
+if M.clean then M.clean() end
+install()
