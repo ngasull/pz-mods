@@ -112,8 +112,6 @@ function GridCell:drawBackground(x, y)
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
                 native:drawRect(x, y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
-                -- else -- Vanilla background
-                --     native:drawRect(x, y, cellSize, cellSize, 0.025, 1.0, 1.0, 1.0);
             end
         else
             native:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
@@ -148,17 +146,6 @@ function GridCell:drawBackground(x, y)
             native:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
         else
             native:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
-            -- elseif instanceof(item, "Clothing") and (
-            --         item:getBodyLocation() == "Shoes" and item:getWetness() > 60
-            --         or item:getWetness() > 10
-            --     )
-            -- then
-            --     native:drawRect(x, y, cellSize, cellSize, 0.2, 0.0, 0.6, 1);
-            -- elseif instanceof(item, "Food") and not item:isFresh() then
-            --     if item:isRotten() then
-            --         native:drawRect(x, y, cellSize, cellSize, 0.8, 0.25, 0.1, 0);
-            --     else
-            --         native:drawRect(x, y, cellSize, cellSize, 0.4, 0.25, 0.25, 0);
         end
     end
 
