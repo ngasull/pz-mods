@@ -138,6 +138,9 @@ function Pane:refresh()
     if self.hoveredCell then
         self.native.mouseOverOption = self.hoveredCell.index
         self.native.joyselection = self.hoveredCell.index - 1
+    else
+        self.native.mouseOverOption = 0
+        self.native.joyselection = nil
     end
 
     self.native:setScrollHeight(2 * minYPadding + self.grid.height)
