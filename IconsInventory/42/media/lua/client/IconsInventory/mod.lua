@@ -19,8 +19,9 @@ M.reload = function()
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/GridLayout.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Pane.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/PaneOverride.lua")
+    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/PageOverride.lua")
 end
 
-M.isDebugEnabled = true or isDebugEnabled()
+M.isDebugEnabled = isDebugEnabled()
 
 return M

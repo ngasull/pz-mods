@@ -25,6 +25,10 @@ function GridCell.new(pane, item, index, stack, category)
     self.stack = stack
     self.category = category or self
 
+    if pane.hoveredCell and self:isCategory() == pane.hoveredCell:isCategory() and item:getID() == pane.hoveredCell.item:getID() then
+        pane.hoveredCell = self
+    end
+
     local player = getSpecificPlayer(pane.native.player)
     self.icon = M.ItemIcon.new(player, pane.native, item)
     return self
@@ -49,7 +53,7 @@ function GridCell:isCollapsed()
 end
 
 function GridCell:isHovered()
-    return self.pane.native.mouseOverOption == self.index
+    return self.pane.hoveredCell == self
 end
 
 function GridCell:isSelected()
@@ -107,38 +111,43 @@ function GridCell:drawBackground(x, y)
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
-                native:drawRect(x, y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0);
+                native:drawRect(x, y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
                 -- else -- Vanilla background
                 --     native:drawRect(x, y, cellSize, cellSize, 0.025, 1.0, 1.0, 1.0);
             end
         else
-            native:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0);
-            native:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0);
+            native:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
+            native:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
         end
     elseif self:isHovered() and heat == 1 then
-        native:drawRect(x, y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0);
+        if native.doController then
+            native:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
+            native:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
+        else
+            native:drawRect(x, y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
+        end
     elseif native.highlightItem and native.highlightItem == item:getType() then
         if not native.blinkAlpha then native.blinkAlpha = 0.5; end
-        native:drawRect(x, y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1);
+        native:drawRect(x, y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1)
         if not native.blinkAlphaIncrease then
-            native.blinkAlpha = native.blinkAlpha - 0.05 * (UIManager.getMillisSinceLastRender() / 33.3);
+            native.blinkAlpha = native.blinkAlpha - 0.05 * (UIManager.getMillisSinceLastRender() / 33.3)
             if native.blinkAlpha < 0 then
                 native.blinkAlpha = 0;
-                native.blinkAlphaIncrease = true;
+                native.blinkAlphaIncrease = true
             end
         else
-            native.blinkAlpha = native.blinkAlpha + 0.05 * (UIManager.getMillisSinceLastRender() / 33.3);
+            native.blinkAlpha = native.blinkAlpha + 0.05 * (UIManager.getMillisSinceLastRender() / 33.3)
             if native.blinkAlpha > 0.5 then
                 native.blinkAlpha = 0.5;
-                native.blinkAlphaIncrease = false;
+                native.blinkAlphaIncrease = false
             end
         end
     elseif heat ~= 1 then
         local alpha = self:isHovered() and 0.45 or 0.3
         if heat > 1 then
-            native:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0);
+            native:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
         else
-            native:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()));
+            native:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
             -- elseif instanceof(item, "Clothing") and (
             --         item:getBodyLocation() == "Shoes" and item:getWetness() > 60
             --         or item:getWetness() > 10
@@ -154,6 +163,6 @@ function GridCell:drawBackground(x, y)
     end
 
     if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
-        native:drawRect(x, y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0);
+        native:drawRect(x, y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
     end
 end

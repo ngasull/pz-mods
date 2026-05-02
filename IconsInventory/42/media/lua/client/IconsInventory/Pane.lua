@@ -4,10 +4,9 @@ local putHotbarInEquipped = true
 local collapseItemsUnder = 0.3
 local alwaysCollapseOver = 3
 local showSmallCategory = false
-local autoResize = true
-local maxRows = 3
-local yPadding = 8
-local xPadding = 16
+local maxColumns = 10
+local minXPadding = 16
+local minYPadding = 8
 
 local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 
@@ -25,14 +24,18 @@ local Pane = {}
 Pane.__index = Pane
 M.Pane = Pane
 
+Pane.yPadding = minYPadding
+
 -- Relies on page override
 ---@param native IconsInventory_ISInventoryPaneOverride
-function Pane.init(native)
+function Pane.new(native)
     local self = setmetatable({}, Pane)
     self.native = native
-    native._IconsInventory = self
     self.page = native.parent
-    self.grid = M.GridLayout.new(yPadding * 2)
+    self.grid = M.GridLayout.new(minYPadding * 2)
+    self.xPadding = minXPadding
+    self.yPadding = minYPadding
+    self.touched = {}
     return self
 end
 
@@ -46,8 +49,8 @@ end
 function Pane:refreshContainer()
     if self.native.inventory ~= self.prevContainer then
         self.prevContainer = self.native.inventory
-        self.touched = {}
-        self.native.collapsed = {}
+        table.wipe(self.touched)
+        table.wipe(self.native.collapsed)
         for _, stack in ipairs(self.native.itemslist) do
             self.native.collapsed[stack.name] = Pane.shouldCollapse(stack)
         end
@@ -63,91 +66,124 @@ function Pane:refreshContainer()
 end
 
 function Pane:refresh()
-    self.native:setWidth(self.native.parent:getWidth() - self.native.parent.buttonSize)
-    self.native:setHeight(2 + self.native.parent:getHeight()
-        - self.native.parent:titleBarHeight()
-        - self.native.parent.controlsUI:getHeight()
-        - ISCollapsableWindow:resizeWidgetHeight())
-
     local vanillaItems = {}
     self.native.items = vanillaItems
 
+    -- Matters on joypad after refreshes
+    local prevHovered = self.hoveredCell
+    local _, prevRow, prevCol = self.grid:locateCell(prevHovered)
+
     local cells = {}
-    local hotbarCells = {}
-    local equippedCells = {}
+    local hotbarCells ---@type IconsInventory_GridCell[]?
+    local equippedCells ---@type IconsInventory_GridCell[]?
     for _, stack in ipairs(self.native.itemslist) do
-        -- table.insert(vanillaItems, stack)
-        local category
+        table.insert(vanillaItems, stack)
+        local category = M.GridCell.new(self, stack.items[1], #vanillaItems, stack)
 
-        for _, item in ipairs(stack.items) do
-            local isCategory = category == nil
-            table.insert(vanillaItems, isCategory and stack or item)
+        if category:isCollapsed() or Pane.shouldCollapse(stack) then
+            table.insert(cells, category)
+        end
 
-            local cell = M.GridCell.new(self, item, #vanillaItems, stack, category)
-            if cell:isCategory() then category = cell end
+        for i = 2, #stack.items do
+            local item = stack.items[i]
+            table.insert(vanillaItems, item)
 
-            if stack.equipped then
-                if not isCategory then
+            if not category:isCollapsed() then
+                local cell = M.GridCell.new(self, item, #vanillaItems, stack, category)
+
+                if stack.equipped then
+                    if not equippedCells then equippedCells = {} end
                     table.insert(equippedCells, cell)
-                end
-            elseif putHotbarInEquipped and cell:isInHotbar() then
-                if not isCategory then
+                elseif putHotbarInEquipped and cell:isInHotbar() then
+                    if not hotbarCells then hotbarCells = {} end
                     table.insert(hotbarCells, cell)
-                end
-            elseif isCategory then
-                if cell:isCollapsed() or Pane.shouldCollapse(stack) then
+                else
                     table.insert(cells, cell)
                 end
-                if cell:isCollapsed() then break end
-            else
-                table.insert(cells, cell)
             end
         end
     end
 
     local groups = { cells }
-    if #hotbarCells > 0 then
+    if hotbarCells then
         table.insert(groups, hotbarCells)
     end
-    if #equippedCells > 0 then
+    if equippedCells then
         table.insert(groups, equippedCells)
     end
 
-    self.grid:set(groups, self.native.width - 2 * xPadding)
+    local maxWidth = self.native.width - 2 * minXPadding
+    local gridWidth = math.floor(maxWidth / M.ItemIcon.cellSize)
+    if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
+        gridWidth = math.min(maxColumns, gridWidth)
+    end
 
-    -- if autoResize then
-    --     local groupSpace = (#groups - 1) * yPadding
-    --     local maxHeight = maxRows * M.ItemIcon.cellSize + groupSpace
-    --     local height = 2 * yPadding + math.max(
-    --         M.ItemIcon.cellSize,
-    --         self.grid:calcGroupHeight(#cells) + self.grid:calcGroupHeight(#equippedCells) + groupSpace
-    --     )
-    --     self.native:setHeight(math.min(maxHeight, height))
-    --     self.native.parent:setHeight(
-    --         self.native.parent:titleBarHeight()
-    --         + height
-    --         + self.native.parent.controlsUI:getHeight()
-    --     )
-    --     self.native.parent:onResize()
-    -- end
+    self.grid:set(groups, gridWidth)
 
-    self.native:setScrollHeight(2 * yPadding + self.grid.height)
+    -- Make sure it's an integer to avoid half-pixel renders
+    self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
+
+    -- If hoveredCell is has not been forwarded (by GridCell.new)
+    if self.hoveredCell == prevHovered then
+        self.hoveredCell = nil
+    end
+    if not self.hoveredCell and prevRow and prevCol then
+        self.hoveredCell = self.grid:getCellAt(prevRow, prevCol)
+    end
+    -- NB: doController check if current pane is *active*
+    if self.native.doController and not self.hoveredCell then
+        self.hoveredCell = self.grid:getCellAt(1, 1)
+    end
+
+    if self.hoveredCell then
+        self.native.mouseOverOption = self.hoveredCell.index
+        self.native.joyselection = self.hoveredCell.index - 1
+    end
+
+    self.native:setScrollHeight(2 * minYPadding + self.grid.height)
     self.native.vscroll:setHeight(self.native:getHeight())
     self.native:updateScrollbars()
 end
 
 function Pane:syncMouse()
-    local hoveredCell = self.grid:hitTest(
-        self.native:getMouseX() - xPadding,
-        self.native:getMouseY() - yPadding
-    )
+    if not self.native.doController then
+        local hoveredCell = self.grid:hitTest(
+            self.native:getMouseX() - self.xPadding,
+            self.native:getMouseY() - self.yPadding
+        )
+        if hoveredCell then
+            self.hoveredCell = hoveredCell
+            self.native.mouseOverOption = self.hoveredCell.index
+        else
+            self.hoveredCell = nil
+            self.native.mouseOverOption = 0
+        end
+    end
+end
+
+function Pane:joypadSelect(hoveredCell)
     if hoveredCell then
         self.hoveredCell = hoveredCell
-        self.native.mouseOverOption = self.hoveredCell.index
-    else
-        self.hoveredCell = nil
-        self.native.mouseOverOption = 0
+        self.native.mouseOverOption = hoveredCell.index
+        -- joyselection index starts at zero for some reason
+        self.native.joyselection = hoveredCell.index - 1
     end
+end
+
+function Pane:joypadRight()
+    self:joypadSelect(self.grid:getCellRight(self.hoveredCell))
+end
+
+function Pane:joypadLeft()
+    self:joypadSelect(self.grid:getCellLeft(self.hoveredCell))
+end
+
+function Pane:joypadDown()
+    self:joypadSelect(self.grid:getCellDown(self.hoveredCell))
+end
+
+function Pane:joypadUp()
+    self:joypadSelect(self.grid:getCellUp(self.hoveredCell))
 end
 
 function Pane:isDragging()
@@ -157,10 +193,10 @@ end
 
 function Pane:render()
     local isDragging = self:isDragging()
-    local yOffset = yPadding
+    local yOffset = minYPadding
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = yPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = minYPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.native.parent.onCharacter then
@@ -172,7 +208,7 @@ function Pane:render()
 
         for i, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
-                local x = xPadding + ((i - 1) % self.grid.gridWidth) * M.ItemIcon.cellSize
+                local x = self.xPadding + ((i - 1) % self.grid.gridWidth) * M.ItemIcon.cellSize
                 local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * M.ItemIcon.cellSize
                 cell:render(x, y)
             end
@@ -181,7 +217,7 @@ function Pane:render()
         yOffset = yOffset + groupHeight
 
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
-            self.native:drawRect(1, yOffset - yPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
+            self.native:drawRect(1, yOffset - minYPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
         end
     end
 end
@@ -214,6 +250,10 @@ function Pane:renderDragged()
     self.native:resumeStencil()
 end
 
+function Pane:desiredWidth()
+    return self.native.parent:getWidth() - self.native.parent.buttonSize
+end
+
 ---@param x? number
 ---@param y? number
 function Pane:_stubMouse(x, y)
@@ -221,9 +261,6 @@ function Pane:_stubMouse(x, y)
         if x and y then
             self.fakeX = x
             self.fakeY = y
-        else
-            self.fakeX = nil
-            self.fakeY = nil
         end
         self.native.getMouseX = self._mouseStubX
         self.native.getMouseY = self._mouseStubY
@@ -234,13 +271,17 @@ end
 function Pane:_restoreMouse()
     self.native.getMouseX = ISUIElement.getMouseX
     self.native.getMouseY = ISUIElement.getMouseY
+    self.fakeX = nil
+    self.fakeY = nil
 end
 
+---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubX(native)
     local mod = native._IconsInventory
     return mod.fakeX or native.column2 + 1 -- To the right of collapse area
 end
 
+---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubY(native)
     local mod = native._IconsInventory
     return mod.fakeY or native.headerHgt + (native.mouseOverOption - 1) * native.itemHgt + 2

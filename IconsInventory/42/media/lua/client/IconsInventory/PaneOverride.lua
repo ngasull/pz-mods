@@ -10,24 +10,22 @@ local Override = {}
 
 function Override.new(...)
     ---@type IconsInventory_ISInventoryPaneOverride
-    local native = vanilla.new(...)
-    M.Pane.init(native)
-    return native
+    local self = vanilla.new(...)
+    self._IconsInventory = M.Pane.new(self)
+    return self
 end
 
 function Override:createChildren()
     vanilla.createChildren(self)
-
-    -- ! -- Mod not init yet
     self.headerHgt = 0
-    self.expandAll:setHeight(0)
-    self.collapseAll:setHeight(0)
-    self.filterMenu:setHeight(0)
-    self.nameHeader:setVisible(false)
-    self.typeHeader:setVisible(false)
+    self:removeChild(self.expandAll)
+    self:removeChild(self.collapseAll)
+    self:removeChild(self.filterMenu)
+    self:removeChild(self.nameHeader)
+    self:removeChild(self.typeHeader)
+    self.nameHeader:removeFromUIManager()
+    self.typeHeader:removeFromUIManager()
 end
-
-Override.doButtons = ISInventoryPane.hideButtons
 
 function Override:refreshContainer()
     local prevSelected = {}
@@ -48,6 +46,14 @@ function Override:refreshContainer()
     self._IconsInventory:refreshContainer()
 end
 
+function Override:doJoypadExpandCollapse()
+    local mod = self._IconsInventory
+    if mod.hoveredCell then
+        mod.touched[mod.hoveredCell.stack.name] = true
+    end
+    return vanilla.doJoypadExpandCollapse(self)
+end
+
 function Override:update()
     local mod = self._IconsInventory
     mod:_stubMouse()
@@ -57,6 +63,10 @@ end
 
 function Override:prerender()
     local mod = self._IconsInventory
+
+    if self:getWidth() ~= mod:desiredWidth() then
+        self.parent:onResize()
+    end
 
     if self.inventory:isDrawDirty() then
         self:refreshContainer()
@@ -105,7 +115,9 @@ function Override:onMouseMove(dx, dy)
 end
 
 function Override:onMouseMoveOutside(dx, dy)
-    self._IconsInventory.hoveredCell = nil
+    if not self.doController then
+        self._IconsInventory.hoveredCell = nil
+    end
     return vanilla.onMouseMoveOutside(self, dx, dy)
 end
 
@@ -138,7 +150,6 @@ end
 function Override:onMouseUp(x, y)
     local mod = self._IconsInventory
 
-    local wasDragging = self.dragStarted
     mod.mouseDown = nil
     mod._dirty = true
 
@@ -150,7 +161,6 @@ function Override:onMouseUp(x, y)
     local handled = vanilla.onMouseUp(self, self:getMouseX(), self:getMouseY())
     mod:_restoreMouse()
     return handled
-    -- end
 end
 
 function Override:onMouseUpOutside(x, y)
@@ -190,10 +200,13 @@ function Override:onMouseDoubleClick(x, y)
     elseif -- Expand/collapse
         not self.dragStarted and mod.hoveredCell and mod.hoveredCell:isCategory()
     then
-        mod.touched[mod.hoveredCell.stack.name] = true
+        local stackName = mod.hoveredCell.stack.name
+        self.collapsed[stackName] = not self.collapsed[stackName];
+        mod.touched[stackName] = true
+        self:refreshContainer();
         -- Vanilla will interpret leftmost clicks as expand/collapse hovered option
-        vanilla.onMouseDown(self, 1, -1)
-        return vanilla.onMouseUp(self, 1, -1)
+        -- vanilla.onMouseDown(self, 1, -1)
+        -- return vanilla.onMouseUp(self, 1, -1)
     elseif mod:_stubMouse() then
         local handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
         mod:_restoreMouse()
@@ -205,35 +218,37 @@ function Override:onMouseWheel(del)
     return vanilla.onMouseWheel(self, del)
 end
 
-function Override:onResize()
-    self._IconsInventory._dirty = true
-end
-
 local function install()
     for k, v in pairs(Override) do
         vanilla[k] = ISInventoryPane[k]
         ISInventoryPane[k] = v
     end
 
-    for i = 0, getNumActivePlayers() - 1 do
-        local pd = getPlayerData(i)
-        if pd then
-            M.Pane.init(pd.playerInventory.inventoryPane):refreshContainer()
-            M.Pane.init(pd.lootInventory.inventoryPane):refreshContainer()
-        end
-    end
-
-    M.clean = function()
+    M.cleanPane = function()
         for k, v in pairs(vanilla) do
             ISInventoryPane[k] = v
         end
     end
 end
 
+local isReload
+if M.cleanPane then
+    M.cleanPane()
+    isReload = true
+end
 
-if M.clean then
-    M.clean()
-    install()
-else
-    Events.OnGameStart.Add(install)
+install()
+
+if isReload then
+    for i = 0, getNumActivePlayers() - 1 do
+        local pd = getPlayerData(i)
+        if pd then
+            local ppane = pd.playerInventory.inventoryPane
+            local lpane = pd.lootInventory.inventoryPane
+            ppane._IconsInventory = M.Pane.new(ppane)
+            lpane._IconsInventory = M.Pane.new(lpane)
+            ppane:refreshContainer()
+            lpane:refreshContainer()
+        end
+    end
 end
