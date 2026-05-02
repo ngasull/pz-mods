@@ -11,7 +11,7 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@field grid IconsInventory_GridLayout<IconsInventory_GridCell>
 ---@field focusedCell? IconsInventory_GridCell
 ---@field prevContainer? ItemContainer
----@field touched table<string, boolean>
+---@field expanded table<string, boolean>
 ---@field mouseDown? { x: integer, y: integer }
 ---@field _fakeX? number
 ---@field _fakeY? number
@@ -30,12 +30,12 @@ function Pane.new(native)
     self.grid = M.GridLayout.new(minYPadding * 2)
     self.xPadding = minXPadding
     self.yPadding = minYPadding
-    self.touched = {}
+    self.expanded = {}
     return self
 end
 
 ---@param stack ContextMenuItemStack
-function Pane.shouldCollapse(stack)
+function Pane.isCollapsable(stack)
     local stackSize = #stack.items - 1
     return M.option.alwaysCollapseOver:getValue() > 1 and (
         stackSize > M.option.alwaysCollapseOver:getValue()
@@ -46,17 +46,7 @@ end
 function Pane:refreshContainer()
     if self.native.inventory ~= self.prevContainer then
         self.prevContainer = self.native.inventory
-        table.wipe(self.touched)
-        table.wipe(self.native.collapsed)
-        for _, stack in ipairs(self.native.itemslist) do
-            self.native.collapsed[stack.name] = Pane.shouldCollapse(stack)
-        end
-    else
-        for _, stack in pairs(self.native.itemslist) do
-            if not self.touched[stack.name] then
-                self.native.collapsed[stack.name] = Pane.shouldCollapse(stack)
-            end
-        end
+        table.wipe(self.expanded)
     end
 
     self._dirty = true
@@ -74,10 +64,12 @@ function Pane:refresh()
     local hotbarCells ---@type IconsInventory_GridCell[]?
     local equippedCells ---@type IconsInventory_GridCell[]?
     for _, stack in ipairs(self.native.itemslist) do
+        -- We work on a fully expanded backend
+        self.native.collapsed[stack.name] = false
         table.insert(vanillaItems, stack)
         local category = M.GridCell.new(self, stack.items[1], #vanillaItems, stack)
 
-        if category:isCollapsed() or Pane.shouldCollapse(stack) then
+        if category:isCollapsed() or Pane.isCollapsable(stack) then
             table.insert(cells, category)
         end
 
@@ -125,7 +117,13 @@ function Pane:refresh()
         self:setFocusedCell(nil)
     end
     if not self.focusedCell and prevRow and prevCol then
-        self:setFocusedCell(self.grid:getCellAt(prevRow, prevCol))
+        for i = prevCol, 1, -1 do
+            local fallback = self.grid:getCellAt(prevRow, i)
+            if fallback then
+                self:setFocusedCell(fallback)
+                break
+            end
+        end
     end
     -- NB: doController check if current pane is *active*
     if self.native.doController and not self.focusedCell then

@@ -34,10 +34,10 @@ end
 
 function Override:doJoypadExpandCollapse()
     local mod = self._IconsInventory
-    if mod.focusedCell then
-        mod.touched[mod.focusedCell.stack.name] = true
+    if mod.focusedCell and mod.focusedCell:isCategory() then
+        mod.expanded[mod.focusedCell.stack.name] = not mod.expanded[mod.focusedCell.stack.name]
+        mod._dirty = true
     end
-    return vanilla.doJoypadExpandCollapse(self)
 end
 
 function Override:update()
@@ -195,8 +195,7 @@ function Override:onMouseDoubleClick(x, y)
         not self.dragStarted and mod.focusedCell and mod.focusedCell:isCategory()
     then
         local stackName = mod.focusedCell.stack.name
-        self.collapsed[stackName] = not self.collapsed[stackName];
-        mod.touched[stackName] = true
+        mod.expanded[stackName] = not mod.expanded[stackName];
         self:refreshContainer();
     elseif mod:stubMouse() then
         local handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())

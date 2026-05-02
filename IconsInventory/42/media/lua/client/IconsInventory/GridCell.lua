@@ -49,7 +49,8 @@ function GridCell:isCategory()
 end
 
 function GridCell:isCollapsed()
-    return self:isCategory() and self.pane.native.collapsed[self.stack.name] and self:getStackSize() > 1
+    if not self:isCategory() or self:getStackSize() < 2 then return false end
+    return not self.pane.expanded[self.stack.name] and M.Pane.isCollapsable(self.stack)
 end
 
 function GridCell:isFocused()
