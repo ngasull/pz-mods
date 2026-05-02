@@ -12,10 +12,22 @@ local vanilla = {}
 ---@class IconsInventory_ISInventoryPageOverride: ISInventoryPage
 ---@field parent ISInventoryPage
 ---@field inventoryPane IconsInventory_ISInventoryPaneOverride
+---@field _IconsInventory_init? true
 ---@field _IconsInventory_pressedBumper integer?
 local Override = {}
 
 function Override:update()
+    if not self._IconsInventory_init then
+        if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
+            local h = math.max(
+                math.floor(self:getHeight() / 2),
+                math.floor(getCore():getScreenHeight() / 4))
+            self:setHeight(h)
+            self:setY(getCore():getScreenHeight() - h)
+        end
+        self._IconsInventory_init = true
+    end
+
     if self._IconsInventory_pressedBumper then
         local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
