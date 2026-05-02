@@ -68,7 +68,7 @@ function Pane:refresh()
 
     -- Matters on joypad after refreshes
     local prevFocused = self.focusedCell
-    local _, prevRow, prevCol = self.grid:locateCell(prevFocused)
+    local prevRow, prevCol = self.grid:locateCell(prevFocused)
 
     local cells = {}
     local hotbarCells ---@type IconsInventory_GridCell[]?
@@ -122,14 +122,14 @@ function Pane:refresh()
 
     -- If focusedCell is has not been forwarded (by GridCell.new)
     if self.focusedCell == prevFocused then
-        self.focusedCell = nil
+        self:setFocusedCell(nil)
     end
     if not self.focusedCell and prevRow and prevCol then
-        self.focusedCell = self.grid:getCellAt(prevRow, prevCol)
+        self:setFocusedCell(self.grid:getCellAt(prevRow, prevCol))
     end
     -- NB: doController check if current pane is *active*
     if self.native.doController and not self.focusedCell then
-        self.focusedCell = self.grid:getCellAt(1, 1)
+        self:setFocusedCell(self.grid:getCellAt(1, 1))
     end
 
     self.native:setScrollHeight(2 * minYPadding + self.grid.height)
@@ -137,32 +137,10 @@ function Pane:refresh()
     self.native:updateScrollbars()
 end
 
-function Pane:syncJoypad()
-    -- joyselection index starts at zero for some reason
-    self.native.joyselection = self.focusedCell and self.focusedCell.index - 1 or nil
-end
-
-function Pane:joypadSelect(focusedCell)
-    if focusedCell then
-        self.focusedCell = focusedCell
-        return true
-    end
-end
-
-function Pane:joypadRight()
-    return self:joypadSelect(self.grid:getCellRight(self.focusedCell))
-end
-
-function Pane:joypadLeft()
-    return self:joypadSelect(self.grid:getCellLeft(self.focusedCell))
-end
-
-function Pane:joypadDown()
-    return self:joypadSelect(self.grid:getCellDown(self.focusedCell))
-end
-
-function Pane:joypadUp()
-    return self:joypadSelect(self.grid:getCellUp(self.focusedCell))
+---@param focusedCell IconsInventory_GridCell?
+function Pane:setFocusedCell(focusedCell)
+    self.focusedCell = focusedCell
+    self.native.joyselection = focusedCell and focusedCell.index - 1 or nil
 end
 
 function Pane:isDragging()

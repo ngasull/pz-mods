@@ -26,7 +26,7 @@ function GridCell.new(pane, item, index, stack, category)
     self.category = category or self
 
     if pane.focusedCell and self:isCategory() == pane.focusedCell:isCategory() and item:getID() == pane.focusedCell.item:getID() then
-        pane.focusedCell = self
+        pane:setFocusedCell(self)
     end
 
     local player = getSpecificPlayer(pane.native.player)

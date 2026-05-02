@@ -6,6 +6,7 @@ local M = require("IconsInventory/mod")
 ---@field gridWidth integer
 ---@field width number
 ---@field height number
+---@field _rows? T[][]
 local GridLayout = {}
 GridLayout.__index = GridLayout
 M.GridLayout = GridLayout
@@ -49,8 +50,7 @@ end
 ---@param gridWidth integer
 function GridLayout:set(cells, gridWidth)
     self.cells = cells
-    self._locateCell_mem = nil
-    self._locateCell_rows = nil
+    self._rows = nil
 
     self.gridWidth = math.max(1, gridWidth)
     self.width = self.gridWidth * M.ItemIcon.cellSize
@@ -61,41 +61,19 @@ function GridLayout:set(cells, gridWidth)
     end
 end
 
----@param nRows integer
-function GridLayout:calcGroupHeight(nRows)
-    return M.ItemIcon.cellSize * math.ceil(nRows / self.gridWidth)
-end
+function GridLayout:getRows()
+    if not self._rows then
+        self._rows = {}
 
----@param row integer
----@param col integer
-function GridLayout:getCellAt(row, col)
-    for _, group in ipairs(self.cells) do
-        local groupRows = math.ceil(#group / self.gridWidth)
-        if groupRows >= row then
-            return group[(row - 1) * self.gridWidth + col]
-        end
-        row = row - groupRows
-    end
-end
-
----@param cell? T
----@return_overload T[][], integer, integer
----@return_overload T[][]
-function GridLayout:locateCell(cell)
-    if not self._locateCell_mem then
-        self._locateCell_mem = {}
-        self._locateCell_rows = {}
-
-        local rows = self._locateCell_rows
-        local row
+        local rows = self._rows
+        local row ---@type T[]?
         for _, group in ipairs(self.cells) do
-            for _, gcell in ipairs(group) do
+            for _, cell in ipairs(group) do
                 if not row then row = {} end
 
-                table.insert(row, gcell)
+                table.insert(row, cell)
                 local r = #rows + 1
                 local c = #row
-                self._locateCell_mem[gcell] = { r, c }
 
                 if #row == self.gridWidth then
                     table.insert(rows, row)
@@ -109,64 +87,36 @@ function GridLayout:locateCell(cell)
             end
         end
     end
+    return self._rows
+end
 
-    local ij = self._locateCell_mem[cell]
-    if ij then
-        return self._locateCell_rows, ij[1], ij[2]
-    else
-        return self._locateCell_rows
+---@param nRows integer
+function GridLayout:calcGroupHeight(nRows)
+    return M.ItemIcon.cellSize * math.ceil(nRows / self.gridWidth)
+end
+
+---@param row integer
+---@param col integer
+function GridLayout:getCellAt(row, col)
+    local rows = self:getRows()
+    if row < 0 then row = #rows + row + 1 end
+
+    local cols = rows[row]
+    if cols then
+        if col < 0 then col = #cols + col + 1 end
+        return cols[col]
     end
 end
 
 ---@param cell? T
-function GridLayout:getCellRight(cell)
-    local rows, row, col = self:locateCell(cell)
-    if row and col then
-        local cols = rows[row]
-        return cols[(col % #cols) + 1]
-    elseif #rows > 0 then
-        -- Find first leftmost cell if any
-        return rows[1][1]
-    end
-end
-
----@param cell? T
-function GridLayout:getCellLeft(cell)
-    local rows, row, col = self:locateCell(cell)
-    if row and col then
-        local cols = rows[row]
-        return cols[((col - 2 + #cols) % #cols) + 1]
-    elseif #rows > 0 then
-        return rows[1][#rows[1]]
-        -- Find first rightmost cell if any
-    end
-end
-
----@param cell? T
-function GridLayout:getCellDown(cell)
-    local rows, row, col = self:locateCell(cell)
-    if row and col then
-        -- local nextRow = rows[(row % #rows) + 1]
-        local nextRow = rows[row + 1]
-        if nextRow then
-            return nextRow[math.min(#nextRow, col)]
+---@return_overload integer, integer
+---@return_overload nil
+function GridLayout:locateCell(cell)
+    for r, cols in ipairs(self:getRows()) do
+        for c, rcell in ipairs(cols) do
+            if rcell == cell then
+                return r, c
+            end
         end
-    elseif #rows > 0 then
-        -- Find first upmost cell if any
-        return rows[1][1]
-    end
-end
-
----@param cell? T
-function GridLayout:getCellUp(cell)
-    local rows, row, col = self:locateCell(cell)
-    if row and col then
-        local prevRow = rows[row - 1]
-        if prevRow then
-            return prevRow[math.min(#prevRow, col)]
-        end
-    elseif #rows > 0 then
-        -- Get first downmost cell if any
-        return rows[#rows][1]
     end
 end

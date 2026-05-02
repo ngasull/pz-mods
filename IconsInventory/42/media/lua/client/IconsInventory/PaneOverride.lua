@@ -90,12 +90,12 @@ function Override:onMouseMove(dx, dy)
     local mod = self._IconsInventory
 
     if self.doController then
-        mod.focusedCell = nil
+        mod:setFocusedCell(nil)
     else
-        mod.focusedCell = mod.grid:hitTest(
+        mod:setFocusedCell(mod.grid:hitTest(
             self:getMouseX() - mod.xPadding,
             self:getMouseY() - mod.yPadding
-        )
+        ))
     end
 
     -- Only forward on drag: hover is handled by this pane
@@ -113,7 +113,7 @@ end
 
 function Override:onMouseMoveOutside(dx, dy)
     if not self.doController then
-        self._IconsInventory.focusedCell = nil
+        self._IconsInventory:setFocusedCell(nil)
     end
     return vanilla.onMouseMoveOutside(self, dx, dy)
 end
