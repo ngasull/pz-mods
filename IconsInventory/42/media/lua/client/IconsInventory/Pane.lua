@@ -16,6 +16,7 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@field mouseDown? { x: integer, y: integer }
 ---@field _fakeX? number
 ---@field _fakeY? number
+---@field _cancelMouseUp? true
 local Pane = {}
 Pane.__index = Pane
 M.Pane = Pane

@@ -32,14 +32,6 @@ function Override:refreshContainer()
     self._IconsInventory:refreshContainer()
 end
 
-function Override:doJoypadExpandCollapse()
-    local mod = self._IconsInventory
-    if mod.focusedCell and mod.focusedCell:isCategory() then
-        mod.expanded[mod.focusedCell.stack.name] = not mod.expanded[mod.focusedCell.stack.name]
-        mod._dirty = true
-    end
-end
-
 function Override:update()
     local mod = self._IconsInventory
     mod:stubMouse()
@@ -147,6 +139,11 @@ function Override:onMouseUp(x, y)
     local mod = self._IconsInventory
     mod.mouseDown = nil
 
+    if mod._cancelMouseUp then
+        mod._cancelMouseUp = nil
+        return
+    end
+
     if mod:stubMouse() then
         x = self:getMouseX()
         y = self:getMouseY()
@@ -159,6 +156,7 @@ end
 function Override:onMouseUpOutside(x, y)
     local mod = self._IconsInventory
     mod.mouseDown = nil
+    mod._cancelMouseUp = nil
     return vanilla.onMouseUpOutside(self, x, y)
 end
 
@@ -181,18 +179,37 @@ function Override:onRightMouseUp(x, y)
     return handled
 end
 
+---@param self IconsInventory_ISInventoryPaneOverride
+---@param cell IconsInventory_Cell
+local function toggleExpanded(self, cell)
+    local mod = self._IconsInventory
+    local stackName = cell.stack.name
+    mod.expanded[stackName] = not mod.expanded[stackName]
+    mod._dirty = true
+end
+
+function Override:doJoypadExpandCollapse()
+    local mod = self._IconsInventory
+    if mod.focusedCell and mod.focusedCell:isCategory() then
+        toggleExpanded(self, mod.focusedCell)
+    end
+end
+
 function Override:onMouseDoubleClick(x, y)
     local mod = self._IconsInventory
     local handled
 
     if self.vscroll and self:isMouseOverScrollBar() then
         return self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
-    elseif -- Expand/collapse
-        not self.dragStarted and mod.focusedCell and mod.focusedCell:isCategory()
-    then
-        local stackName = mod.focusedCell.stack.name
-        mod.expanded[stackName] = not mod.expanded[stackName];
-        mod._dirty = true
+    elseif not self.dragStarted and mod.focusedCell and mod.focusedCell:isCategory() then
+        toggleExpanded(self, mod.focusedCell)
+
+        -- We don't want to select all on expand (first click of double click selected the category)
+        for i in ipairs(mod.focusedCell.stack.items) do
+            self.selected[mod.focusedCell.index + i - 1] = nil
+        end
+        -- Also cancel up to avoid re-selecting
+        mod._cancelMouseUp = true
     elseif mod:stubMouse() then
         handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
     end
