@@ -188,8 +188,8 @@ function Override:onJoypadDown(button)
         if row and col then
             M.Pane.stubContextMenuXY(
                 function()
-                    local x = pane:getAbsoluteX() + mod.xPadding + (col - 1) * M.ItemIcon.cellSize
-                    local y = pane:getAbsoluteY() + mod.yPadding + row * M.ItemIcon.cellSize + mod.native:getYScroll()
+                    local x = pane:getAbsoluteX() + mod.grid.x + (col - 1) * M.ItemIcon.cellSize
+                    local y = pane:getAbsoluteY() + mod.grid.y + row * M.ItemIcon.cellSize + mod.native:getYScroll()
                     return x, y
                 end,
                 vanilla.onJoypadDown, self, button

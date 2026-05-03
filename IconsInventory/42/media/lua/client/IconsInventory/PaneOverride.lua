@@ -39,7 +39,7 @@ function Override:update()
     mod:restoreMouse()
 
     if self.doController and self.toolRender and self.toolRender.anchorBottomLeft then
-        self.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + mod.xPadding
+        self.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + mod.grid.x
     end
 end
 
@@ -85,8 +85,8 @@ function Override:onMouseMove(dx, dy)
         mod:setFocusedCell(nil)
     else
         mod:setFocusedCell(mod.grid:hitTest(
-            self:getMouseX() - mod.xPadding,
-            self:getMouseY() - mod.yPadding
+            self:getMouseX(),
+            self:getMouseY()
         ))
     end
 

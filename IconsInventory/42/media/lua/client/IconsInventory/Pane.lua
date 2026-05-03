@@ -1,7 +1,7 @@
 local M = require("IconsInventory/mod")
 
 local minXPadding = 16
-local minYPadding = 8
+local yPadding = 8
 
 local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 
@@ -21,17 +21,14 @@ local Pane = {}
 Pane.__index = Pane
 M.Pane = Pane
 
-Pane.yPadding = minYPadding
-
 -- Relies on page override
 ---@param native IconsInventory_ISInventoryPaneOverride
 function Pane.new(native)
     local self = setmetatable({}, Pane)
     self.native = native
     self.page = native.parent
-    self.grid = M.GridLayout.new(minYPadding * 2)
-    self.xPadding = minXPadding
-    self.yPadding = minYPadding
+    self.grid = M.GridLayout.new(yPadding * 2)
+    self.yPadding = yPadding
     self.expanded = {}
     self.pool = M.CellPool:new()
     return self
@@ -112,6 +109,9 @@ function Pane:refresh()
     end
 
     self.grid:set(groups, gridWidth)
+    -- Make sure it's an integer to avoid half-pixel renders
+    self.grid.x = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
+    self.grid.y = self.native.headerHgt + yPadding
 
     -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
@@ -131,7 +131,7 @@ function Pane:refresh()
         self:setFocusedCell(self.grid:getCellAt(1, 1))
     end
 
-    self.native:setScrollHeight(2 * minYPadding + self.grid.height)
+    self.native:setScrollHeight(2 * yPadding + self.grid.height)
     self.native.vscroll:setHeight(self.native:getHeight())
     self.native:updateScrollbars()
 end
@@ -148,26 +148,23 @@ function Pane:isDragging()
 end
 
 function Pane:render()
-    -- Make sure it's an integer to avoid half-pixel renders
-    self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
-
     local isDragging = self:isDragging()
-    local yOffset = minYPadding
+    local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = minYPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = yPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.native.parent.onCharacter then
             self.native:drawRect(
-                1, 1,
-                self.native.width - 2, groupHeight - 1,
+                1, self.grid.y - yPadding,
+                self.native:getWidth() - 2, groupHeight - 1,
                 0.5, 0, 0, 0)
         end
 
         for i, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
-                local x = self.xPadding + ((i - 1) % self.grid.gridWidth) * M.ItemIcon.cellSize
+                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * M.ItemIcon.cellSize
                 local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * M.ItemIcon.cellSize
                 cell:render(x, y)
             end
@@ -176,9 +173,15 @@ function Pane:render()
         yOffset = yOffset + groupHeight
 
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
-            self.native:drawRect(1, yOffset - minYPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
+            self.native:drawRect(1, yOffset - yPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
         end
     end
+
+    -- Draw static header above drawable area for mods (ie: BetterContainers) pushing down the grid (clipped by stencil otherwise)
+    self.native:drawRect(1, -self.native:getYScroll() + 1, self.native.width - 2, self.grid.y - yPadding - 2, 1,
+        0, 0, 0)
+    self.native:drawRect(1, -self.native:getYScroll() + self.grid.y - yPadding - 1, self.native.width - 2, 1, 0.2, 1, 1,
+        1)
 end
 
 function Pane:renderDragged()
@@ -210,7 +213,8 @@ function Pane:renderDragged()
 end
 
 function Pane:desiredWidth()
-    return self.native.parent:getWidth() - self.native.parent.buttonSize
+    local containersWidth = self.native.parent.buttonSize
+    return self.native.parent:getWidth() - containersWidth
 end
 
 local vanilla_createMenu = ISInventoryPaneContextMenu.createMenu

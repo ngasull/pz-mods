@@ -4,6 +4,8 @@ local M = require("IconsInventory/mod")
 ---@field groupSpace number
 ---@field cells T[][]
 ---@field gridWidth integer
+---@field x number
+---@field y number
 ---@field width number
 ---@field height number
 ---@field _rows? T[][]
@@ -15,6 +17,8 @@ M.GridLayout = GridLayout
 function GridLayout.new(groupSpace)
     ---@type IconsInventory_GridLayout
     local self = setmetatable({}, GridLayout)
+    self.x = 0
+    self.y = 0
     self.width = 0
     self.height = 0
     self.gridWidth = 1
@@ -25,6 +29,8 @@ end
 
 ---@return T?, integer, integer
 function GridLayout:hitTest(mx, my)
+    mx = mx - self.x
+    my = my - self.y
     if mx >= 0 and my >= 0 then
         local candidateColumn = math.floor(mx / M.ItemIcon.cellSize)
 
