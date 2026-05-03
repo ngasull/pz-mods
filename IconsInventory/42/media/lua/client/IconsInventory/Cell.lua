@@ -11,26 +11,31 @@ local Cell = {}
 Cell.__index = Cell
 M.Cell = Cell
 
----@param pane IconsInventory_Pane
 ---@param item InventoryItem
+---@param ... any
+function Cell.new(item, ...)
+    ---@type IconsInventory_Cell
+    local self = setmetatable({}, Cell)
+    self.item = item
+    self:init(...)
+    return self
+end
+
+---@param pane IconsInventory_Pane
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
 ---@param category? IconsInventory_Cell
-function Cell.new(pane, item, index, stack, category)
-    ---@type IconsInventory_Cell
-    local self = setmetatable({}, Cell)
+function Cell:init(pane, index, stack, category)
     self.pane = pane
-    self.item = item
     self.index = index
     self.stack = stack
     self.category = category or self
 
-    if pane.focusedCell and self:isCategory() == pane.focusedCell:isCategory() and item:getID() == pane.focusedCell.item:getID() then
+    if pane.focusedCell and self:isCategory() == pane.focusedCell:isCategory() and self.item:getID() == pane.focusedCell.item:getID() then
         pane:setFocusedCell(self)
     end
 
     self.player = getSpecificPlayer(pane.native.player)
-    return self
 end
 
 function Cell:getStackSize()

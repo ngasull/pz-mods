@@ -12,6 +12,7 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@field focusedCell? IconsInventory_Cell
 ---@field prevContainer? ItemContainer
 ---@field expanded table<string, boolean>
+---@field pool IconsInventory_CellPool
 ---@field mouseDown? { x: integer, y: integer }
 ---@field _fakeX? number
 ---@field _fakeY? number
@@ -31,6 +32,7 @@ function Pane.new(native)
     self.xPadding = minXPadding
     self.yPadding = minYPadding
     self.expanded = {}
+    self.pool = M.CellPool:new()
     return self
 end
 
@@ -60,6 +62,7 @@ function Pane:refresh()
     local prevFocused = self.focusedCell
     local prevRow, prevCol = self.grid:locateCell(prevFocused)
 
+    self.pool:prepare()
     local cells = {}
     local hotbarCells ---@type IconsInventory_Cell[]?
     local equippedCells ---@type IconsInventory_Cell[]?
@@ -67,7 +70,7 @@ function Pane:refresh()
         -- We work on a fully expanded backend
         self.native.collapsed[stack.name] = false
         table.insert(vanillaItems, stack)
-        local category = M.Cell.new(self, stack.items[1], #vanillaItems, stack)
+        local category = self.pool:get(stack.items[1], self, #vanillaItems, stack)
 
         if category:isCollapsed() or Pane.isCollapsable(stack) then
             table.insert(cells, category)
@@ -78,7 +81,7 @@ function Pane:refresh()
             table.insert(vanillaItems, item)
 
             if not category:isCollapsed() then
-                local cell = M.Cell.new(self, item, #vanillaItems, stack, category)
+                local cell = self.pool:get(item, self, #vanillaItems, stack, category)
 
                 if stack.equipped then
                     if not equippedCells then equippedCells = {} end
