@@ -39,7 +39,7 @@ end
 ---@param stack ContextMenuItemStack
 function Pane.isCollapsable(stack)
     local stackSize = #stack.items - 1
-    return M.option.alwaysCollapseOver:getValue() > 1 and (
+    return not stack.equipped and not stack.inHotbar and M.option.alwaysCollapseOver:getValue() > 1 and (
         stackSize > M.option.alwaysCollapseOver:getValue()
         or stackSize > 1 and stack.weight / stackSize < M.option.collapseItemsUnder:getValue()
     )
