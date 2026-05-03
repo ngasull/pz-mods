@@ -8,8 +8,8 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@class IconsInventory_Pane
 ---@field page ISInventoryPage
 ---@field native IconsInventory_ISInventoryPaneOverride
----@field grid IconsInventory_GridLayout<IconsInventory_GridCell>
----@field focusedCell? IconsInventory_GridCell
+---@field grid IconsInventory_GridLayout<IconsInventory_Cell>
+---@field focusedCell? IconsInventory_Cell
 ---@field prevContainer? ItemContainer
 ---@field expanded table<string, boolean>
 ---@field mouseDown? { x: integer, y: integer }
@@ -61,13 +61,13 @@ function Pane:refresh()
     local prevRow, prevCol = self.grid:locateCell(prevFocused)
 
     local cells = {}
-    local hotbarCells ---@type IconsInventory_GridCell[]?
-    local equippedCells ---@type IconsInventory_GridCell[]?
+    local hotbarCells ---@type IconsInventory_Cell[]?
+    local equippedCells ---@type IconsInventory_Cell[]?
     for _, stack in ipairs(self.native.itemslist) do
         -- We work on a fully expanded backend
         self.native.collapsed[stack.name] = false
         table.insert(vanillaItems, stack)
-        local category = M.GridCell.new(self, stack.items[1], #vanillaItems, stack)
+        local category = M.Cell.new(self, stack.items[1], #vanillaItems, stack)
 
         if category:isCollapsed() or Pane.isCollapsable(stack) then
             table.insert(cells, category)
@@ -78,7 +78,7 @@ function Pane:refresh()
             table.insert(vanillaItems, item)
 
             if not category:isCollapsed() then
-                local cell = M.GridCell.new(self, item, #vanillaItems, stack, category)
+                local cell = M.Cell.new(self, item, #vanillaItems, stack, category)
 
                 if stack.equipped then
                     if not equippedCells then equippedCells = {} end
@@ -112,7 +112,7 @@ function Pane:refresh()
     -- Make sure it's an integer to avoid half-pixel renders
     self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
 
-    -- If focusedCell is has not been forwarded (by GridCell.new)
+    -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
         self:setFocusedCell(nil)
     end
@@ -135,7 +135,7 @@ function Pane:refresh()
     self.native:updateScrollbars()
 end
 
----@param focusedCell IconsInventory_GridCell?
+---@param focusedCell IconsInventory_Cell?
 function Pane:setFocusedCell(focusedCell)
     self.focusedCell = focusedCell
     self.native.joyselection = focusedCell and focusedCell.index - 1 or nil

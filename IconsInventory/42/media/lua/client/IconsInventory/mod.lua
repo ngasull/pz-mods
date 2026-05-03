@@ -7,8 +7,8 @@ local M = {
     ---@class M_GridLayout: IconsInventory_GridLayout
     GridLayout = nil,
 
-    ---@class M_GridCell: IconsInventory_GridCell
-    GridCell = nil,
+    ---@class M_Cell: IconsInventory_Cell
+    Cell = nil,
 
     ---@class M_ItemIcon: IconsInventory_ItemIcon
     ItemIcon = nil,
@@ -59,7 +59,7 @@ M.reload = function()
     table.wipe(applies)
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/DebugPanel.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/ItemIcon.lua")
-    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/GridCell.lua")
+    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Cell.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/GridLayout.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Pane.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/PaneOverride.lua")

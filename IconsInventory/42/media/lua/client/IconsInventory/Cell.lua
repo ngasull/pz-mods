@@ -1,24 +1,24 @@
 local M = require("IconsInventory/mod")
 
----@class IconsInventory_GridCell
+---@class IconsInventory_Cell
 ---@field pane IconsInventory_Pane
 ---@field item InventoryItem
 ---@field index integer
 ---@field stack ContextMenuItemStack
----@field category IconsInventory_GridCell
----@field icon IconsInventory_ItemIcon
-local GridCell = {}
-GridCell.__index = GridCell
-M.GridCell = GridCell
+---@field category IconsInventory_Cell
+---@field player IsoPlayer
+local Cell = {}
+Cell.__index = Cell
+M.Cell = Cell
 
 ---@param pane IconsInventory_Pane
 ---@param item InventoryItem
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
----@param category? IconsInventory_GridCell
-function GridCell.new(pane, item, index, stack, category)
-    ---@type IconsInventory_GridCell
-    local self = setmetatable({}, GridCell)
+---@param category? IconsInventory_Cell
+function Cell.new(pane, item, index, stack, category)
+    ---@type IconsInventory_Cell
+    local self = setmetatable({}, Cell)
     self.pane = pane
     self.item = item
     self.index = index
@@ -29,42 +29,41 @@ function GridCell.new(pane, item, index, stack, category)
         pane:setFocusedCell(self)
     end
 
-    local player = getSpecificPlayer(pane.native.player)
-    self.icon = M.ItemIcon.new(player, pane.native, item)
+    self.player = getSpecificPlayer(pane.native.player)
     return self
 end
 
-function GridCell:getStackSize()
+function Cell:getStackSize()
     return #self.stack.items - 1
 end
 
-function GridCell:isInHotbar()
+function Cell:isInHotbar()
     local hotbar = getPlayerHotbar(self.pane.native.player)
     -- Double check: inHotbar is not reliable
     return self.stack.inHotbar or hotbar and hotbar:isInHotbar(self.item) and not self.stack.equipped
 end
 
-function GridCell:isCategory()
+function Cell:isCategory()
     return self.category == self
 end
 
-function GridCell:isCollapsed()
+function Cell:isCollapsed()
     if not self:isCategory() or self:getStackSize() < 2 then return false end
     return not self.pane.expanded[self.stack.name] and M.Pane.isCollapsable(self.stack)
 end
 
-function GridCell:isFocused()
+function Cell:isFocused()
     return self.pane.focusedCell == self
 end
 
-function GridCell:isSelected()
+function Cell:isSelected()
     local selected = self.pane.native.selected
     return selected and selected[self.index]
 end
 
 ---@param x number
 ---@param y number
-function GridCell:render(x, y)
+function Cell:render(x, y)
     local cellSize = M.ItemIcon.cellSize
 
     self:drawBackground(x, y)
@@ -77,22 +76,22 @@ function GridCell:render(x, y)
 
     if self:isCategory() then
         if self:isCollapsed() then
-            self.icon:drawBase(x, y)
-            self.icon:drawSubscript(x, y, tostring(self:getStackSize()))
+            M.ItemIcon.drawBase(self, x, y)
+            M.ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()))
         else
-            self.icon:drawBase(x, y, 0.5)
-            self.icon:drawSubscript(x, y, tostring(self:getStackSize()), 0.6)
+            M.ItemIcon.drawBase(self, x, y, 0.5)
+            M.ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()), 0.6)
         end
     else
-        self.icon:drawBase(x, y)
-        self.icon:drawDetails(x, y)
+        M.ItemIcon.drawBase(self, x, y)
+        M.ItemIcon.drawDetails(self, x, y)
     end
 end
 
 -- See ISInventoryPane:renderdetails
 ---@param x number
 ---@param y number
-function GridCell:drawBackground(x, y)
+function Cell:drawBackground(x, y)
     local cellSize = M.ItemIcon.cellSize
     local item = self.item
     local native = self.pane.native
