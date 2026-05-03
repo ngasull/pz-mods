@@ -86,7 +86,7 @@ function Pane:refresh()
                 if stack.equipped then
                     if not equippedCells then equippedCells = {} end
                     table.insert(equippedCells, cell)
-                elseif cell:isInHotbar() then
+                elseif stack.inHotbar then
                     if not hotbarCells then hotbarCells = {} end
                     table.insert(hotbarCells, cell)
                 else

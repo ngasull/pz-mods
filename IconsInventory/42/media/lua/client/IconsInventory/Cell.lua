@@ -42,12 +42,6 @@ function Cell:getStackSize()
     return #self.stack.items - 1
 end
 
-function Cell:isInHotbar()
-    local hotbar = getPlayerHotbar(self.pane.native.player)
-    -- Double check: inHotbar is not reliable
-    return self.stack.inHotbar or hotbar and hotbar:isInHotbar(self.item) and not self.stack.equipped
-end
-
 function Cell:isCategory()
     return self.category == self
 end
