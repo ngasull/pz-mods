@@ -109,9 +109,6 @@ function Pane:refresh()
 
     self.grid:set(groups, gridWidth)
 
-    -- Make sure it's an integer to avoid half-pixel renders
-    self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
-
     -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
         self:setFocusedCell(nil)
@@ -147,6 +144,9 @@ function Pane:isDragging()
 end
 
 function Pane:render()
+    -- Make sure it's an integer to avoid half-pixel renders
+    self.xPadding = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
+
     local isDragging = self:isDragging()
     local yOffset = minYPadding
 
@@ -237,16 +237,11 @@ end
 ---@param x? number
 ---@param y? number
 function Pane:stubMouse(x, y)
-    if self.focusedCell or (x and y) then
-        if x and y then
-            self._fakeX = x
-            self._fakeY = y
-        end
-        self.native.getMouseX = self._mouseStubX
-        self.native.getMouseY = self._mouseStubY
-        return true
-    end
-    self.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
+    self._fakeX = x
+    self._fakeY = y
+    self.native.getMouseX = self._mouseStubX
+    self.native.getMouseY = self._mouseStubY
+    return self.focusedCell or (x and y)
 end
 
 function Pane:restoreMouse()
@@ -259,11 +254,23 @@ end
 ---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubX(native)
     local mod = native._IconsInventory
-    return mod._fakeX or native.column2 + 1 -- To the right of collapse area
+    if mod._fakeX then
+        return mod._fakeX
+    elseif mod.focusedCell then
+        return native.column2 + 1 -- To the right of collapse area
+    else
+        return -1
+    end
 end
 
 ---@param native IconsInventory_ISInventoryPaneOverride
 function Pane._mouseStubY(native)
     local mod = native._IconsInventory
-    return mod._fakeY or native.headerHgt + (mod.focusedCell.index - 1) * native.itemHgt + 2
+    if mod._fakeY then
+        return mod._fakeY
+    elseif mod.focusedCell then
+        return native.headerHgt + (mod.focusedCell.index - 1) * native.itemHgt + 2
+    else
+        return -1
+    end
 end

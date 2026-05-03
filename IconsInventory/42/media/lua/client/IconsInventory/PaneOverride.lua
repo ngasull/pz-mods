@@ -120,11 +120,11 @@ end
 
 function Override:onMouseDown(x, y)
     local mod = self._IconsInventory
+    local handled
 
     if mod:stubMouse() then
         mod.mouseDown = { x = x, y = y }
-        local handled = vanilla.onMouseDown(self, self:getMouseX(), self:getMouseY())
-        mod:restoreMouse()
+        handled = vanilla.onMouseDown(self, self:getMouseX(), self:getMouseY())
 
         if mod.focusedCell and not mod.focusedCell:isCategory() then
             local category = mod.focusedCell.category
@@ -138,9 +138,9 @@ function Override:onMouseDown(x, y)
                 end
             end
         end
-
-        return handled
     end
+    mod:restoreMouse()
+    return handled
 end
 
 function Override:onMouseUp(x, y)
@@ -164,9 +164,10 @@ end
 
 function Override:onRightMouseUp(x, y)
     local mod = self._IconsInventory
+    local handled = true
 
     if mod:stubMouse() then
-        local handled = M.Pane.stubContextMenuXY(
+        handled = M.Pane.stubContextMenuXY(
             function()
                 local ctxX = self:getAbsoluteX() + x
                 local ctxY = self:getAbsoluteY() + y + self:getYScroll()
@@ -174,15 +175,15 @@ function Override:onRightMouseUp(x, y)
             end,
             vanilla.onRightMouseUp, self, self:getMouseX(), self:getMouseY()
         )
-        mod:restoreMouse()
-        return handled
     end
 
-    return true
+    mod:restoreMouse()
+    return handled
 end
 
 function Override:onMouseDoubleClick(x, y)
     local mod = self._IconsInventory
+    local handled
 
     if self.vscroll and self:isMouseOverScrollBar() then
         return self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
@@ -193,10 +194,11 @@ function Override:onMouseDoubleClick(x, y)
         mod.expanded[stackName] = not mod.expanded[stackName];
         mod._dirty = true
     elseif mod:stubMouse() then
-        local handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
-        mod:restoreMouse()
-        return handled
+        handled = vanilla.onMouseDoubleClick(self, self:getMouseX(), self:getMouseY())
     end
+
+    mod:restoreMouse()
+    return handled
 end
 
 function Override:onMouseWheel(del)
