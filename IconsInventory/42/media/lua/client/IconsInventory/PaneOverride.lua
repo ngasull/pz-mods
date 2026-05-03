@@ -64,8 +64,10 @@ function Override:prerender()
     end
 
     -- Render regular content
-    local vscrollBarWidth = self.vscroll.barwidth and self.vscroll.barwidth > 0 and self.vscroll.barwidth + 4 or 0
-    self:setStencilRect(1, 1, self.width - 2 - vscrollBarWidth, self.height - 2);
+    local vscrollBarWidth = self:isVScrollBarVisible() and self.vscroll:getWidth() or 0
+    self.vscroll:setX(self:getWidth() - vscrollBarWidth + 1)
+
+    self:setStencilRect(1, 1, self.vscroll.x + 1, self.height - 2);
     mod:render()
     self:clearStencilRect()
 
