@@ -1,4 +1,4 @@
-local options = PZAPI.ModOptions:create("StaticBackpacks", "Static Backpacks")
+local options = PZAPI.ModOptions:create("StaticBags", "Static Bags")
 
 options:addDescription("Define static order for each body part")
 

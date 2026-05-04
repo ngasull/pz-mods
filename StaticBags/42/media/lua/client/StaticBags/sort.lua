@@ -1,4 +1,4 @@
-local M = require("StaticBackpacks/mod")
+local M = require("StaticBags/mod")
 
 local locationOrder = {
     [ItemBodyLocation.HANDS_RIGHT] = M.option.rightHand,
@@ -21,9 +21,9 @@ local function sortScore(item, location)
     end
 end
 
----@class StaticBackpacks_sort_ISInventoryPage_override: ISInventoryPage
+---@class StaticBags_sort_ISInventoryPage_override: ISInventoryPage
 local Override = {}
----@class StaticBackpacks_sort_ISInventoryPage: ISInventoryPage
+---@class StaticBags_sort_ISInventoryPage: ISInventoryPage
 local vanilla = {}
 
 -- Fix vanilla onBackpackMouseUp to avoid double-triggering the event
@@ -38,16 +38,16 @@ end
 
 function Override:refreshBackpacks()
     -- Restore choice as understood internally (only for joypad somehow)
-    if self._StaticBackpacks_overridenChoices then
-        self.backpackChoice = self._StaticBackpacks_overridenChoices[self.inventoryPane.inventory]
+    if self._StaticBags_overridenChoices then
+        self.backpackChoice = self._StaticBags_overridenChoices[self.inventoryPane.inventory]
     end
 
     vanilla.refreshBackpacks(self)
 
     if self.onCharacter then
-        self._StaticBackpacks_overridenChoices = {}
+        self._StaticBags_overridenChoices = {}
         for i, button in ipairs(self.backpacks) do
-            self._StaticBackpacks_overridenChoices[button.inventory] = i
+            self._StaticBags_overridenChoices[button.inventory] = i
         end
 
         local y = self.backpacks[1]:getY()
