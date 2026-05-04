@@ -1,11 +1,22 @@
 local M = require("IconsInventory/mod")
 
+---@param self IconsInventory_ISInventoryPaneOverride
+local function removeHeader(self)
+    if self.headerHgt ~= self._IconsInventory_headerHgt then
+        -- If any mod increases headerHgt, we keep the difference
+        local vanillaHeaderHgt = getTextManager():getFontHeight(UIFont.Small) + 1
+        self.headerHgt = math.max(0, self.headerHgt - vanillaHeaderHgt)
+        self._IconsInventory_headerHgt = self.headerHgt
+    end
+end
+
 ---@class IconsInventory_ISInventoryPane: ISInventoryPane
 local vanilla = {}
 
 ---@class IconsInventory_ISInventoryPaneOverride: ISInventoryPane
 ---@field parent ISInventoryPage
 ---@field _IconsInventory IconsInventory_Pane
+---@field _IconsInventory_headerHgt? number
 local Override = {}
 
 function Override.new(...)
@@ -17,7 +28,7 @@ end
 
 function Override:createChildren()
     vanilla.createChildren(self)
-    self.headerHgt = 0
+    removeHeader(self)
     self:removeChild(self.expandAll)
     self:removeChild(self.collapseAll)
     self:removeChild(self.filterMenu)
@@ -228,6 +239,12 @@ function Override:onMouseWheel(del)
     return vanilla.onMouseWheel(self, del)
 end
 
+function Override:onResize()
+    vanilla.onResize(self)
+    -- Mods may reset header on resize (ie: Better Containers)
+    removeHeader(self)
+end
+
 local function install()
     for k, v in pairs(Override) do
         vanilla[k] = ISInventoryPane[k]
@@ -249,7 +266,7 @@ end
 
 install()
 
-if isReload then
+local apply = function()
     for i = 0, getNumActivePlayers() - 1 do
         local pd = getPlayerData(i)
         if pd then
@@ -257,8 +274,13 @@ if isReload then
             local lpane = pd.lootInventory.inventoryPane
             ppane._IconsInventory = M.Pane.new(ppane)
             lpane._IconsInventory = M.Pane.new(lpane)
+            removeHeader(ppane)
+            removeHeader(lpane)
             ppane:refreshContainer()
             lpane:refreshContainer()
         end
     end
 end
+
+M.addApply(apply)
+if isReload then apply() end

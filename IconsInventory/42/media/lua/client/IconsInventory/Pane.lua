@@ -178,10 +178,15 @@ function Pane:render()
     end
 
     -- Draw static header above drawable area for mods (ie: BetterContainers) pushing down the grid (clipped by stencil otherwise)
-    self.native:drawRect(1, -self.native:getYScroll() + 1, self.native.width - 2, self.grid.y - yPadding - 2, 1,
-        0, 0, 0)
-    self.native:drawRect(1, -self.native:getYScroll() + self.grid.y - yPadding - 1, self.native.width - 2, 1, 0.2, 1, 1,
-        1)
+    if self.native.headerHgt > 0 then
+        self.native:drawRect(1, -self.native:getYScroll(),
+            self.native.width - 2, self.native.headerHgt,
+            1, 0, 0, 0)
+        self.native:drawRect(
+            1, self.native.headerHgt - self.native:getYScroll(),
+            self.native.width - 2, 1,
+            0.2, 1, 1, 1)
+    end
 end
 
 function Pane:renderDragged()
