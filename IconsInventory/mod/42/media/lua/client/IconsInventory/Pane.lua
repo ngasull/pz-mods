@@ -13,7 +13,7 @@ local pt = getTextManager():getFontHeight(UIFont.Small) + 1
 ---@field prevContainer? ItemContainer
 ---@field expanded table<string, boolean>
 ---@field pool IconsInventory_CellPool
----@field mouseDown? { x: integer, y: integer }
+---@field mouseDown? { x: number, y: number, cell?: IconsInventory_Cell }
 ---@field _fakeX? number
 ---@field _fakeY? number
 ---@field _cancelMouseUp? true
