@@ -64,10 +64,14 @@ function Override:prerender()
     end
 
     -- Render regular content
-    local vscrollBarWidth = self:isVScrollBarVisible() and self.vscroll:getWidth() or 0
-    self.vscroll:setX(self:getWidth() - vscrollBarWidth + 1)
 
-    self:setStencilRect(1, 1, self.vscroll.x + 1, self.height - 2);
+    -- See ISScrollBar.lua: they are not sure themselves
+    local realVScrollWidth = self.vscroll.width - 2
+    -- -2 to overlap/merge outer border
+    local visibleScrollBarWidth = self:isVScrollBarVisible() and realVScrollWidth - 2 or 0
+    self.vscroll:setX(self:getWidth() - realVScrollWidth)
+
+    self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self.height);
     mod:render()
     self:clearStencilRect()
 
