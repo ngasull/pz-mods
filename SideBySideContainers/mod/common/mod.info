@@ -1,6 +1,8 @@
 id=SideBySideContainers
 name=Side-by-Side Containers 
-description=Put loot window containers on the left side
+description=Put loot containers on the left side
+poster=poster.png
+icon=icon.png
 pzversion=42
 modversion=1.1
 versionMin=42.0.0

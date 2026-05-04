@@ -1,6 +1,8 @@
 id=IconsInventory
 name=Icons Inventory
 description=Icon-based inventory view, vanilla feeling
+poster=poster.png
+icon=icon.png
 pzversion=42
 modversion=1.1
 versionMin=42.0.0
