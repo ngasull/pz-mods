@@ -228,11 +228,14 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     --- Condition circle
     fractionFromNative = nil
     ringFromNative = nil
-    ISInventoryPane.drawText = noop
-    ISInventoryPane.drawProgressBar = capture_drawProgressBar
-    ui:drawItemDetails(item, 0, 0, 0)
-    ISInventoryPane.drawText = vanilla_drawText
-    ISInventoryPane.drawProgressBar = vanilla_drawProgressBar
+    ---@diagnostic disable-next-line: undefined-global
+    if not ItemConditionOverlay then -- Opt-out for this specific mod (keep literature)
+        ISInventoryPane.drawText = noop
+        ISInventoryPane.drawProgressBar = capture_drawProgressBar
+        ui:drawItemDetails(item, 0, 0, 0)
+        ISInventoryPane.drawText = vanilla_drawText
+        ISInventoryPane.drawProgressBar = vanilla_drawProgressBar
+    end
 
     if fractionFromNative then
         if instanceof(item, "Drainable") and not item:hasTag(ItemTag.HIDE_REMAINING) then
