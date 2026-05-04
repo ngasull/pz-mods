@@ -1,5 +1,7 @@
 local M = require("IconsInventory/mod")
 
+local function False() return false end
+
 ---@param self IconsInventory_ISInventoryPaneOverride
 local function removeHeader(self)
     if self.headerHgt ~= self._IconsInventory_headerHgt then
@@ -143,9 +145,34 @@ function Override:onMouseDown(x, y)
     local mod = self._IconsInventory
     local handled
 
-    if mod:stubMouse() then
+    if isShiftKeyDown() and not isCtrlKeyDown() and mod.focusedCell then
+        local target = self.parent.onCharacter and getPlayerLoot(self.player) or getPlayerInventory(self.player)
+        ---@cast target -nil
+        if mod.focusedCell:isCategory() then
+            local items = {}
+            for i = 2, #mod.focusedCell.stack.items do
+                table.insert(items, mod.focusedCell.stack.items[i])
+            end
+            self:transferItemsByWeight(items, target.inventory)
+        else
+            self:transferItemsByWeight({ mod.focusedCell.item }, target.inventory)
+        end
+    elseif mod:stubMouse() then
         mod.mouseDown = { x = x, y = y, cell = mod.focusedCell }
-        handled = vanilla.onMouseDown(self, self:getMouseX(), self:getMouseY())
+
+        local vanilla_isCtrlKeyDown = isCtrlKeyDown
+        if isShiftKeyDown() and isCtrlKeyDown() then
+            isCtrlKeyDown = False
+        end
+        local ok, res = pcall(vanilla.onMouseDown, self, self:getMouseX(), self:getMouseY())
+        isCtrlKeyDown = vanilla_isCtrlKeyDown
+
+        if not ok then
+            mod:restoreMouse()
+            error(handled)
+        end
+
+        handled = res
 
         if mod.focusedCell then
             if mod.focusedCell:isCategory() then
