@@ -1,10 +1,5 @@
 local M = require("IconsInventory/mod")
 
-local minXPadding = 16
-local yPadding = 8
-
-local pt = getTextManager():getFontHeight(UIFont.Small) + 1
-
 ---@class IconsInventory_Pane
 ---@field page ISInventoryPage
 ---@field native IconsInventory_ISInventoryPaneOverride
@@ -27,10 +22,11 @@ function Pane.new(native)
     local self = setmetatable({}, Pane)
     self.native = native
     self.page = native.parent
-    self.grid = M.GridLayout.new(yPadding * 2)
-    self.yPadding = yPadding
+    self.grid = M.GridLayout.new(2 * M.ItemIcon.padding)
     self.expanded = {}
     self.pool = M.CellPool:new()
+    self.minXPadding = 2 * M.ItemIcon.padding
+    self.yPadding = M.ItemIcon.padding
     return self
 end
 
@@ -102,7 +98,7 @@ function Pane:refresh()
         table.insert(groups, equippedCells)
     end
 
-    local maxWidth = self.native.width - 2 * minXPadding
+    local maxWidth = self.native.width - 2 * self.minXPadding
     local gridWidth = math.floor(maxWidth / M.ItemIcon.cellSize)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
         gridWidth = math.min(M.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
@@ -111,7 +107,7 @@ function Pane:refresh()
     self.grid:set(groups, gridWidth)
     -- Make sure it's an integer to avoid half-pixel renders
     self.grid.x = math.floor(0.49 + (self.native:getWidth() - self.grid.width) / 2)
-    self.grid.y = self.native.headerHgt + yPadding
+    self.grid.y = self.native.headerHgt + self.yPadding
 
     -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
@@ -131,7 +127,7 @@ function Pane:refresh()
         self:setFocusedCell(self.grid:getCellAt(1, 1))
     end
 
-    self.native:setScrollHeight(2 * yPadding + self.grid.height)
+    self.native:setScrollHeight(2 * self.yPadding + self.grid.height)
     self.native.vscroll:setHeight(self.native:getHeight())
     self.native:updateScrollbars()
 end
@@ -152,12 +148,12 @@ function Pane:render()
     local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = yPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = self.yPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.native.parent.onCharacter then
             self.native:drawRect(
-                1, self.grid.y - yPadding,
+                1, self.grid.y - self.yPadding,
                 self.native:getWidth() - 2, groupHeight - 1,
                 0.5, 0, 0, 0)
         end
@@ -173,7 +169,7 @@ function Pane:render()
         yOffset = yOffset + groupHeight
 
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
-            self.native:drawRect(1, yOffset - yPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
+            self.native:drawRect(1, yOffset - self.yPadding, self.native.width - 2, 1, 0.2, 1, 1, 1)
         end
     end
 

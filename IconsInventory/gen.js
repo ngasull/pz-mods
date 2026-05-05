@@ -1,6 +1,7 @@
+let scaling = 2
 let steps = 12
-let radius = 10
-let thickness = 4
+let radius = 5 * scaling
+let thickness = 2 * scaling
 let canvas = document.createElement("canvas")
 canvas.width = 2 * radius
 canvas.height = 2 * radius
@@ -16,7 +17,7 @@ let drawSlice = (i, name, color) => {
     ctx.stroke();
     let a = document.createElement("a")
     a.href = canvas.toDataURL("image/png")
-    a.download = `ring-${name}-${i}.png`
+    a.download = `ring-${scaling}-${name}-${i}.png`
     a.dispatchEvent(new MouseEvent("click"))
 }
 
@@ -28,17 +29,6 @@ for (let j = 0; j < steps; j++) {
 }
 
 ctx.strokeStyle = '#000000dd';
-ctx.lineWidth = thickness
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.beginPath();
-ctx.arc(radius, radius, radius - thickness / 2 - 0.5, 0, 2 * Math.PI);
-ctx.stroke();
-a = document.createElement("a")
-a.href = canvas.toDataURL("image/png")
-a.download = `ring-bg.png`
-a.dispatchEvent(new MouseEvent("click"))
-
-ctx.strokeStyle = '#000000dd';
 ctx.lineWidth = 1
 ctx.clearRect(0, 0, canvas.width, canvas.height);
 ctx.beginPath();
@@ -47,22 +37,35 @@ ctx.lineTo(radius, thickness + 1);
 ctx.stroke();
 a = document.createElement("a")
 a.href = canvas.toDataURL("image/png")
-a.download = `ring-separator.png`
+a.download = `ring-${scaling}-separator.png`
 a.dispatchEvent(new MouseEvent("click"))
 
-let softBgSize = 64
-let softBgRadius = softBgSize / 2
-canvas = document.createElement("canvas")
-canvas.width = softBgSize
-canvas.height = softBgSize
-ctx = canvas.getContext("2d")
-let radgrad = ctx.createRadialGradient(softBgRadius, softBgRadius, 0, softBgRadius, softBgRadius, softBgRadius);
-radgrad.addColorStop(0, 'rgba(255,255,255,1)');
-// radgrad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
-radgrad.addColorStop(1, 'rgba(255,255,255,0)');
-ctx.fillStyle = radgrad;
-ctx.fillRect(0, 0, softBgSize, softBgSize);
-a = document.createElement("a")
-a.href = canvas.toDataURL("image/png")
-a.download = `soft-bg.png`
-a.dispatchEvent(new MouseEvent("click"))
+if (scaling === 2) {
+    ctx.strokeStyle = '#000000dd';
+    ctx.lineWidth = thickness
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.beginPath();
+    ctx.arc(radius, radius, radius - thickness / 2 - 0.5, 0, 2 * Math.PI);
+    ctx.stroke();
+    a = document.createElement("a")
+    a.href = canvas.toDataURL("image/png")
+    a.download = `ring-bg.png`
+    a.dispatchEvent(new MouseEvent("click"))
+
+    let softBgSize = 64
+    let softBgRadius = softBgSize / 2
+    canvas = document.createElement("canvas")
+    canvas.width = softBgSize
+    canvas.height = softBgSize
+    ctx = canvas.getContext("2d")
+    let radgrad = ctx.createRadialGradient(softBgRadius, softBgRadius, 0, softBgRadius, softBgRadius, softBgRadius);
+    radgrad.addColorStop(0, 'rgba(255,255,255,1)');
+    // radgrad.addColorStop(0.3, 'rgba(255,255,255,0.8)');
+    radgrad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = radgrad;
+    ctx.fillRect(0, 0, softBgSize, softBgSize);
+    a = document.createElement("a")
+    a.href = canvas.toDataURL("image/png")
+    a.download = `soft-bg.png`
+    a.dispatchEvent(new MouseEvent("click"))
+}

@@ -1,21 +1,20 @@
 local M = require("IconsInventory/mod")
 
-local iconSize = 64
-local padding = 8
-local halfPadding = padding / 2
-local cellSize = iconSize + 2 * padding
+local iconSize ---@type integer
+local padding ---@type integer
+local subIconSize ---@type integer
+local fontSize ---@type integer
+local ringRadius ---@type integer
+local ringDiameter ---@type integer
+local halfPadding ---@type number
+local cellSize ---@type  integer
+local subIconRelPos ---@type  number
+local subIconYPad ---@type number
 
-local ringRadius = 10
----@type Texture[]
-local ringGood = {}
----@type Texture[]
-local ringBad = {}
-for i = 1, 16 do
-    ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-good-" .. tostring(i) .. ".png")
-    ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-bad-" .. tostring(i) .. ".png")
-end
+local ringGood = {} ---@type Texture[]
+local ringBad = {} ---@type Texture[]
+local ringSeparator
 local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
-local ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-separator.png")
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
@@ -23,11 +22,6 @@ local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 local wetIcon = getTexture("media/ui/Entity/SlotStatus/wet_24.png")
 local clockIcon = getTexture("media/ui/speedControls/Wait_Off.png")
 local maggots = InventoryItem.new("", "", "Maggots", "Item_Insect_Maggots")
-
--- Adjusted variables from ISInventoryPane:renderdetails
-local subIconSize = 16
-local subIconRelPos = 1.25 * padding + iconSize
-local subIconYPad = (2 * ringRadius - subIconSize) / 2
 
 local equippedItemIcon = getTexture("media/ui/icon.png")
 local equippedInHotbar = getTexture("media/ui/iconInHotbar.png")
@@ -37,7 +31,6 @@ local poisonIcon = getTexture("media/ui/SkullPoison.png")
 local favoriteStar = getTexture("media/ui/FavoriteStar.png")
 local noFavoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/nocraft.png")
 local favoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/craftok.png")
-local favoriteRecipeInputStarSize = 16;
 
 local function noop() end
 local vanilla_drawText = ISInventoryPane.drawText
@@ -57,10 +50,6 @@ end
 local ItemIcon = {}
 M.ItemIcon = ItemIcon
 
-ItemIcon.cellSize = cellSize
-ItemIcon.iconSize = iconSize
-ItemIcon.padding = padding
-
 ---@param cell IconsInventory_Cell
 ---@param xoff number
 ---@param yoff number
@@ -70,7 +59,8 @@ function ItemIcon.drawBase(cell, xoff, yoff, scale)
     local center = (cellSize - size) / 2
 
     -- Some icons are almost invisible (like Car keys)
-    cell.pane.native:drawTexture(softBg, xoff + padding, yoff + padding,
+    cell.pane.native:drawTextureScaled(softBg, xoff + padding, yoff + padding,
+        iconSize, iconSize,
         1, 0.2, 0.2, 0.2)
 
     ISInventoryItem.renderItemIcon(
@@ -82,7 +72,6 @@ end
 
 ---@param cell IconsInventory_Cell
 function ItemIcon.drawSubscript(cell, xoff, yoff, str, scale)
-    local fontSize = 30
     local size = (scale or 1) * iconSize
     local offset = (iconSize - size) / 2
     cell.pane.native:drawTextRight(
@@ -207,12 +196,12 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
         padBR = padBR + 4
         ui:drawTextureScaled(noFavoriteRecipeInputStar,
             xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
-            favoriteRecipeInputStarSize, favoriteRecipeInputStarSize, 1, 1, 1, 1);
+            subIconSize, subIconSize, 1, 1, 1, 1);
     elseif item:isFavouriteRecipeInput(cell.player) then
         padBR = padBR + 4
         ui:drawTextureScaled(favoriteRecipeInputStar,
             xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
-            favoriteRecipeInputStarSize, favoriteRecipeInputStarSize, 1, 1, 1, 1);
+            subIconSize, subIconSize, 1, 1, 1, 1);
     end
 
     local bookNumber = item:getCategory() == "Literature"
@@ -264,7 +253,10 @@ function ItemIcon.drawRing(cell, ring, xoff, yoff, fraction)
     local centerX = xoff + halfPadding + ringRadius
     local centerY = yoff + cellSize - ringRadius - halfPadding
 
-    cell.pane.native:drawTexture(ringBg, centerX - ringRadius, centerY - ringRadius, 1)
+    cell.pane.native:drawTextureScaled(ringBg,
+        centerX - ringRadius, centerY - ringRadius,
+        ringDiameter, ringDiameter,
+        1)
 
     local angle = 0
     while fraction >= 0.25 do
@@ -315,3 +307,36 @@ ItemIcon.bookNumber = {
     [7] = "IV",
     [9] = "V",
 }
+
+local function refreshResolution()
+    -- NB: Makes 2K render as 4K because PZ decides 2K text is at 4K size
+    local scaling = math.floor(0.7 + getCore():getScreenHeight() / 1080)
+    iconSize = 32 * scaling
+    padding = 4 * scaling
+    subIconSize = 8 * scaling
+    fontSize = 15 * scaling -- Estimated
+
+    ringRadius = 5 * scaling
+    ringDiameter = ringRadius * 2
+
+    halfPadding = padding / 2
+    cellSize = iconSize + 2 * padding
+    subIconRelPos = 1.25 * padding + iconSize
+    subIconYPad = (2 * ringRadius - subIconSize) / 2
+
+    ItemIcon.scaling = scaling
+    ItemIcon.cellSize = cellSize
+    ItemIcon.iconSize = iconSize
+    ItemIcon.padding = padding
+
+    local scalingStr = tostring(scaling)
+    for i = 1, 16 do
+        ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-good-" .. tostring(i) .. ".png")
+        ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-bad-" .. tostring(i) .. ".png")
+    end
+    ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-separator.png")
+end
+
+refreshResolution()
+-- ! -- Not reliably called
+-- Events.OnResolutionChange.Add(refreshResolution)
