@@ -309,7 +309,7 @@ ItemIcon.bookNumber = {
 
 local function refreshResolution()
     -- NB: Makes 2K render as 4K because PZ decides 2K text is at 4K size
-    local scaling = math.floor(0.7 + getCore():getScreenHeight() / 1080)
+    local scaling = math.max(1, math.min(2, math.floor(0.7 + getCore():getScreenHeight() / 1080)))
     iconSize = 32 * scaling
     padding = 4 * scaling
     subIconSize = 8 * scaling
