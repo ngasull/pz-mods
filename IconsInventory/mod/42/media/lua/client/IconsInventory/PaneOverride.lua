@@ -245,6 +245,24 @@ function Override:onRightMouseUp(x, y)
             end,
             vanilla.onRightMouseUp, self, self:getMouseX(), self:getMouseY()
         )
+    else
+        local context = ISContextMenu.get(self.player,
+            self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll())
+        context.origin = self.inventoryPage
+        context.mouseOver = 1
+        setJoypadFocus(self.player, context)
+
+        local catOption = context:addOption(getText("IGUI_invpanel_Category"),
+            mod, M.Pane.setSort, ISInventoryPane.itemSortByCatInc)
+        local weightOption = context:addOption(
+            getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending"),
+            mod, M.Pane.setSort, ISInventoryPane.itemSortByWeightDesc)
+
+        if self.itemSortFunc == ISInventoryPane.itemSortByCatInc then
+            context:setOptionChecked(catOption, true)
+        elseif self.itemSortFunc == ISInventoryPane.itemSortByWeightDesc then
+            context:setOptionChecked(weightOption, true)
+        end
     end
 
     mod:restoreMouse()
@@ -303,18 +321,20 @@ end
 
 install()
 
+---@param page IconsInventory_ISInventoryPageOverride
+local function applyPage(page)
+    local pane = page.inventoryPane
+    pane._IconsInventory = M.Pane.new(pane)
+    removeHeader(pane)
+    pane:refreshContainer()
+end
+
 local apply = function()
     for i = 0, getNumActivePlayers() - 1 do
         local pd = getPlayerData(i)
         if pd then
-            local ppane = pd.playerInventory.inventoryPane
-            local lpane = pd.lootInventory.inventoryPane
-            ppane._IconsInventory = M.Pane.new(ppane)
-            lpane._IconsInventory = M.Pane.new(lpane)
-            removeHeader(ppane)
-            removeHeader(lpane)
-            ppane:refreshContainer()
-            lpane:refreshContainer()
+            applyPage(pd.playerInventory)
+            applyPage(pd.lootInventory)
         end
     end
 end

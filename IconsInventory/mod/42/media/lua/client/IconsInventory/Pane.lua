@@ -1,7 +1,6 @@
 local M = require("IconsInventory/mod")
 
 ---@class IconsInventory_Pane
----@field page ISInventoryPage
 ---@field native IconsInventory_ISInventoryPaneOverride
 ---@field grid IconsInventory_GridLayout<IconsInventory_Cell>
 ---@field focusedCell? IconsInventory_Cell
@@ -21,12 +20,14 @@ M.Pane = Pane
 function Pane.new(native)
     local self = setmetatable({}, Pane)
     self.native = native
-    self.page = native.parent
     self.grid = M.GridLayout.new(2 * M.ItemIcon.padding)
     self.expanded = {}
     self.pool = M.CellPool:new()
     self.minXPadding = 2 * M.ItemIcon.padding
     self.yPadding = M.ItemIcon.padding
+
+    native.itemSortFunc = ISInventoryPane.itemSortByCatInc
+
     return self
 end
 
@@ -216,6 +217,11 @@ end
 function Pane:desiredWidth()
     local containersWidth = self.native.parent.buttonSize
     return self.native.parent:getWidth() - containersWidth
+end
+
+function Pane:setSort(itemSortFunc)
+    self.native.itemSortFunc = itemSortFunc
+    self.native:refreshContainer()
 end
 
 local vanilla_createMenu = ISInventoryPaneContextMenu.createMenu
