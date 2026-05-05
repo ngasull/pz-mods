@@ -3,6 +3,7 @@ local M = require("IconsInventory/mod")
 local iconSize ---@type integer
 local padding ---@type integer
 local subIconSize ---@type integer
+local equippedIconSize ---@type integer
 local fontSize ---@type integer
 local ringRadius ---@type integer
 local ringDiameter ---@type integer
@@ -92,23 +93,21 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     local padBR = -4
     if cell.player:isEquipped(item) then
         padBR = padBR + 4
-        local size = subIconSize / 2
         ui:drawTextureScaled(equippedItemIcon,
-            xoff + subIconRelPos - size - padBR, yoff + subIconRelPos - size - subIconYPad / 2,
-            size, size,
+            xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
-        padBR = padBR + size
+        padBR = padBR + equippedIconSize
     end
 
     local hotbar = getPlayerHotbar(cell.player:getIndex());
     if not cell.player:isEquipped(item) and hotbar and hotbar:isInHotbar(item) then
         padBR = padBR + 4
-        local size = subIconSize / 2
         ui:drawTextureScaled(equippedInHotbar,
-            xoff + subIconRelPos - size - padBR, yoff + subIconRelPos - size - subIconYPad / 2,
-            size, size,
+            xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
-        padBR = padBR + size + 4
+        padBR = padBR + equippedIconSize + 4
     end
 
     if item:isBroken() then
@@ -314,6 +313,7 @@ local function refreshResolution()
     iconSize = 32 * scaling
     padding = 4 * scaling
     subIconSize = 8 * scaling
+    equippedIconSize = 7 * scaling
     fontSize = 15 * scaling -- Estimated
 
     ringRadius = 5 * scaling
