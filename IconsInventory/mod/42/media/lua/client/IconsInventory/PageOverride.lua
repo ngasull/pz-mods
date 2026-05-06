@@ -10,7 +10,7 @@ end
 ---@param col? integer
 local function focusTheOtherPage(self, col)
     local otherPage = getTheOtherPage(self)
-    local otherMod = otherPage.inventoryPane._IconsInventory
+    local otherMod = otherPage._IconsInventory
     local otherCell = otherMod.grid:getCellAt(1, col or 1)
     otherMod:setFocusedCell(otherCell)
     setJoypadFocus(self.player, otherPage)
@@ -22,9 +22,23 @@ local vanilla = {}
 ---@class IconsInventory_ISInventoryPageOverride: ISInventoryPage
 ---@field parent ISInventoryPage
 ---@field inventoryPane IconsInventory_ISInventoryPaneOverride
+---@field _IconsInventory IconsInventory_IconsPane
 ---@field _IconsInventory_init? true
 ---@field _IconsInventory_pressedBumper integer?
 local Override = {}
+
+---@param self IconsInventory_ISInventoryPageOverride
+local function initPane(self)
+    self._IconsInventory = M.IconsPane.new(self)
+    self:addChild(self._IconsInventory)
+end
+
+function Override:createChildren()
+    initPane(self)
+    vanilla.createChildren(self)
+    self:removeChild(self.inventoryPane)
+    self.inventoryPane:removeFromUIManager()
+end
 
 function Override:update()
     if not self._IconsInventory_init then
@@ -52,64 +66,61 @@ function Override:update()
 end
 
 function Override:onJoypadDirRight(...)
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
+    local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
     if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
     else
-        local row, col = mod.grid:locateCell(mod.focusedCell)
+        local row, col = pane.grid:locateCell(pane.focusedCell)
         if not row or not col then
             -- Find first leftmost cell if any
             row = 1
             col = 1
         end
 
-        mod:setFocusedCell(mod.grid:getCellAt(row, col + 1))
+        pane:setFocusedCell(pane.grid:getCellAt(row, col + 1))
 
-        if not mod.focusedCell then
+        if not pane.focusedCell then
             if self.onCharacter then
                 focusTheOtherPage(self, 1)
             else
-                mod:setFocusedCell(mod.grid:getCellAt(row, col))
+                pane:setFocusedCell(pane.grid:getCellAt(row, col))
             end
         end
     end
 end
 
 function Override:onJoypadDirLeft(...)
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
+    local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
     if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
     else
-        local row, col = mod.grid:locateCell(mod.focusedCell)
+        local row, col = pane.grid:locateCell(pane.focusedCell)
         if not row or not col then
             -- Find first rightmost cell if any
             row = 1
             col = -1
         end
 
-        mod:setFocusedCell(mod.grid:getCellAt(row, col - 1))
+        pane:setFocusedCell(pane.grid:getCellAt(row, col - 1))
 
-        if not mod.focusedCell then
+        if not pane.focusedCell then
             if not self.onCharacter then
                 focusTheOtherPage(self, -1)
             else
-                mod:setFocusedCell(mod.grid:getCellAt(row, col))
+                pane:setFocusedCell(pane.grid:getCellAt(row, col))
             end
         end
     end
 end
 
 function Override:onJoypadDirDown(...)
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
+    local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
     if isJoypadLBPressed(joypad) then
@@ -122,26 +133,25 @@ function Override:onJoypadDirDown(...)
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        local rows = mod.grid:getRows()
-        local row, col = mod.grid:locateCell(mod.focusedCell)
+        local rows = pane.grid:getRows()
+        local row, col = pane.grid:locateCell(pane.focusedCell)
 
         if row and col then
             local nextRow = rows[row + 1]
-            mod:setFocusedCell(nextRow and nextRow[math.min(#nextRow, col)])
+            pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, col)])
         else
             -- Find first upmost cell if any
-            mod:setFocusedCell(mod.grid:getCellAt(1, 1))
+            pane:setFocusedCell(pane.grid:getCellAt(1, 1))
         end
 
-        if not mod.focusedCell then
+        if not pane.focusedCell then
             self:selectNextContainer()
         end
     end
 end
 
 function Override:onJoypadDirUp(...)
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
+    local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
     if isJoypadLBPressed(joypad) then
@@ -154,26 +164,25 @@ function Override:onJoypadDirUp(...)
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        local rows = mod.grid:getRows()
-        local row, col = mod.grid:locateCell(mod.focusedCell)
+        local rows = pane.grid:getRows()
+        local row, col = pane.grid:locateCell(pane.focusedCell)
 
         if row and col then
             local prevRow = rows[row - 1]
-            mod:setFocusedCell(prevRow and prevRow[math.min(#prevRow, col)])
+            pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, col)])
         else
             -- Get first downmost cell if any
-            mod:setFocusedCell(mod.grid:getCellAt(-1, 1))
+            pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
         end
 
-        if not mod.focusedCell then
+        if not pane.focusedCell then
             self:selectPrevContainer()
         end
     end
 end
 
 function Override:onJoypadDown(button)
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
+    local pane = self._IconsInventory
 
     if button == Joypad.LBumper or button == Joypad.RBumper then
         -- If re-pressed before update
@@ -182,14 +191,14 @@ function Override:onJoypadDown(button)
         end
 
         self._IconsInventory_pressedBumper = button
-    elseif button == Joypad.AButton and mod.focusedCell then
-        local row, col = mod.grid:locateCell(mod.focusedCell)
+    elseif button == Joypad.AButton and pane.focusedCell then
+        local row, col = pane.grid:locateCell(pane.focusedCell)
 
         if row and col then
-            M.Pane.stubContextMenuXY(
+            M.IconsPane.stubContextMenuXY(
                 function()
-                    local x = pane:getAbsoluteX() + mod.grid.x + (col - 1) * M.ItemIcon.cellSize
-                    local y = pane:getAbsoluteY() + mod.grid.y + row * M.ItemIcon.cellSize + mod.native:getYScroll()
+                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * M.ItemIcon.cellSize
+                    local y = pane:getAbsoluteY() + pane.grid.y + row * M.ItemIcon.cellSize + pane.native:getYScroll()
                     return x, y
                 end,
                 vanilla.onJoypadDown, self, button
@@ -197,23 +206,18 @@ function Override:onJoypadDown(button)
         else
             return vanilla.onJoypadDown(self, button)
         end
+    elseif button == Joypad.BButton then
+        local player = getSpecificPlayer(self.player)
+        if isPlayerDoingActionThatCanBeCancelled(player) then
+            stopDoingActionThatCanBeCancelled(player)
+            return
+        end
+        if pane.focusedCell and pane.focusedCell:isCategory() then
+            pane:toggleExpanded(pane.focusedCell)
+        end
     else
         return vanilla.onJoypadDown(self, button)
     end
-end
-
-function Override:onResize()
-    if vanilla.onResize then vanilla.onResize(self) end
-    local pane = self.inventoryPane
-    local mod = pane._IconsInventory
-
-    pane:setWidth(mod:desiredWidth())
-    pane:setHeight(2 + self:getHeight()
-        - self:titleBarHeight()
-        - self.controlsUI:getHeight()
-        - ISCollapsableWindow:resizeWidgetHeight())
-
-    mod._dirty = true
 end
 
 local function install()
@@ -229,5 +233,31 @@ local function install()
     end
 end
 
-if M.cleanPage then M.cleanPage() end
+local isReload
+if M.cleanPage then
+    M.cleanPage()
+    isReload = true
+end
+
 install()
+
+---@param page IconsInventory_ISInventoryPageOverride
+local function applyPage(page)
+    page:removeChild(page._IconsInventory)
+    page._IconsInventory:removeFromUIManager()
+    initPane(page)
+    page.inventoryPane:refreshContainer()
+end
+
+local apply = function()
+    for i = 0, getNumActivePlayers() - 1 do
+        local pd = getPlayerData(i)
+        if pd then
+            applyPage(pd.playerInventory)
+            applyPage(pd.lootInventory)
+        end
+    end
+end
+
+M.addApply(apply)
+if isReload then apply() end

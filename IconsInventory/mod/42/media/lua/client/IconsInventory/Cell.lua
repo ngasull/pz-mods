@@ -1,7 +1,7 @@
 local M = require("IconsInventory/mod")
 
 ---@class IconsInventory_Cell
----@field pane IconsInventory_Pane
+---@field pane IconsInventory_IconsPane
 ---@field item InventoryItem
 ---@field index integer
 ---@field stack ContextMenuItemStack
@@ -21,7 +21,7 @@ function Cell.new(item, ...)
     return self
 end
 
----@param pane IconsInventory_Pane
+---@param pane IconsInventory_IconsPane
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
 ---@param category? IconsInventory_Cell
@@ -48,7 +48,7 @@ end
 
 function Cell:isCollapsed()
     if not self:isCategory() or self:getStackSize() < 2 then return false end
-    return not self.pane.expanded[self.stack.name] and M.Pane.isCollapsable(self.stack)
+    return not self.pane.expanded[self.stack.name] and M.IconsPane.isCollapsable(self.stack)
 end
 
 function Cell:isFocused()
@@ -69,7 +69,7 @@ function Cell:render(x, y)
 
     local job = self.item:getJobDelta()
     if job > 0 and (not self:isCategory() or self:isCollapsed()) then
-        self.pane.native:drawRect(x, y + (1 - job) * cellSize, cellSize, job * cellSize,
+        self.pane:drawRect(x, y + (1 - job) * cellSize, cellSize, job * cellSize,
             0.2, 0.4, 1.0, 0.3);
     end
 
@@ -110,17 +110,17 @@ function Cell:drawBackground(x, y)
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
-                native:drawRect(x, y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
+                self.pane:drawRect(x, y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
             end
         else
-            native:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
-            native:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
+            self.pane:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
+            self.pane:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
         end
     elseif self:isFocused() and heat == 1 then
         if native.doController then
-            native:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
+            self.pane:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
         else
-            native:drawRect(x, y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
+            self.pane:drawRect(x, y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
         end
     elseif native.highlightItem and native.highlightItem == item:getType() then
         if not native.blinkAlpha then native.blinkAlpha = 0.5; end
@@ -141,17 +141,17 @@ function Cell:drawBackground(x, y)
     elseif heat ~= 1 then
         local alpha = self:isFocused() and 0.45 or 0.3
         if heat > 1 then
-            native:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
+            self.pane:drawRect(x, y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
         else
-            native:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
+            self.pane:drawRect(x, y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
         end
     end
 
     if native.doController and self:isFocused() then
-        native:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
+        self.pane:drawRectBorder(x, y, cellSize, cellSize, 0.2, 1, 1, 1)
     end
 
     if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
-        native:drawRect(x, y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
+        self.pane:drawRect(x, y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
     end
 end

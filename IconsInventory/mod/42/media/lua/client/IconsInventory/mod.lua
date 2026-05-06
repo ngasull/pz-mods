@@ -1,8 +1,8 @@
 local M = {
     option = {},
 
-    ---@class M_Pane: IconsInventory_Pane
-    Pane = nil,
+    ---@class M_IconsPane: IconsInventory_IconsPane
+    IconsPane = nil,
 
     ---@class M_GridLayout: IconsInventory_GridLayout
     GridLayout = nil,
@@ -65,7 +65,7 @@ M.reload = function()
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Cell.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/CellPool.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/GridLayout.lua")
-    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Pane.lua")
+    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/IconsPane.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/PaneOverride.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/PageOverride.lua")
 end

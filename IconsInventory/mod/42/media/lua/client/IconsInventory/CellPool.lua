@@ -21,7 +21,7 @@ function CellPool:prepare()
 end
 
 ---@param item InventoryItem
----@param pane IconsInventory_Pane
+---@param pane IconsInventory_IconsPane
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
 ---@param category? IconsInventory_Cell

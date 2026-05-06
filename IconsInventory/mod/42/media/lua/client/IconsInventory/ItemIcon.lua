@@ -59,12 +59,12 @@ function ItemIcon.drawBase(cell, xoff, yoff, scale)
     local center = (cellSize - size) / 2
 
     -- Some icons are almost invisible (like Car keys)
-    cell.pane.native:drawTextureScaled(softBg, xoff + padding, yoff + padding,
+    cell.pane:drawTextureScaled(softBg, xoff + padding, yoff + padding,
         iconSize, iconSize,
         1, 0.2, 0.2, 0.2)
 
     ISInventoryItem.renderItemIcon(
-        cell.pane.native, cell.item,
+        cell.pane, cell.item,
         xoff + center, yoff + center,
         1, size, size
     )
@@ -74,7 +74,7 @@ end
 function ItemIcon.drawSubscript(cell, xoff, yoff, str, scale)
     local size = (scale or 1) * iconSize
     local offset = (iconSize - size) / 2
-    cell.pane.native:drawTextRight(
+    cell.pane:drawTextRight(
         str,
         xoff + cellSize - halfPadding - offset,
         yoff + cellSize - halfPadding - fontSize - offset,
@@ -85,7 +85,7 @@ end
 ---@param cell IconsInventory_Cell
 function ItemIcon.drawDetails(cell, xoff, yoff)
     local item = cell.item
-    local ui = cell.pane.native
+    local ui = cell.pane
 
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
@@ -240,7 +240,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     if not ItemConditionOverlay then -- Opt-out for this specific mod (keep literature)
         ISInventoryPane.drawText = noop
         ISInventoryPane.drawProgressBar = capture_drawProgressBar
-        ui:drawItemDetails(item, 0, 0, 0)
+        cell.pane.native:drawItemDetails(item, 0, 0, 0)
         ISInventoryPane.drawText = vanilla_drawText
         ISInventoryPane.drawProgressBar = vanilla_drawProgressBar
     end
@@ -272,7 +272,7 @@ function ItemIcon.drawRing(cell, ring, xoff, yoff, fraction)
     local centerX = xoff + halfPadding + ringRadius
     local centerY = yoff + cellSize - ringRadius - halfPadding
 
-    cell.pane.native:drawTextureScaled(ringBg,
+    cell.pane:drawTextureScaled(ringBg,
         centerX - ringRadius, centerY - ringRadius,
         ringDiameter, ringDiameter,
         1)
@@ -314,7 +314,7 @@ end
 ---@param centerY number
 ---@param angle number
 function ItemIcon.drawTextureAngle(cell, tex, centerX, centerY, angle)
-    local ui = cell.pane.native
+    local ui = cell.pane
     -- DrawTextureAngle somehow doesn't take scroll into account
     ui:DrawTextureAngle(tex, centerX + ui:getXScroll(), centerY + ui:getYScroll(), angle)
 end
