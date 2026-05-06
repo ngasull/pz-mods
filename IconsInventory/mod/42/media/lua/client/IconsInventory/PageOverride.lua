@@ -25,12 +25,20 @@ local vanilla = {}
 ---@field _IconsInventory IconsInventory_IconsPane
 ---@field _IconsInventory_init? true
 ---@field _IconsInventory_pressedBumper integer?
+---@field _IconsInventory_bcSearchStrip? ISPanel
+---@field _IconsInventory_bcSearchEntry? ISTextBox
+---@field _IconsInventory_bcSyncOk? true
 local Override = {}
 
 ---@param self IconsInventory_ISInventoryPageOverride
 local function initPane(self)
+    local prevPane = self._IconsInventory
     self._IconsInventory = M.IconsPane.new(self)
     self:addChild(self._IconsInventory)
+
+    if prevPane then
+        self._IconsInventory:setY(prevPane:getY())
+    end
 end
 
 function Override:createChildren()
@@ -57,12 +65,31 @@ function Override:update()
 
         -- onJoypadUp is not working: do it manually
         if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-            vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
             self._IconsInventory_pressedBumper = nil
+            vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
         end
     end
 
+    M.BC.stealBetterSearch(self)
+
     return vanilla.update(self)
+end
+
+function Override:prerender()
+    local pane = self._IconsInventory
+
+    -- Draw static header above drawable area for mods (ie: BetterContainers) pushing down the grid (clipped by stencil otherwise)
+    if pane.y > self:titleBarHeight() then
+        self:drawRect(1, self:titleBarHeight(),
+            self.width - 2, pane.y - self:titleBarHeight(),
+            1, 0, 0, 0)
+        self:drawRect(
+            1, pane.y - 1,
+            self.width - 2, 1,
+            0.2, 1, 1, 1)
+    end
+
+    vanilla.prerender(self)
 end
 
 function Override:onJoypadDirRight(...)
@@ -247,6 +274,10 @@ local function applyPage(page)
     page._IconsInventory:removeFromUIManager()
     initPane(page)
     page.inventoryPane:refreshContainer()
+
+    if not isReload then
+        page._IconsInventory_bcSyncOk = nil
+    end
 end
 
 local apply = function()
@@ -260,4 +291,7 @@ local apply = function()
 end
 
 M.addApply(apply)
-if isReload then apply() end
+if isReload then
+    apply()
+    isReload = false
+end

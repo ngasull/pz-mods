@@ -60,6 +60,7 @@ M.options:addDescription("Default: " .. tostring(default.maxJoypadColumns))
 -- ! -- Add mod last or don't load other mods in development
 M.reload = function()
     table.wipe(applies)
+    reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/integration/BetterContainers.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/DebugPanel.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/ItemIcon.lua")
     reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/Cell.lua")

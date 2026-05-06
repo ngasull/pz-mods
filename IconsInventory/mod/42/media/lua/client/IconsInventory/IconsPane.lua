@@ -20,7 +20,7 @@ M.IconsPane = IconsPane
 
 ---@param emptyPage IconsInventory_ISInventoryPageOverride
 function IconsPane.new(emptyPage)
-    local self = setmetatable(ISPanel:new(0, 0, 1, 1), IconsPane)
+    local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane)
     self.parent = emptyPage
     self.anchorBottom = true
     self.anchorLeft = true
@@ -53,10 +53,9 @@ function IconsPane:refreshContainer()
     local containersWidth = self.parent.buttonSize
 
     self:setX(self.native.x)
-    self:setY(self.native.y)
     self:setWidth(self.parent:getWidth() - containersWidth)
     self:setHeight(1 + self.parent:getHeight()
-        - self.parent:titleBarHeight()
+        - self:getY()
         - self.parent.controlsUI:getHeight()
         - ISCollapsableWindow:resizeWidgetHeight())
 
@@ -197,18 +196,6 @@ function IconsPane:renderBase()
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
             self:drawRect(1, yOffset - self.yPadding, self.width - 2, 1, 0.2, 1, 1, 1)
         end
-    end
-
-    -- Draw static header above drawable area for mods (ie: BetterContainers) pushing down the grid (clipped by stencil otherwise)
-    local headerHgt = self.grid.y - self.yPadding
-    if headerHgt > 0 then
-        self:drawRect(1, -self:getYScroll(),
-            self.width - 2, headerHgt,
-            1, 0, 0, 0)
-        self:drawRect(
-            1, headerHgt - self:getYScroll(),
-            self.width - 2, 1,
-            0.2, 1, 1, 1)
     end
 end
 
