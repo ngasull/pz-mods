@@ -60,6 +60,10 @@ function Cell:isSelected()
     return selected and selected[self.index]
 end
 
+function Cell:isCleanUIHighlighted()
+    return self.stack.matchesSearch
+end
+
 ---@param x number
 ---@param y number
 function Cell:render(x, y)
@@ -116,7 +120,7 @@ function Cell:drawBackground(x, y)
             self.pane:drawRect(x, y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
             self.pane:drawRectBorder(x, y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
         end
-    elseif self:isFocused() and heat == 1 then
+    elseif self:isFocused() and heat == 1 and not self:isCleanUIHighlighted() then
         if native.doController then
             self.pane:drawRect(x, y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
         else
@@ -124,7 +128,7 @@ function Cell:drawBackground(x, y)
         end
     elseif native.highlightItem and native.highlightItem == item:getType() then
         if not native.blinkAlpha then native.blinkAlpha = 0.5; end
-        native:drawRect(x, y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1)
+        self.pane:drawRect(x, y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1)
         if not native.blinkAlphaIncrease then
             native.blinkAlpha = native.blinkAlpha - 0.05 * (UIManager.getMillisSinceLastRender() / 33.3)
             if native.blinkAlpha < 0 then
@@ -138,6 +142,8 @@ function Cell:drawBackground(x, y)
                 native.blinkAlphaIncrease = false
             end
         end
+    elseif self:isCleanUIHighlighted() then
+        self.pane:drawRect(x, y, cellSize, cellSize, self:isFocused() and 0.45 or 0.3, 0.5, 0.3, 0.1)
     elseif heat ~= 1 then
         local alpha = self:isFocused() and 0.45 or 0.3
         if heat > 1 then

@@ -31,7 +31,7 @@ local vanilla = {}
 local Override = {}
 
 ---@param self IconsInventory_ISInventoryPageOverride
-local function initPane(self)
+local function initPage(self)
     local prevPane = self._IconsInventory
     self._IconsInventory = M.IconsPane.new(self)
     self:addChild(self._IconsInventory)
@@ -43,13 +43,15 @@ local function initPane(self)
 end
 
 function Override:createChildren()
-    initPane(self)
+    initPage(self)
     vanilla.createChildren(self)
     self:removeChild(self.inventoryPane)
     self.inventoryPane:removeFromUIManager()
 end
 
 function Override:update()
+    vanilla.update(self)
+
     if not self._IconsInventory_init then
         if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
             local h = math.max(
@@ -57,8 +59,18 @@ function Override:update()
                 math.floor(getCore():getScreenHeight() / 4))
             self:setHeight(h)
             self:setY(getCore():getScreenHeight() - h)
+
+            if self.inventoryPane.toolRender then
+                self.inventoryPane.toolRender:setOwner(self._IconsInventory)
+            end
         end
+
         self._IconsInventory_init = true
+    end
+
+    -- Support CleanUI (keep checking, they init randomly on controller connect)
+    if self.controlsUI:getY() < self.inventoryPane:getY() and self._IconsInventory:getY() ~= self.inventoryPane:getY() then
+        self._IconsInventory:setY(self.inventoryPane:getY())
     end
 
     if self._IconsInventory_pressedBumper then
@@ -72,8 +84,6 @@ function Override:update()
     end
 
     M.BC.stealBetterSearch(self)
-
-    return vanilla.update(self)
 end
 
 function Override:prerender()
@@ -100,6 +110,9 @@ local function switchToList(self)
         self._IconsInventory:setVisible(false)
         self._IconsInventory:removeFromUIManager()
 
+        if self.inventoryPane.toolRender then
+            self.inventoryPane.toolRender:setOwner(self.inventoryPane)
+        end
         self.inventoryPane:setVisible(true)
         self.inventoryPane:setWidth(self._IconsInventory:getWidth())
         ISInventoryPane.collapseAll(self.inventoryPane, self.inventoryPane.collapseAll)
@@ -111,6 +124,7 @@ end
 local function switchToIcons(self)
     if not self._IconsInventory:isVisible() then
         self:removeChild(self.inventoryPane)
+        self.inventoryPane:setYScroll(0) -- Impacts stubbed mouse
         self.inventoryPane:setVisible(false)
         self.inventoryPane:removeFromUIManager()
 
@@ -317,13 +331,19 @@ install()
 
 ---@param page IconsInventory_ISInventoryPageOverride
 local function applyPage(page)
-    page:removeChild(page._IconsInventory)
-    page._IconsInventory:removeFromUIManager()
-    initPane(page)
-    page.inventoryPane:refreshContainer()
+    if page._IconsInventory then -- More resilient to what other mods might do
+        page:removeChild(page._IconsInventory)
+        page._IconsInventory:removeFromUIManager()
+        initPage(page)
+        page.inventoryPane:refreshContainer()
 
-    if not isReload then
-        page._IconsInventory_bcSyncOk = nil
+        if not isReload then
+            page._IconsInventory_bcSyncOk = nil
+        end
+    else
+        initPage(page)
+        page:removeChild(page.inventoryPane)
+        page.inventoryPane:removeFromUIManager()
     end
 end
 

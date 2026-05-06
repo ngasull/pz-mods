@@ -1,5 +1,6 @@
 local M = require("IconsInventory/mod")
 
+local function True() return true end
 local function False() return false end
 
 ---@class IconsInventory_IconsPane: ISPanel
@@ -11,8 +12,7 @@ local function False() return false end
 ---@field expanded table<string, boolean>
 ---@field pool IconsInventory_CellPool
 ---@field mouseDown? { x: number, y: number, cell?: IconsInventory_Cell }
----@field _fakeX? number
----@field _fakeY? number
+---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
@@ -50,14 +50,15 @@ function IconsPane.isCollapsable(stack)
 end
 
 function IconsPane:refreshContainer()
-    local containersWidth = self.parent.buttonSize
+    local containersWidth = self.parent.containerButtonPanel:getWidth()
+    local y = self:getY()
+    local controlsY = self.parent.controlsUI:getY()
 
     self:setX(self.native.x)
     self:setWidth(self.parent:getWidth() - containersWidth)
-    self:setHeight(1 + self.parent:getHeight()
-        - self:getY()
-        - self.parent.controlsUI:getHeight()
-        - ISCollapsableWindow:resizeWidgetHeight())
+    self:setHeight(1 + self.parent:getHeight() - y
+        - (controlsY > y and self.parent.controlsUI:getHeight() or 0)
+        - (self.parent.resizeWidget2 and self.parent.resizeWidget2:getHeight() or 0))
 
     if self.parent.containerButtonPanel.anchorLeft then
         self:setX(containersWidth)
@@ -86,30 +87,32 @@ function IconsPane:refresh()
     local hotbarCells ---@type IconsInventory_Cell[]?
     local equippedCells ---@type IconsInventory_Cell[]?
     for _, stack in ipairs(self.native.itemslist) do
-        -- We work on a fully expanded backend
-        self.native.collapsed[stack.name] = false
-        table.insert(vanillaItems, stack)
-        local category = self.pool:get(stack.items[1], self, #vanillaItems, stack)
+        if #stack.items > 0 then -- Check that other mods don't get crazy with items (CleanUI)
+            -- We work on a fully expanded backend
+            self.native.collapsed[stack.name] = false
+            table.insert(vanillaItems, stack)
+            local category = self.pool:get(stack.items[1], self, #vanillaItems, stack)
 
-        if category:isCollapsed() or IconsPane.isCollapsable(stack) then
-            table.insert(cells, category)
-        end
+            if category:isCollapsed() or IconsPane.isCollapsable(stack) then
+                table.insert(cells, category)
+            end
 
-        for i = 2, #stack.items do
-            local item = stack.items[i]
-            table.insert(vanillaItems, item)
+            for i = 2, #stack.items do
+                local item = stack.items[i]
+                table.insert(vanillaItems, item)
 
-            if not category:isCollapsed() then
-                local cell = self.pool:get(item, self, #vanillaItems, stack, category)
+                if not category:isCollapsed() then
+                    local cell = self.pool:get(item, self, #vanillaItems, stack, category)
 
-                if stack.equipped then
-                    if not equippedCells then equippedCells = {} end
-                    table.insert(equippedCells, cell)
-                elseif stack.inHotbar then
-                    if not hotbarCells then hotbarCells = {} end
-                    table.insert(hotbarCells, cell)
-                else
-                    table.insert(cells, cell)
+                    if stack.equipped then
+                        if not equippedCells then equippedCells = {} end
+                        table.insert(equippedCells, cell)
+                    elseif stack.inHotbar then
+                        if not hotbarCells then hotbarCells = {} end
+                        table.insert(hotbarCells, cell)
+                    else
+                        table.insert(cells, cell)
+                    end
                 end
             end
         end
@@ -178,8 +181,8 @@ function IconsPane:renderBase()
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
             self:drawRect(
-                1, self.grid.y - self.yPadding,
-                self:getWidth() - 2, groupHeight - 1,
+                0, self.grid.y - self.yPadding,
+                self:getWidth(), groupHeight - 1,
                 0.5, 0, 0, 0)
         end
 
@@ -194,7 +197,7 @@ function IconsPane:renderBase()
         yOffset = yOffset + groupHeight
 
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
-            self:drawRect(1, yOffset - self.yPadding, self.width - 2, 1, 0.2, 1, 1, 1)
+            self:drawRect(0, yOffset - self.yPadding, self.width, 1, 0.2, 1, 1, 1)
         end
     end
 end
@@ -257,47 +260,6 @@ function IconsPane.stubContextMenuXY(calcXY, cb, ...)
     end
 end
 
----@param x? number
----@param y? number
-function IconsPane:stubMouse(x, y)
-    self._fakeX = x
-    self._fakeY = y
-    self.native.getMouseX = self._mouseStubX
-    self.native.getMouseY = self._mouseStubY
-    return self.focusedCell or (x and y)
-end
-
-function IconsPane:restoreMouse()
-    self.native.getMouseX = ISUIElement.getMouseX
-    self.native.getMouseY = ISUIElement.getMouseY
-    self._fakeX = nil
-    self._fakeY = nil
-end
-
----@param native IconsInventory_ISInventoryPaneOverride
-function IconsPane._mouseStubX(native)
-    local self = native.parent._IconsInventory
-    if self._fakeX then
-        return self._fakeX
-    elseif self.focusedCell then
-        return native.column2 + 1 -- To the right of collapse area
-    else
-        return -1
-    end
-end
-
----@param native IconsInventory_ISInventoryPaneOverride
-function IconsPane._mouseStubY(native)
-    local self = native.parent._IconsInventory
-    if self._fakeY then
-        return self._fakeY
-    elseif self.focusedCell then
-        return native.headerHgt + (self.focusedCell.index - 1) * native.itemHgt + 2
-    else
-        return -1
-    end
-end
-
 ---@param cell IconsInventory_Cell
 function IconsPane:toggleExpanded(cell)
     local stackName = cell.stack.name
@@ -308,9 +270,18 @@ end
 function IconsPane:update()
     if not self.native then return end
 
-    self:stubMouse()
-    self.native:update()
-    self:restoreMouse()
+    if self:isReallyVisible() then -- Avoids glitchy tooltip in game menu
+        local vanilla_isReallyVisible = self.native.isReallyVisible
+        self.native.isReallyVisible = True
+        local ok, err = pcall(self.native.update, self.native)
+        self.native.isReallyVisible = vanilla_isReallyVisible
+
+        if not ok then error(err) end
+
+        if self.native.toolRender then
+            self.native.toolRender:setOwner(self)
+        end
+    end
 
     if self.native.doController and self.native.toolRender and self.native.toolRender.anchorBottomLeft then
         self.native.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + self.grid.x
@@ -339,7 +310,8 @@ function IconsPane:prerender()
     local visibleScrollBarWidth = self:isVScrollBarVisible() and realVScrollWidth - 2 or 0
     self.vscroll:setX(self:getWidth() - realVScrollWidth)
 
-    self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self:getHeight());
+    -- Height -1 to avoid removing controlsUI line
+    self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self:getHeight() - 1)
     self:renderBase()
     self:clearStencilRect()
 
@@ -355,6 +327,7 @@ function IconsPane:onMouseMove(dx, dy)
     if self.native.doController then
         self:setFocusedCell(nil)
     else
+        self._mouseOut = false
         self:setFocusedCell(self.grid:hitTest(
             self:getMouseX(),
             self:getMouseY()
@@ -363,18 +336,14 @@ function IconsPane:onMouseMove(dx, dy)
 
     -- Only forward on drag: hover is handled by this pane
     if self.mouseDown and self.native.downX and self.native.downY then
-        self:stubMouse(
-            self.native.downX + self.native:getMouseX() - self.mouseDown.x,
-            self.native.downY + self.native:getMouseY() - self.mouseDown.y
-        )
         local handled = self.native:onMouseMove(dx, dy)
-        self:restoreMouse()
         if self.native.draggingMarquis then self.native.draggingMarquis = false end
         return handled
     end
 end
 
 function IconsPane:onMouseMoveOutside(dx, dy)
+    self._mouseOut = true
     if not self.native.doController then
         self:setFocusedCell(nil)
     end
@@ -397,7 +366,7 @@ function IconsPane:onMouseDown(x, y)
         else
             self.native:transferItemsByWeight({ self.focusedCell.item }, target.inventory)
         end
-    elseif self:stubMouse() then
+    elseif self.focusedCell then
         self.mouseDown = { x = x, y = y, cell = self.focusedCell }
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
 
@@ -411,7 +380,6 @@ function IconsPane:onMouseDown(x, y)
         if ok then
             handled = res
         else
-            self:restoreMouse()
             error(handled)
         end
 
@@ -436,7 +404,7 @@ function IconsPane:onMouseDown(x, y)
             end
         end
     end
-    self:restoreMouse()
+
     return handled
 end
 
@@ -453,13 +421,8 @@ function IconsPane:onMouseUp(x, y)
             self.native.selected[self.focusedCell.index + i - 1] = nil
         end
     else
-        if self:stubMouse() then
-            x = self.native:getMouseX()
-            y = self.native:getMouseY()
-        end
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
-        handled = self.native:onMouseUp(x, y)
-        self:restoreMouse()
+        handled = self.native:onMouseUp(self.native:getMouseX(), self.native:getMouseY())
     end
 
     self.mouseDown = nil
@@ -474,7 +437,7 @@ end
 function IconsPane:onRightMouseUp(x, y)
     local handled = true
 
-    if self:stubMouse() then
+    if self.focusedCell then
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
         handled = M.IconsPane.stubContextMenuXY(
             function()
@@ -504,18 +467,15 @@ function IconsPane:onRightMouseUp(x, y)
         end
     end
 
-    self:restoreMouse()
     return handled
 end
 
 function IconsPane:onMouseDoubleClick(x, y)
     if self.vscroll and self:isVScrollBarVisible() and self.vscroll:isMouseOver() then
         self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
-    elseif self:stubMouse() then
+    elseif self.focusedCell then
         self.native:onMouseDoubleClick(self.native:getMouseX(), self.native:getMouseY())
     end
-
-    self:restoreMouse()
 end
 
 function IconsPane:onMouseWheel(del)

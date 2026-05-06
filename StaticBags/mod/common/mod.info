@@ -6,5 +6,5 @@ icon=icon.png
 pzversion=42
 modversion=1.1
 versionMin=42.0.0
-incompatible=CleanUI
+incompatible=
 author=ngasull
