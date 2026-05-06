@@ -108,6 +108,3 @@ end
 
 if M.clean then M.clean() end
 install()
-M.options.apply()
-
-Events.OnGameStart.Add(M.options.apply)
