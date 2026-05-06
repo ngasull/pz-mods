@@ -38,6 +38,7 @@ local function initPane(self)
 
     if prevPane then
         self._IconsInventory:setY(prevPane:getY())
+        self._IconsInventory:setVisible(prevPane:isVisible())
     end
 end
 
@@ -90,6 +91,52 @@ function Override:prerender()
     end
 
     vanilla.prerender(self)
+end
+
+---@param self IconsInventory_ISInventoryPageOverride
+local function switchToList(self)
+    if self._IconsInventory:isVisible() then
+        self:removeChild(self._IconsInventory)
+        self._IconsInventory:setVisible(false)
+        self._IconsInventory:removeFromUIManager()
+
+        self.inventoryPane:setVisible(true)
+        self.inventoryPane:setWidth(self._IconsInventory:getWidth())
+        ISInventoryPane.collapseAll(self.inventoryPane, self.inventoryPane.collapseAll)
+        self:addChild(self.inventoryPane)
+    end
+end
+
+---@param self IconsInventory_ISInventoryPageOverride
+local function switchToIcons(self)
+    if not self._IconsInventory:isVisible() then
+        self:removeChild(self.inventoryPane)
+        self.inventoryPane:setVisible(false)
+        self.inventoryPane:removeFromUIManager()
+
+        self._IconsInventory:setVisible(true)
+        self._IconsInventory:refreshContainer()
+        self:addChild(self._IconsInventory)
+    end
+end
+
+function Override:onRightMouseUp(x, y)
+    if vanilla.onRightMouseUp then vanilla.onRightMouseUp(self, x, y) end
+
+    local context = ISContextMenu.get(self.inventoryPane.player,
+        self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll())
+    context.origin = self
+    context.mouseOver = 1
+    setJoypadFocus(self.inventoryPane.player, context)
+
+    local iconsOption = context:addOption(getText("IGUI_Controller_Inventory"), self, switchToIcons)
+    local listOption = context:addOption(getText("IGUI_AdminPanel_ItemList"), self, switchToList)
+
+    if self._IconsInventory:isVisible() then
+        context:setOptionChecked(iconsOption, true)
+    else
+        context:setOptionChecked(listOption, true)
+    end
 end
 
 function Override:onJoypadDirRight(...)

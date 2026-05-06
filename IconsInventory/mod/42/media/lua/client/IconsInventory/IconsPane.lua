@@ -458,7 +458,7 @@ function IconsPane:onMouseUp(x, y)
             y = self.native:getMouseY()
         end
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
-        handled = self.native:onMouseUp(self.native:getMouseX(), self.native:getMouseY())
+        handled = self.native:onMouseUp(x, y)
         self:restoreMouse()
     end
 
@@ -475,10 +475,11 @@ function IconsPane:onRightMouseUp(x, y)
     local handled = true
 
     if self:stubMouse() then
+        self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
         handled = M.IconsPane.stubContextMenuXY(
             function()
-                local ctxX = self.native:getAbsoluteX() + x
-                local ctxY = self.native:getAbsoluteY() + y + self.native:getYScroll()
+                local ctxX = self:getAbsoluteX() + x
+                local ctxY = self:getAbsoluteY() + y + self:getYScroll()
                 return ctxX, ctxY
             end,
             self.native.onRightMouseUp, self.native, self.native:getMouseX(), self.native:getMouseY()
