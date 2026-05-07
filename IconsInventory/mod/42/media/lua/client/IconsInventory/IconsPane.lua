@@ -104,10 +104,11 @@ function IconsPane:refresh()
                 if not category:isCollapsed() then
                     local cell = self.pool:get(item, self, #vanillaItems, stack, category)
 
-                    if stack.equipped then
+                    -- stack.equipped and inHotbar may have been modified by mods
+                    if cell:isEquipped() then
                         if not equippedCells then equippedCells = {} end
                         table.insert(equippedCells, cell)
-                    elseif stack.inHotbar then
+                    elseif cell:isInHotbar() then
                         if not hotbarCells then hotbarCells = {} end
                         table.insert(hotbarCells, cell)
                     else

@@ -46,6 +46,15 @@ function Cell:isCategory()
     return self.category == self
 end
 
+function Cell:isEquipped()
+    return self.player:isEquipped(self.item)
+end
+
+function Cell:isInHotbar()
+    local hotbar = not self:isEquipped() and getPlayerHotbar(self.player:getIndex());
+    return hotbar and hotbar:isInHotbar(self.item)
+end
+
 function Cell:isCollapsed()
     if not self:isCategory() or self:getStackSize() < 2 then return false end
     return not self.pane.expanded[self.stack.name] and M.IconsPane.isCollapsable(self.stack)

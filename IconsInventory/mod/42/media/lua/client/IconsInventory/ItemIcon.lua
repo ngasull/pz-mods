@@ -90,7 +90,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
     local padBR = -4
-    if cell.player:isEquipped(item) then
+    if cell:isEquipped() then
         padBR = padBR + 4
         ui:drawTextureScaled(equippedItemIcon,
             xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
@@ -99,8 +99,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
         padBR = padBR + equippedIconSize
     end
 
-    local hotbar = getPlayerHotbar(cell.player:getIndex());
-    if not cell.player:isEquipped(item) and hotbar and hotbar:isInHotbar(item) then
+    if cell:isInHotbar() then
         padBR = padBR + 4
         ui:drawTextureScaled(equippedInHotbar,
             xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
