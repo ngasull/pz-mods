@@ -50,22 +50,6 @@ function IconsPane.isCollapsable(stack)
 end
 
 function IconsPane:refreshContainer()
-    local containersWidth = self.parent.containerButtonPanel:getWidth()
-    local y = self:getY()
-    local controlsY = self.parent.controlsUI:getY()
-
-    self:setX(self.native.x)
-    self:setWidth(self.parent:getWidth() - containersWidth)
-    self:setHeight(1 + self.parent:getHeight() - y
-        - (controlsY > y and self.parent.controlsUI:getHeight() or 0)
-        - (self.parent.resizeWidget2 and self.parent.resizeWidget2:getHeight() or 0))
-
-    if self.parent.containerButtonPanel.anchorLeft then
-        self:setX(containersWidth)
-    else
-        self:setX(0)
-    end
-
     if self.native.inventory ~= self.prevContainer then
         self.prevContainer = self.native.inventory
         table.wipe(self.expanded)
@@ -290,6 +274,18 @@ function IconsPane:update()
 end
 
 function IconsPane:prerender()
+    local containersWidth = self.parent.containerButtonPanel:getWidth()
+    local y = self:getY()
+    local controlsY = self.parent.controlsUI:getY()
+    local desiredWidth = self.parent:getWidth() - containersWidth
+    local desiredHeight = 1 + self.parent:getHeight() - y
+        - (controlsY > y and self.parent.controlsUI:getHeight() or 0)
+        - (self.parent.resizeWidget2 and self.parent.resizeWidget2:getHeight() or 0)
+
+    if self.x ~= self.native.x then self:setX(self.native.x) end
+    if self:getWidth() ~= desiredWidth then self:setWidth(desiredWidth) end
+    if self:getHeight() ~= desiredHeight then self:setHeight(desiredHeight) end
+
     if self.native.inventory:isDrawDirty() then
         self.native:refreshContainer()
     end
