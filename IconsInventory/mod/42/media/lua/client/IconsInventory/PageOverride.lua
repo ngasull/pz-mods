@@ -19,7 +19,7 @@ end
 ---@class IconsInventory_ISInventoryPage: ISInventoryPage
 local vanilla = {}
 
----@class IconsInventory_ISInventoryPageOverride: ISInventoryPage
+---@class IconsInventory_ISInventoryPageOverride: IconsInventory_ISInventoryPage
 ---@field parent ISInventoryPage
 ---@field inventoryPane IconsInventory_ISInventoryPaneOverride
 ---@field _IconsInventory IconsInventory_IconsPane

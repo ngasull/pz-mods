@@ -3,7 +3,7 @@ local M = require("IconsInventory/mod")
 ---@class IconsInventory_ISInventoryPane: ISInventoryPane
 local vanilla = {}
 
----@class IconsInventory_ISInventoryPaneOverride: ISInventoryPane
+---@class IconsInventory_ISInventoryPaneOverride: IconsInventory_ISInventoryPane
 ---@field parent IconsInventory_ISInventoryPageOverride
 ---@field _IconsInventory_headerHgt? number
 local Override = {}

@@ -84,6 +84,12 @@ function Cell:render(x, y)
     if job > 0 and (not self:isCategory() or self:isCollapsed()) then
         self.pane:drawRect(x, y + (1 - job) * cellSize, cellSize, job * cellSize,
             0.2, 0.4, 1.0, 0.3);
+    elseif M.isQueuedForTransfer(self.item) then
+        local animDuration = 1000
+        local animDelta = math.fmod(getTimeInMillis(), animDuration) / animDuration;
+        local blinkStrength = 2 * math.abs(animDelta - 0.5)
+        self.pane:drawRect(x, y, cellSize, cellSize,
+            0.1 + blinkStrength * 0.05, 0.4, 1.0, 0.3);
     end
 
     if self:isCategory() then
