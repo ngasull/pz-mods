@@ -49,6 +49,12 @@ M.option.alwaysCollapseOver = M.options:addSlider(
     "1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
 M.options:addDescription("1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
 
+M.option.hungerMode = M.options:addComboBox("hungerMode", "Restored hunger display")
+M.option.hungerMode:addItem("Remaining portion indicator", true)
+M.option.hungerMode_portion = 1
+M.option.hungerMode:addItem("Restored hunger value")
+M.option.hungerMode_numbers = 2
+
 M.options:addTitle("Gamepad")
 
 M.option.maxJoypadColumns = M.options:addSlider(

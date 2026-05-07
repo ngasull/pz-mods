@@ -21,6 +21,7 @@ local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
 -- Added by Icons Inventory
 local wetIcon = getTexture("media/ui/Entity/SlotStatus/wet_24.png")
+local clockIcon = getTexture("media/ui/speedControls/Wait_Off.png")
 local maggots = InventoryItem.new("", "", "Maggots", "Item_Insect_Maggots")
 
 local equippedItemIcon = getTexture("media/ui/icon.png")
@@ -118,7 +119,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     end
 
     if instanceof(item, "Food") then
-        local isNourishing = item:getHungChange() < 0 and not (
+        local isNourishing = item:getHungerChange() < 0 and not (
             item:getScriptItem():isCantEat()
             or item:isBurnt()
             or item:isRotten()
@@ -128,11 +129,14 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             or (item:isIsCookable() and not item:isFrozen() and item:getHeat() > 1.6)
         )
 
-        if isNourishing and not item:isSpice()
+        local displayNumbers = false
+        if isNourishing and M.option.hungerMode:getValue() == M.option.hungerMode_numbers
+            and not item:isSpice()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
         then
+            displayNumbers = true
             padBR = padBR + 4
-            local str = tostring(math.floor(0.5 - item:getHungChange() * 100))
+            local str = tostring(math.floor(0.5 - item:getHungerChange() * 100))
             ui:drawTextRight(
                 str,
                 xoff + cellSize - halfPadding - padBR,
@@ -161,16 +165,31 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
                 subIconSize,
                 1, 1, 1, 1);
             padBR = padBR + subIconSize
-        elseif not item:isFresh() and item:isRotten() then
-            padBR = padBR + 4
-            ISInventoryItem.renderItemIcon(
-                ui, maggots,
-                xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
-                0.8, subIconSize, subIconSize)
-            padBR = padBR + subIconSize
+        elseif not item:isFresh() then
+            if item:isRotten() then
+                padBR = padBR + 4
+                ISInventoryItem.renderItemIcon(
+                    ui, maggots,
+                    xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                    0.8, subIconSize, subIconSize)
+                padBR = padBR + subIconSize
+            elseif not displayNumbers then
+                padBR = padBR + 4
+                ui:drawTextureScaled(clockIcon,
+                    xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                    subIconSize, subIconSize,
+                    0.5, 0.75, 0.75, 0)
+                padBR = padBR + subIconSize
+            end
         end
 
-        -- Early return to avoid the ring
+        -- `getHungChange` is an internal value, `getHungerChange` is displayed value
+        if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
+            ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getHungChange() / item:getBaseHunger())
+            return
+        end
+
+        -- Return early to avoid the ring as well
         if isNourishing then return end
     elseif instanceof(item, "Clothing") and (
             item:getBodyLocation() == "Shoes" and item:getWetness() > 60
