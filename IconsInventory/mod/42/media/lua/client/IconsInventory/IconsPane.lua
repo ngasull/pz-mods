@@ -408,7 +408,7 @@ end
 function IconsPane:onMouseUp(x, y)
     local handled
     if self.focusedCell and self.focusedCell:isCategory()
-        and self.mouseDown and self.mouseDown.cell == self.focusedCell
+        and self.mouseDown and self.mouseDown.cell and self.mouseDown.cell.item == self.focusedCell.item
         and not self.native.dragStarted and not isCtrlKeyDown() and not isShiftKeyDown()
     then
         self:toggleExpanded(self.focusedCell)
