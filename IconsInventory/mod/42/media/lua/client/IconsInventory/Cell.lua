@@ -30,11 +30,6 @@ function Cell:init(pane, index, stack, category)
     self.index = index
     self.stack = stack
     self.category = category or self
-
-    if pane.focusedCell and self:isCategory() == pane.focusedCell:isCategory() and self.item:getID() == pane.focusedCell.item:getID() then
-        pane:setFocusedCell(self)
-    end
-
     self.player = getSpecificPlayer(pane.native.player)
 end
 
@@ -52,7 +47,7 @@ end
 
 function Cell:isInHotbar()
     local hotbar = not self:isEquipped() and getPlayerHotbar(self.player:getIndex());
-    return hotbar and hotbar:isInHotbar(self.item)
+    return hotbar and hotbar:isInHotbar(self.item) or false
 end
 
 function Cell:isCollapsed()
@@ -66,7 +61,43 @@ end
 
 function Cell:isSelected()
     local selected = self.pane.native.selected
-    return selected and selected[self.index]
+    return not not (selected and selected[self.index])
+end
+
+---@param isSelected boolean
+function Cell:setSelected(isSelected)
+    if self:isCategory() then
+        -- Sync all items with category
+        for i = 0, #self.stack.items - 1 do
+            self.pane.native.selected[self.index + i] = isSelected and self.pane.native.items[self.index + i] or nil
+        end
+    else
+        self.pane.native.selected[self.index] = isSelected and self.pane.native.items[self.index] or nil
+
+        -- Unselect category if it has unselected elements (=> non-vanilla)
+        local category = self.category
+        self.pane.native.selected[category.index] = self.pane.native.items[category.index]
+        for i = 1, #category.stack.items - 1 do
+            if not self.pane.native.selected[category.index + i] then
+                self.pane.native.selected[category.index] = nil
+                break
+            end
+        end
+    end
+end
+
+function Cell:isQueuedForTransfer()
+    if self:isCategory() then
+        if not self:isCollapsed() then return false end
+        for _, item in ipairs(self.stack.items) do
+            if not M.isQueuedForTransfer(item) then
+                return false
+            end
+        end
+        return true
+    else
+        return M.isQueuedForTransfer(self.item)
+    end
 end
 
 function Cell:isCleanUIHighlighted()
@@ -84,7 +115,7 @@ function Cell:render(x, y)
     if job > 0 and (not self:isCategory() or self:isCollapsed()) then
         self.pane:drawRect(x, y + (1 - job) * cellSize, cellSize, job * cellSize,
             0.2, 0.4, 1.0, 0.3);
-    elseif M.isQueuedForTransfer(self.item) then
+    elseif self:isQueuedForTransfer() then
         local animDuration = 1000
         local animDelta = math.fmod(getTimeInMillis(), animDuration) / animDuration;
         local blinkStrength = 2 * math.abs(animDelta - 0.5)
