@@ -366,7 +366,9 @@ function IconsPane:onMouseDown(x, y)
         local vx, vy = self.native:getMouseX(), self.native:getMouseY()
         self.mouseDown = { x = x, y = y, cell = self.focusedCell, vx = vx, vy = vy, ctrl = isCtrlKeyDown() }
 
-        if self.mouseDown.ctrl and not self:handleCtrlShiftClick(x, y, self.focusedCell) then
+        local handledCtrlShift = self:handleCtrlShiftClick(x, y, self.focusedCell)
+        -- Order matters
+        if not handledCtrlShift and self.mouseDown.ctrl then
             self.focusedCell:setSelected(not self.focusedCell:isSelected())
         end
     else
@@ -428,6 +430,8 @@ function IconsPane:handleCtrlShiftClick(x, y, focusedCell)
         isCtrlKeyDown = vanilla_isCtrlKeyDown
         if not ok then error(res) end
         return true
+    else
+        self.native.firstSelect = focusedCell.index
     end
 end
 
