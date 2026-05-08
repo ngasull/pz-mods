@@ -285,8 +285,14 @@ function IconsPane:prerender()
         - (self.parent.resizeWidget2 and self.parent.resizeWidget2:getHeight() or 0))
 
     if self.x ~= self.native.x then self:setX(self.native.x) end
-    if self:getWidth() ~= desiredWidth then self:setWidth(desiredWidth) end
-    if self:getHeight() ~= desiredHeight then self:setHeight(desiredHeight) end
+    if self:getWidth() ~= desiredWidth then
+        self:setWidth(desiredWidth)
+        self.native.width = desiredWidth -- Mods may use dimensions under the hood (CleanUI for appliances)
+    end
+    if self:getHeight() ~= desiredHeight then
+        self:setHeight(desiredHeight)
+        self.native.height = desiredHeight
+    end
 
     if self.native.inventory:isDrawDirty() then
         self.native:refreshContainer()
