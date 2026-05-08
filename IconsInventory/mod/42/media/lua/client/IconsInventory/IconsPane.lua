@@ -332,10 +332,7 @@ function IconsPane:onMouseMove(dx, dy)
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
 
-        if self:isDragging() then
-            self.native:onMouseMove(dx, dy)
-            self.native.draggingMarquis = false
-        elseif self.mouseDown then
+        if self.mouseDown and not self:isDragging() then
             if self.mouseDown.ctrl then
                 if self.focusedCell and self.focusedCell:isSelected() ~= self.mouseDown.cell:isSelected() then
                     self.focusedCell:setSelected(self.mouseDown.cell:isSelected())
@@ -343,7 +340,7 @@ function IconsPane:onMouseMove(dx, dy)
             elseif math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 then
                 self.native.mouseOverOption = self.mouseDown.cell.index
                 self.native:onMouseDown(self.mouseDown.vx, self.mouseDown.vy)
-                self.native:onMouseMove(dx, dy)
+                self.native.dragStarted = true
             end
         end
     end
@@ -366,10 +363,21 @@ function IconsPane:onMouseDown(x, y)
         local vx, vy = self.native:getMouseX(), self.native:getMouseY()
         self.mouseDown = { x = x, y = y, cell = self.focusedCell, vx = vx, vy = vy, ctrl = isCtrlKeyDown() }
 
-        local handledCtrlShift = self:handleCtrlShiftClick(x, y, self.focusedCell)
-        -- Order matters
-        if not handledCtrlShift and self.mouseDown.ctrl then
-            self.focusedCell:setSelected(not self.focusedCell:isSelected())
+        if self.mouseDown.ctrl and isShiftKeyDown() then
+            self.mouseDown = nil
+            self.native.mouseOverOption = self.focusedCell.index
+            local vanilla_isCtrlKeyDown = isCtrlKeyDown
+            isCtrlKeyDown = False
+            local ok, res = pcall(self.native.onMouseDown, self.native, vx, vy)
+            isCtrlKeyDown = vanilla_isCtrlKeyDown
+            if not ok then error(res) end
+        else
+            -- Marks current cell as native shift-click start
+            self.native.firstSelect = self.focusedCell.index
+
+            if self.mouseDown.ctrl then
+                self.focusedCell:setSelected(not self.focusedCell:isSelected())
+            end
         end
     else
         table.wipe(self.native.selected)
@@ -413,25 +421,6 @@ function IconsPane:handleShiftClick(x, y)
 
         self.native:transferItemsByWeight(items, target.inventory)
         return true
-    end
-end
-
----@param x number
----@param y number
----@param focusedCell IconsInventory_Cell
-function IconsPane:handleCtrlShiftClick(x, y, focusedCell)
-    if isCtrlKeyDown() and isShiftKeyDown() then
-        self.mouseDown = nil
-        local vx, vy = self.native:getMouseX(), self.native:getMouseY()
-        self.native.mouseOverOption = focusedCell.index
-        local vanilla_isCtrlKeyDown = isCtrlKeyDown
-        isCtrlKeyDown = False
-        local ok, res = pcall(self.native.onMouseDown, self.native, vx, vy)
-        isCtrlKeyDown = vanilla_isCtrlKeyDown
-        if not ok then error(res) end
-        return true
-    else
-        self.native.firstSelect = focusedCell.index
     end
 end
 
