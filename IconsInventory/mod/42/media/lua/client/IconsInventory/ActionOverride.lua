@@ -16,6 +16,21 @@ M.isQueuedForTransfer = function(item)
     return true
 end
 
+---@param action ISBaseTimedAction
+local function cancelAction(action)
+    if action.Type == "ISInventoryTransferAction" then
+        ---@cast action +ISInventoryTransferAction
+        queuedTransfers[action.item] = nil
+        if action.queueList then
+            for _, qi in ipairs(action.queueList) do
+                for _, item in ipairs(qi.items) do
+                    queuedTransfers[item] = nil
+                end
+            end
+        end
+    end
+end
+
 ---@class IconsInventory_ISTimedActionQueue: ISTimedActionQueue
 local QueueVanilla = {}
 
@@ -31,26 +46,20 @@ function QueueOverride.add(action)
 end
 
 function QueueOverride:removeFromQueue(action)
-    if action.Type == "ISInventoryTransferAction" then
-        queuedTransfers[action.item] = nil
-    end
+    cancelAction(action)
     return QueueVanilla.removeFromQueue(self, action)
 end
 
 function QueueOverride:clearQueue()
     for _, action in ipairs(self.queue) do
-        if action.Type == "ISInventoryTransferAction" then
-            queuedTransfers[action.item] = nil
-        end
+        cancelAction(action)
     end
     return QueueVanilla.clearQueue(self)
 end
 
 function QueueOverride:cancelQueue()
     for _, action in ipairs(self.queue) do
-        if action.Type == "ISInventoryTransferAction" then
-            queuedTransfers[action.item] = nil
-        end
+        cancelAction(action)
     end
     return QueueVanilla.cancelQueue(self)
 end
