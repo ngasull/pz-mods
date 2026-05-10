@@ -279,6 +279,9 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getAlreadyReadPages() / item:getNumberOfPages())
         end
     end
+
+    -- Integration
+    M.P4HasBeenRead.renderdetails(cell, xoff, yoff)
 end
 
 ---@param cell IconsInventory_Cell
