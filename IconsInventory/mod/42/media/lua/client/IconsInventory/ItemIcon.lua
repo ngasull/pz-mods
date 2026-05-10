@@ -119,18 +119,17 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     end
 
     if instanceof(item, "Food") then
+        local isBeingCooked = item:isIsCookable() and not item:isFrozen() and item:getHeat() > 1.6
         local isNourishing = item:getHungerChange() < 0 and not (
             item:getScriptItem():isCantEat()
             or item:isBurnt()
             or item:isRotten()
             or cell.player:isKnownPoison(item)
             or (item:isbDangerousUncooked() and not item:isCooked())
-            -- Exclude items being cooked (want ring)
-            or (item:isIsCookable() and not item:isFrozen() and item:getHeat() > 1.6)
         )
 
         local displayNumbers = false
-        if isNourishing and M.option.hungerMode:getValue() == M.option.hungerMode_numbers
+        if not isBeingCooked and isNourishing and M.option.hungerMode:getValue() == M.option.hungerMode_numbers
             and not item:isSpice()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
         then
@@ -183,14 +182,17 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             end
         end
 
-        -- `getHungChange` is an internal value, `getHungerChange` is displayed value
-        if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
-            ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getHungChange() / item:getBaseHunger())
-            return
-        end
+        if not isBeingCooked then
+            -- Remaining portion ring
+            -- `getHungChange` is an internal value, `getHungerChange` is displayed value
+            if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
+                ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getHungChange() / item:getBaseHunger())
+                return
+            end
 
-        -- Return early to avoid the ring as well
-        if isNourishing then return end
+            -- Return early to avoid the ring as well
+            if isNourishing then return end
+        end
     elseif instanceof(item, "Clothing") and (
             item:getBodyLocation() == "Shoes" and item:getWetness() > 60
             or item:getWetness() > 10
