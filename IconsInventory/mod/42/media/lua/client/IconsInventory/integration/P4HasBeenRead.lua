@@ -19,6 +19,33 @@ P4HasBeenRead.options = {
     AutoMark = nil,
 }
 
+P4HasBeenRead.effectiveCodes = { "CRP", "COO", "FRM", "DOC", "ELC", "MTL", "MEC", "TAI", "FIS", "TRA", "FOR", "HUS",
+    "FKN", "BLA", "POT", "RCP", "BAA", "BUA", "SBU", "LBA", "SBA", "SPE", "AIM", "REL", "SPR", "LFT", "NIM", "SNE" }
+P4HasBeenRead.effectiveMedias = {}
+
+P4HasBeenRead.OnInitRecordedMedia = function(_rc)
+    for id, media in pairs(RecMedia) do
+        local isEffective = false
+        for _, line in ipairs(media.lines) do
+            if line.codes ~= "BOR-1" then -- Hack for performance
+                for _, code in ipairs(P4HasBeenRead.effectiveCodes) do
+                    if string.find(line.codes, code) then
+                        isEffective = true
+                        break
+                    end
+                end
+            end
+            if isEffective then
+                break
+            end
+        end
+        if isEffective then
+            P4HasBeenRead.effectiveMedias[id] = true
+        end
+    end
+end
+Events.OnInitRecordedMedia.Add(P4HasBeenRead.OnInitRecordedMedia)
+
 -- *****************************************************************************
 -- * Textures
 -- *****************************************************************************
