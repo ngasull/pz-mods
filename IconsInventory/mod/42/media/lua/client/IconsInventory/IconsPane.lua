@@ -506,13 +506,12 @@ function IconsPane:onMouseDoubleClick(x, y)
 end
 
 function IconsPane:onMouseWheel(del)
-    if isShiftKeyDown() then
-        return self.native:onMouseWheel(del)
-    else
-        if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
-        self.smoothScrollTargetY = self:getYScroll() - (del * M.ItemIcon.cellSize)
-        return true;
-    end
+    if self.parent.isCollapsed then return false end
+    if self.parent:isCycleContainerKeyDown() then return false end
+
+    if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
+    self.smoothScrollTargetY = self:getYScroll() - (del * M.ItemIcon.cellSize)
+    return true;
 end
 
 -- Copy/Pastadapted from ISInventoryPane
