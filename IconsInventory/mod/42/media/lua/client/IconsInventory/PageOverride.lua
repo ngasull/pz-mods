@@ -39,6 +39,7 @@ local function initPage(self)
     if prevPane then
         self._IconsInventory:setY(prevPane:getY())
         self._IconsInventory:setVisible(prevPane:isVisible())
+        self._IconsInventory:setEnabled(prevPane:isEnabled())
     end
 end
 
@@ -109,6 +110,7 @@ local function switchToList(self)
         self:removeChild(self._IconsInventory)
         self._IconsInventory:setVisible(false)
         self._IconsInventory:removeFromUIManager()
+        self._IconsInventory:setEnabled(false)
 
         if self.inventoryPane.toolRender then
             self.inventoryPane.toolRender:setOwner(self.inventoryPane)
@@ -129,6 +131,7 @@ local function switchToIcons(self)
         self.inventoryPane:removeFromUIManager()
 
         self._IconsInventory:setVisible(true)
+        self._IconsInventory:setEnabled(true)
         self._IconsInventory:refreshContainer()
         self:addChild(self._IconsInventory)
     end

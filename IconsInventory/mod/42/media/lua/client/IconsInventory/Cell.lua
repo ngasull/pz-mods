@@ -37,6 +37,11 @@ function Cell:getStackSize()
     return #self.stack.items - 1
 end
 
+-- Gets the matching object in vanilla list
+function Cell:getListItem()
+    return self.category == self and self.stack or self.item
+end
+
 function Cell:isCategory()
     return self.category == self
 end
@@ -45,8 +50,12 @@ function Cell:isEquipped()
     return self.player:isEquipped(self.item)
 end
 
+function Cell:isInEquippedGroup()
+    return self.stack.equipped
+end
+
 function Cell:isInHotbar()
-    local hotbar = not self:isEquipped() and getPlayerHotbar(self.player:getIndex());
+    local hotbar = not self.player:isEquipped(self.item) and getPlayerHotbar(self.player:getIndex());
     return hotbar and hotbar:isInHotbar(self.item) or false
 end
 

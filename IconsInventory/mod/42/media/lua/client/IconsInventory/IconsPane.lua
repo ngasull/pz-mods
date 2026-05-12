@@ -3,6 +3,24 @@ local M = require("IconsInventory/mod")
 local function True() return true end
 local function False() return false end
 
+-- Directly from ISInventoryPane
+local function isSelectAllPossible(page)
+    if not page then return false end
+    if not page:isVisible() then return false end
+    if page.isCollapsed then return false end
+    if not page:isMouseOver() then return false end
+    -- for _, v in pairs(page.inventoryPane.selected) do
+    --     return true
+    -- end
+    return true
+end
+
+---@param page ISInventoryPage
+---@return IconsInventory_ISInventoryPageOverride
+local function getTheOtherPage(page)
+    return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
+end
+
 ---@class IconsInventory_IconsPane: ISPanel
 ---@field parent IconsInventory_ISInventoryPageOverride
 ---@field native IconsInventory_ISInventoryPaneOverride
@@ -267,6 +285,22 @@ function IconsPane:update()
         if self.native.toolRender then
             self.native.toolRender:setOwner(self)
         end
+    end
+
+    if isCtrlKeyDown() and isSelectAllPossible(self.parent) then
+        getCore():setIsSelectingAll(true)
+        if isKeyDown(Keyboard.KEY_A) then
+            table.wipe(self.native.selected)
+            for _, row in ipairs(self.grid.cells) do
+                for _, cell in ipairs(row) do
+                    if not (cell:isInEquippedGroup() or cell:isInHotbar()) then
+                        self.native.selected[cell.index] = cell:getListItem()
+                    end
+                end
+            end
+        end
+    else
+        getCore():setIsSelectingAll(isCtrlKeyDown() and isSelectAllPossible(getTheOtherPage(self.parent)))
     end
 
     if self.native.doController and self.native.toolRender and self.native.toolRender.anchorBottomLeft then
