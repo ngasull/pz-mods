@@ -1,4 +1,7 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
+local IconsPane = require("IconsInventory/IconsPane")
+local ItemIcon = require("IconsInventory/ItemIcon")
+local BetterContainers = require("IconsInventory/integration/BetterContainers")
 
 ---@param self ISInventoryPage
 ---@return IconsInventory_ISInventoryPageOverride
@@ -33,7 +36,7 @@ local Override = {}
 ---@param self IconsInventory_ISInventoryPageOverride
 local function initPage(self)
     local prevPane = self._IconsInventory
-    self._IconsInventory = M.IconsPane.new(self)
+    self._IconsInventory = IconsPane.new(self)
     self:addChild(self._IconsInventory)
 
     if prevPane then
@@ -84,7 +87,7 @@ function Override:update()
         end
     end
 
-    M.BC.stealBetterSearch(self)
+    BetterContainers.stealBetterSearch(self)
 end
 
 function Override:prerender()
@@ -286,10 +289,10 @@ function Override:onJoypadDown(button)
         local row, col = pane.grid:locateCell(pane.focusedCell)
 
         if row and col then
-            M.IconsPane.stubContextMenuXY(
+            IconsPane.stubContextMenuXY(
                 function()
-                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * M.ItemIcon.cellSize
-                    local y = pane:getAbsoluteY() + pane.grid.y + row * M.ItemIcon.cellSize + pane.native:getYScroll()
+                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * ItemIcon.cellSize
+                    local y = pane:getAbsoluteY() + pane.grid.y + row * ItemIcon.cellSize + pane.native:getYScroll()
                     return x, y
                 end,
                 vanilla.onJoypadDown, self, button
@@ -316,17 +319,12 @@ local function install()
         vanilla[k] = ISInventoryPage[k]
         ISInventoryPage[k] = v
     end
-
-    M.cleanPage = function()
-        for k, v in pairs(vanilla) do
-            ISInventoryPage[k] = v
-        end
-    end
 end
 
 local isReload
-if M.cleanPage then
-    M.cleanPage()
+local Prev = require("IconsInventory/PageOverride")
+if Prev then
+    Prev._clean()
     isReload = true
 end
 
@@ -360,8 +358,16 @@ local apply = function()
     end
 end
 
-M.addApply(apply)
+mod.addApply(apply)
 if isReload then
     apply()
     isReload = false
 end
+
+return {
+    _clean = function()
+        for k, v in pairs(vanilla) do
+            ISInventoryPage[k] = v
+        end
+    end
+}

@@ -1,7 +1,7 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
 
-if M.isDebugEnabled then
-    local debugOption = M.options:addTickBox("debug", "Debug", false)
+if mod.isDebugEnabled then
+    local debugOption = mod.options:addTickBox("debug", "Debug", false)
 
     local w = 450
     local h = 120
@@ -28,7 +28,7 @@ if M.isDebugEnabled then
 
         local th = self:titleBarHeight()
         local rh = self:resizeWidgetHeight()
-        local btn = ISButton:new(0, th, w, h - th - rh, "Reload", self, M.reload)
+        local btn = ISButton:new(0, th, w, h - th - rh, "Reload", self, mod.reload)
 
         self:addChild(btn)
     end
@@ -48,5 +48,5 @@ if M.isDebugEnabled then
     end
 
     Events.OnGameStart.Add(init)
-    M.addApply(init)
+    mod.addApply(init)
 end

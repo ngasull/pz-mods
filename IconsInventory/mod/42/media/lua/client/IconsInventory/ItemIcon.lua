@@ -1,4 +1,4 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
 
 local iconSize ---@type integer
 local padding ---@type integer
@@ -49,7 +49,6 @@ end
 
 ---@class IconsInventory_ItemIcon
 local ItemIcon = {}
-M.ItemIcon = ItemIcon
 
 ---@param cell IconsInventory_Cell
 ---@param xoff number
@@ -129,7 +128,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
         )
 
         local displayNumbers = false
-        if not isBeingCooked and isNourishing and M.option.hungerMode:getValue() == M.option.hungerMode_numbers
+        if not isBeingCooked and isNourishing and mod.option.hungerMode:getValue() == mod.option.hungerMode_numbers
             and not item:isSpice()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
         then
@@ -281,7 +280,9 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     end
 
     -- Integration
-    M.P4HasBeenRead.renderdetails(cell, xoff, yoff)
+    -- Lazy for now (module resolution)
+    local P4HasBeenRead = require("IconsInventory/integration/P4HasBeenRead")
+    P4HasBeenRead.renderdetails(cell, xoff, yoff)
 end
 
 ---@param cell IconsInventory_Cell
@@ -383,3 +384,5 @@ end
 refreshResolution()
 -- ! -- Not reliably called
 -- Events.OnResolutionChange.Add(refreshResolution)
+
+return ItemIcon

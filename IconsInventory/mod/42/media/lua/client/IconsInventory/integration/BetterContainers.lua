@@ -1,6 +1,4 @@
-local M = require("IconsInventory/mod")
-
-M.BC = {}
+local BetterContainers = {}
 
 ---@param page IconsInventory_ISInventoryPageOverride
 local function removeBetterSearch(page)
@@ -16,7 +14,7 @@ local function removeBetterSearch(page)
 end
 
 ---@param page IconsInventory_ISInventoryPageOverride
-function M.BC.stealBetterSearch(page)
+function BetterContainers.stealBetterSearch(page)
     local pane = page._IconsInventory
     local native = page.inventoryPane
 
@@ -51,3 +49,5 @@ function M.BC.stealBetterSearch(page)
         page._IconsInventory_bcSearchStrip:setX(pane.x)
     end
 end
+
+return BetterContainers

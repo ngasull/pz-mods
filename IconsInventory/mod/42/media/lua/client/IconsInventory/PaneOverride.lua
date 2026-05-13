@@ -1,4 +1,4 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
 
 ---@class IconsInventory_ISInventoryPane: ISInventoryPane
 local vanilla = {}
@@ -64,13 +64,16 @@ local function install()
         vanilla[k] = ISInventoryPane[k]
         ISInventoryPane[k] = v
     end
+end
 
-    M.cleanPane = function()
+local Prev = require("IconsInventory/PaneOverride")
+if Prev then Prev._clean() end
+install()
+
+return {
+    _clean = function()
         for k, v in pairs(vanilla) do
             ISInventoryPane[k] = v
         end
     end
-end
-
-if M.cleanPane then M.cleanPane() end
-install()
+}

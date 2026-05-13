@@ -1,4 +1,4 @@
-local M = require("IconsInventory/mod")
+local ItemIcon = require("IconsInventory/ItemIcon")
 
 ---@class IconsInventory_GridLayout<T>
 ---@field groupSpace number
@@ -11,7 +11,6 @@ local M = require("IconsInventory/mod")
 ---@field _rows? T[][]
 local GridLayout = {}
 GridLayout.__index = GridLayout
-M.GridLayout = GridLayout
 
 ---@param groupSpace number
 function GridLayout.new(groupSpace)
@@ -32,11 +31,11 @@ function GridLayout:hitTest(mx, my)
     mx = mx - self.x
     my = my - self.y
     if mx >= 0 and my >= 0 then
-        local candidateColumn = math.floor(mx / M.ItemIcon.cellSize)
+        local candidateColumn = math.floor(mx / ItemIcon.cellSize)
 
         if candidateColumn < self.gridWidth then
             for i, group in ipairs(self.cells) do
-                local candidateRow = math.floor(my / M.ItemIcon.cellSize)
+                local candidateRow = math.floor(my / ItemIcon.cellSize)
                 local groupRowCount = math.ceil(#group / self.gridWidth)
                 if candidateRow < groupRowCount then
                     local candidate = candidateRow * self.gridWidth + candidateColumn
@@ -46,7 +45,7 @@ function GridLayout:hitTest(mx, my)
                         return
                     end
                 end
-                my = my - groupRowCount * M.ItemIcon.cellSize - self.groupSpace
+                my = my - groupRowCount * ItemIcon.cellSize - self.groupSpace
             end
         end
     end
@@ -59,7 +58,7 @@ function GridLayout:set(cells, gridWidth)
     self._rows = nil
 
     self.gridWidth = math.max(1, gridWidth)
-    self.width = self.gridWidth * M.ItemIcon.cellSize
+    self.width = self.gridWidth * ItemIcon.cellSize
 
     self.height = (#self.cells - 1) * self.groupSpace
     for _, group in ipairs(self.cells) do
@@ -98,7 +97,7 @@ end
 
 ---@param nRows integer
 function GridLayout:calcGroupHeight(nRows)
-    return M.ItemIcon.cellSize * math.ceil(nRows / self.gridWidth)
+    return ItemIcon.cellSize * math.ceil(nRows / self.gridWidth)
 end
 
 ---@param row integer
@@ -126,3 +125,5 @@ function GridLayout:locateCell(cell)
         end
     end
 end
+
+return GridLayout

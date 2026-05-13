@@ -1,4 +1,4 @@
-local M = require("IconsInventory/mod")
+local Cell = require("IconsInventory/Cell")
 
 ---@class IconsInventory_CellPool
 ---@field store table<InventoryItem|ContextMenuItemStack, IconsInventory_Cell>
@@ -6,7 +6,6 @@ local M = require("IconsInventory/mod")
 ---@field reused IconsInventory_Cell[]
 local CellPool = {}
 CellPool.__index = CellPool
-M.CellPool = CellPool
 
 function CellPool.new()
     ---@type IconsInventory_CellPool
@@ -32,8 +31,10 @@ function CellPool:get(item, pane, index, stack, category)
         self.store[key] = nil
         cell:init(pane, index, stack, category)
     else
-        cell = M.Cell.new(item, pane, index, stack, category)
+        cell = Cell.new(item, pane, index, stack, category)
     end
     self.nextStore[key] = cell
     return cell
 end
+
+return CellPool

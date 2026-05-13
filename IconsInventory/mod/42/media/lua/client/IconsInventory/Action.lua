@@ -1,12 +1,13 @@
 require "TimedActions/ISInventoryTransferAction"
 
-local M = require("IconsInventory/mod")
 
 ---@type table<InventoryItem, ISInventoryTransferAction>
 local queuedTransfers = setmetatable({}, { __mode = "kv" })
 
+local Action = {}
+
 ---@param item InventoryItem
-M.isQueuedForTransfer = function(item)
+Action.isQueuedForTransfer = function(item)
     local action = queuedTransfers[item]
     if not action then return false end
     if item:getJobDelta() > 0 then
@@ -84,16 +85,19 @@ local function install()
         ActionVanilla[k] = ISInventoryTransferAction[k]
         ISInventoryTransferAction[k] = v
     end
+end
 
-    M.cleanAction = function()
-        for k, v in pairs(QueueVanilla) do
-            ISTimedActionQueue[k] = v
-        end
-        for k, v in pairs(ActionVanilla) do
-            ISInventoryTransferAction[k] = v
-        end
+Action._clean = function()
+    for k, v in pairs(QueueVanilla) do
+        ISTimedActionQueue[k] = v
+    end
+    for k, v in pairs(ActionVanilla) do
+        ISInventoryTransferAction[k] = v
     end
 end
 
-if M.cleanAction then M.cleanAction() end
+local Prev = require("IconsInventory/Action")
+if Prev then Prev._clean() end
 install()
+
+return Action

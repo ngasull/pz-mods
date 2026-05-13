@@ -1,4 +1,7 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
+local GridLayout = require("IconsInventory/GridLayout")
+local CellPool = require("IconsInventory/CellPool")
+local ItemIcon = require("IconsInventory/ItemIcon")
 
 local function True() return true end
 local function False() return false end
@@ -36,7 +39,6 @@ end
 ---@field _fakeY? number
 local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
-M.IconsPane = IconsPane
 
 ---@param emptyPage IconsInventory_ISInventoryPageOverride
 function IconsPane.new(emptyPage)
@@ -47,26 +49,17 @@ function IconsPane.new(emptyPage)
     self.anchorRight = true
     self.anchorTop = true
 
-    self.grid = M.GridLayout.new(2 * M.ItemIcon.padding)
+    self.grid = GridLayout.new(2 * ItemIcon.padding)
     self.expanded = {}
-    self.pool = M.CellPool:new()
-    self.minXPadding = 2 * M.ItemIcon.padding
-    self.yPadding = M.ItemIcon.padding
+    self.pool = CellPool:new()
+    self.minXPadding = 2 * ItemIcon.padding
+    self.yPadding = ItemIcon.padding
 
     return self
 end
 
 function IconsPane:createChildren()
     self:addScrollBars();
-end
-
----@param stack ContextMenuItemStack
-function IconsPane.isCollapsable(stack)
-    local stackSize = #stack.items - 1
-    return not stack.equipped and not stack.inHotbar and M.option.alwaysCollapseOver:getValue() > 1 and (
-        stackSize > M.option.alwaysCollapseOver:getValue()
-        or stackSize > 1 and stack.weight / stackSize < M.option.collapseItemsUnder:getValue()
-    )
 end
 
 function IconsPane:refreshContainer()
@@ -97,7 +90,7 @@ function IconsPane:refresh()
             table.insert(vanillaItems, stack)
             local category = self.pool:get(stack.items[1], self, #vanillaItems, stack)
 
-            if category:isCollapsed() or IconsPane.isCollapsable(stack) then
+            if category:isCollapsed() or category:isCollapsable() then
                 table.insert(cells, category)
             end
 
@@ -132,9 +125,9 @@ function IconsPane:refresh()
     end
 
     local maxWidth = self.width - 2 * self.minXPadding
-    local gridWidth = math.floor(maxWidth / M.ItemIcon.cellSize)
+    local gridWidth = math.floor(maxWidth / ItemIcon.cellSize)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
-        gridWidth = math.min(M.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
+        gridWidth = math.min(mod.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
     end
 
     self.grid:set(groups, gridWidth)
@@ -180,7 +173,7 @@ function IconsPane:renderBase()
     local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = self.yPadding * 2 + M.ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = self.yPadding * 2 + ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
@@ -192,8 +185,8 @@ function IconsPane:renderBase()
 
         for i, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
-                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * M.ItemIcon.cellSize
-                local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * M.ItemIcon.cellSize
+                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * ItemIcon.cellSize
+                local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * ItemIcon.cellSize
                 cell:render(x, y)
             end
         end
@@ -218,7 +211,7 @@ function IconsPane:renderDragged()
         end
     end
 
-    local cursorOffset = -M.ItemIcon.padding
+    local cursorOffset = -ItemIcon.padding
     -- Deduce scroll as draw functions automatically take it into account
     local centerX = getMouseX() - self:getAbsoluteX() - self:getXScroll() + cursorOffset
     local centerY = getMouseY() - self:getAbsoluteY() - self:getYScroll() + cursorOffset
@@ -498,7 +491,7 @@ function IconsPane:onRightMouseUp(x, y)
 
     if self.focusedCell then
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
-        handled = M.IconsPane.stubContextMenuXY(
+        handled = IconsPane.stubContextMenuXY(
             function()
                 local ctxX = self:getAbsoluteX() + x
                 local ctxY = self:getAbsoluteY() + y + self:getYScroll()
@@ -514,10 +507,10 @@ function IconsPane:onRightMouseUp(x, y)
         setJoypadFocus(self.native.player, context)
 
         local catOption = context:addOption(getText("IGUI_invpanel_Category"),
-            self, M.IconsPane.setSort, ISInventoryPane.itemSortByCatInc)
+            self, IconsPane.setSort, ISInventoryPane.itemSortByCatInc)
         local weightOption = context:addOption(
             getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending"),
-            self, M.IconsPane.setSort, ISInventoryPane.itemSortByWeightDesc)
+            self, IconsPane.setSort, ISInventoryPane.itemSortByWeightDesc)
 
         if self.native.itemSortFunc == ISInventoryPane.itemSortByCatInc then
             context:setOptionChecked(catOption, true)
@@ -544,7 +537,7 @@ function IconsPane:onMouseWheel(del)
     if self.parent:isCycleContainerKeyDown() then return false end
 
     if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
-    self.smoothScrollTargetY = self:getYScroll() - (del * M.ItemIcon.cellSize)
+    self.smoothScrollTargetY = self:getYScroll() - (del * ItemIcon.cellSize)
     return true;
 end
 
@@ -575,3 +568,5 @@ function IconsPane:onResize()
     ISPanel.onResize(self)
     self._dirty = true
 end
+
+return IconsPane

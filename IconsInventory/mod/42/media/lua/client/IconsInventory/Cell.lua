@@ -1,6 +1,8 @@
-local M = require("IconsInventory/mod")
+local mod = require("IconsInventory/mod")
+local Action = require("IconsInventory/Action")
+local ItemIcon = require("IconsInventory/ItemIcon")
 
----@class IconsInventory_Cell
+---@class IconsInventory_Cell: IconsInventory_ItemIcon
 ---@field pane IconsInventory_IconsPane
 ---@field item InventoryItem
 ---@field index integer
@@ -9,7 +11,6 @@ local M = require("IconsInventory/mod")
 ---@field player IsoPlayer
 local Cell = {}
 Cell.__index = Cell
-M.Cell = Cell
 
 ---@param item InventoryItem
 ---@param ... any
@@ -46,6 +47,14 @@ function Cell:isCategory()
     return self.category == self
 end
 
+function Cell:isCollapsable()
+    local stackSize = #self.stack.items - 1
+    return not self.stack.equipped and not self.stack.inHotbar and mod.option.alwaysCollapseOver:getValue() > 1 and (
+        stackSize > mod.option.alwaysCollapseOver:getValue()
+        or stackSize > 1 and self.stack.weight / stackSize < mod.option.collapseItemsUnder:getValue()
+    )
+end
+
 function Cell:isEquipped()
     return self.player:isEquipped(self.item)
 end
@@ -61,7 +70,7 @@ end
 
 function Cell:isCollapsed()
     if not self:isCategory() or self:getStackSize() < 2 then return false end
-    return not self.pane.expanded[self.stack.name] and M.IconsPane.isCollapsable(self.stack)
+    return not self.pane.expanded[self.stack.name] and self:isCollapsable()
 end
 
 function Cell:isFocused()
@@ -99,13 +108,13 @@ function Cell:isQueuedForTransfer()
     if self:isCategory() then
         if not self:isCollapsed() then return false end
         for _, item in ipairs(self.stack.items) do
-            if not M.isQueuedForTransfer(item) then
+            if not Action.isQueuedForTransfer(item) then
                 return false
             end
         end
         return true
     else
-        return M.isQueuedForTransfer(self.item)
+        return Action.isQueuedForTransfer(self.item)
     end
 end
 
@@ -116,7 +125,7 @@ end
 ---@param x number
 ---@param y number
 function Cell:render(x, y)
-    local cellSize = M.ItemIcon.cellSize
+    local cellSize = ItemIcon.cellSize
 
     self:drawBackground(x, y)
 
@@ -134,15 +143,15 @@ function Cell:render(x, y)
 
     if self:isCategory() then
         if self:isCollapsed() then
-            M.ItemIcon.drawBase(self, x, y)
-            M.ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()))
+            ItemIcon.drawBase(self, x, y)
+            ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()))
         else
-            M.ItemIcon.drawBase(self, x, y, 0.5)
-            M.ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()), 0.6)
+            ItemIcon.drawBase(self, x, y, 0.5)
+            ItemIcon.drawSubscript(self, x, y, tostring(self:getStackSize()), 0.6)
         end
     else
-        M.ItemIcon.drawBase(self, x, y)
-        M.ItemIcon.drawDetails(self, x, y)
+        ItemIcon.drawBase(self, x, y)
+        ItemIcon.drawDetails(self, x, y)
     end
 end
 
@@ -150,7 +159,7 @@ end
 ---@param x number
 ---@param y number
 function Cell:drawBackground(x, y)
-    local cellSize = M.ItemIcon.cellSize
+    local cellSize = ItemIcon.cellSize
     local item = self.item
     local native = self.pane.native
     local heat = (
@@ -216,3 +225,5 @@ function Cell:drawBackground(x, y)
         self.pane:drawRect(x, y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
     end
 end
+
+return Cell
