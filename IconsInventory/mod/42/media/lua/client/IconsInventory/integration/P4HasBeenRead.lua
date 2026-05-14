@@ -317,40 +317,38 @@ P4HasBeenRead.getRecipeResourceFullType = function(item, type)
     end
 end
 
----@param cell IconsInventory_Cell
----@param xoff number
----@param yoff number
-function P4HasBeenRead.renderdetails(cell, xoff, yoff)
+---@param self IconsInventory_Cell
+function P4HasBeenRead.renderdetails(self)
     if P4HasBeenRead.isInstalled then
         if not P4HasBeenRead.modData then
-            P4HasBeenRead.modData = cell.player:getModData().P4HasBeenRead
+            P4HasBeenRead.modData = self.player:getModData().P4HasBeenRead
             P4HasBeenRead.doNotAutoMark = P4HasBeenRead.modData.doNotAutoMark
         end
 
         P4HasBeenRead.recordedMediaResult = {}
-        P4HasBeenRead.setTextures(cell.player, cell.item)
+        P4HasBeenRead.setTextures(self.player, self.item)
 
-        local tex = cell.item:getTex()
+        local tex = self.item:getTex()
         if tex ~= nil then
             local halfPadding = ItemIcon.padding / 2
             local scaling = ItemIcon.scaling == 2 and 1.5 or 1 -- Looks really ugly when scaled x2
             if P4HasBeenRead.status and P4HasBeenRead.status ~= P4HasBeenRead.notCompletedTexture then
-                cell.pane:drawTextureScaled(P4HasBeenRead.status,
-                    xoff + halfPadding, yoff + ItemIcon.cellSize - halfPadding - 16 * scaling,
+                self.pane:drawTextureScaled(P4HasBeenRead.status,
+                    self.x + halfPadding, self.y + ItemIcon.cellSize - halfPadding - 16 * scaling,
                     P4HasBeenRead.status:getWidth() * scaling,
                     P4HasBeenRead.status:getHeight() * scaling,
                     1, 1, 1, 1)
             end
             if P4HasBeenRead.marking then
-                cell.pane:drawTextureScaled(P4HasBeenRead.marking,
-                    xoff + halfPadding + 10 * scaling, yoff + ItemIcon.cellSize - halfPadding - 10 * scaling,
+                self.pane:drawTextureScaled(P4HasBeenRead.marking,
+                    self.x + halfPadding + 10 * scaling, self.y + ItemIcon.cellSize - halfPadding - 10 * scaling,
                     P4HasBeenRead.marking:getWidth() * scaling,
                     P4HasBeenRead.marking:getHeight() * scaling,
                     1, 1, 1, 1)
             end
             if P4HasBeenRead.current then
-                cell.pane:drawTextureScaled(P4HasBeenRead.current,
-                    xoff + halfPadding, yoff + halfPadding,
+                self.pane:drawTextureScaled(P4HasBeenRead.current,
+                    self.x + halfPadding, self.y + halfPadding,
                     P4HasBeenRead.current:getWidth() * scaling,
                     P4HasBeenRead.current:getHeight() * scaling,
                     1, 1, 1, 1)

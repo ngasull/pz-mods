@@ -14,7 +14,7 @@ local subIconYPad ---@type number
 
 local ringGood = {} ---@type Texture[]
 local ringBad = {} ---@type Texture[]
-local ringSeparator
+local ringSeparator ---@type Texture
 local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
@@ -47,62 +47,167 @@ local function capture_drawProgressBar(self, x, y, w, h, f, fg)
     ringFromNative = fg.r > fg.g and ringBad or ringGood
 end
 
----@class IconsInventory_ItemIcon
+---@class IconsInventory_ItemIcon: IconsInventory_CellBase
 local ItemIcon = {}
 
----@param cell IconsInventory_Cell
----@param xoff number
----@param yoff number
----@param scale? number
-function ItemIcon.drawBase(cell, xoff, yoff, scale)
-    local size = (scale or 1) * iconSize
-    local center = (cellSize - size) / 2
+---@param x number
+---@param y number
+function ItemIcon:render(x, y)
+    self.x = x
+    self.y = y
 
-    -- Some icons are almost invisible (like Car keys)
-    cell.pane:drawTextureScaled(softBg, xoff + padding, yoff + padding,
-        iconSize, iconSize,
-        1, 0.2, 0.2, 0.2)
+    self:renderBackground()
 
-    ISInventoryItem.renderItemIcon(
-        cell.pane, cell.item,
-        xoff + center, yoff + center,
-        1, size, size
-    )
+    local job = self.item:getJobDelta()
+    if job > 0 and (not self:isCategory() or self:isCollapsed()) then
+        self:renderJob(job)
+    elseif self:isQueuedForTransfer() then
+        self:renderQueued()
+    end
+
+    if self:isCategory() then
+        self:renderStack()
+    else
+        self:renderDetails()
+    end
 end
 
----@param cell IconsInventory_Cell
-function ItemIcon.drawSubscript(cell, xoff, yoff, str, scale)
-    local size = (scale or 1) * iconSize
-    local offset = (iconSize - size) / 2
-    cell.pane:drawTextRight(
-        str,
-        xoff + cellSize - halfPadding - offset,
-        yoff + cellSize - halfPadding - fontSize - offset,
+-- See ISInventoryPane:renderdetails
+function ItemIcon:renderBackground()
+    local item = self.item
+    local native = self.pane.native
+    local heat = (
+        (instanceof(item, "Food") or instanceof(item, "DrainableComboItem")) and item:getHeat()
+    ) or item:getItemHeat()
+
+    if instanceof(item, 'InventoryItem') then
+        item:updateAge()
+    end
+    if instanceof(item, 'Clothing') then
+        item:updateWetness()
+    end
+
+    if self:isSelected() then
+        if native.dragging ~= nil and native.dragStarted then
+            if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
+                or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
+            then
+                self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
+            end
+        else
+            self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
+            self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
+        end
+    elseif self:isFocused() and heat == 1 and not self:isCleanUIHighlighted() then
+        if native.doController then
+            self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
+        else
+            self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
+        end
+    elseif native.highlightItem and native.highlightItem == item:getType() then
+        if not native.blinkAlpha then native.blinkAlpha = 0.5; end
+        self.pane:drawRect(self.x, self.y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1)
+        if not native.blinkAlphaIncrease then
+            native.blinkAlpha = native.blinkAlpha - 0.05 * (UIManager.getMillisSinceLastRender() / 33.3)
+            if native.blinkAlpha < 0 then
+                native.blinkAlpha = 0;
+                native.blinkAlphaIncrease = true
+            end
+        else
+            native.blinkAlpha = native.blinkAlpha + 0.05 * (UIManager.getMillisSinceLastRender() / 33.3)
+            if native.blinkAlpha > 0.5 then
+                native.blinkAlpha = 0.5;
+                native.blinkAlphaIncrease = false
+            end
+        end
+    elseif self:isCleanUIHighlighted() then
+        self.pane:drawRect(self.x, self.y, cellSize, cellSize, self:isFocused() and 0.45 or 0.3, 0.5, 0.3, 0.1)
+    elseif heat ~= 1 then
+        local alpha = self:isFocused() and 0.45 or 0.3
+        if heat > 1 then
+            self.pane:drawRect(self.x, self.y, cellSize, cellSize, alpha, math.abs(item:getInvHeat()), 0.0, 0.0)
+        else
+            self.pane:drawRect(self.x, self.y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
+        end
+    end
+
+    if native.doController and self:isFocused() then
+        self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.2, 1, 1, 1)
+    end
+
+    if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
+        self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
+    end
+end
+
+---@param delta number
+function ItemIcon:renderJob(delta)
+    self.pane:drawRect(self.x, self.y + (1 - delta) * cellSize, cellSize, delta * cellSize,
+        0.2, 0.4, 1.0, 0.3);
+end
+
+function ItemIcon:renderQueued()
+    local animDuration = 1000
+    local animDelta = math.fmod(getTimeInMillis(), animDuration) / animDuration;
+    local blinkStrength = 2 * math.abs(animDelta - 0.5)
+    self.pane:drawRect(self.x, self.y, cellSize, cellSize,
+        0.1 + blinkStrength * 0.05, 0.4, 1.0, 0.3);
+end
+
+-- Some icons are almost invisible (like Car keys)
+function ItemIcon:renderContrast()
+    self.pane:drawTexture(softBg, self.x + padding, self.y + padding, 1, 0.2, 0.2, 0.2)
+end
+
+function ItemIcon:renderStack()
+    local scaledIconSize = self:isCollapsed() and iconSize or 0.5 * iconSize
+    local scaledPadding = (cellSize - scaledIconSize) / 2
+    local scaledHalfPadding = scaledPadding / 2
+
+    self:renderContrast()
+
+    ISInventoryItem.renderItemIcon(
+        self.pane, self.item,
+        self.x + scaledPadding, self.y + scaledPadding,
+        1, scaledIconSize, scaledIconSize
+    )
+    self.pane:drawTextRight(
+        tostring(self:getStackSize()),
+        self.x + cellSize - scaledHalfPadding,
+        self.y + cellSize - scaledHalfPadding - fontSize,
         1, 1, 1, 1, UIFont.Small
     )
 end
 
----@param cell IconsInventory_Cell
-function ItemIcon.drawDetails(cell, xoff, yoff)
-    local item = cell.item
-    local ui = cell.pane
+function ItemIcon:renderDetails()
+    local item = self.item
+    local ui = self.pane
+
+    self:renderContrast()
+    ISInventoryItem.renderItemIcon(
+        ui, item,
+        self.x + padding, self.y + padding,
+        1, iconSize, iconSize
+    )
 
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
     local padBR = -4
-    if cell:isEquipped() then
+    if self:isEquipped() then
         padBR = padBR + 4
         ui:drawTextureScaled(equippedItemIcon,
-            xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            self.x + subIconRelPos - equippedIconSize - padBR,
+            self.y + subIconRelPos - equippedIconSize - subIconYPad + 1,
             equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
         padBR = padBR + equippedIconSize
     end
 
-    if cell:isInHotbar() then
+    if self:isInHotbar() then
         padBR = padBR + 4
         ui:drawTextureScaled(equippedInHotbar,
-            xoff + subIconRelPos - equippedIconSize - padBR, yoff + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            self.x + subIconRelPos - equippedIconSize - padBR,
+            self.y + subIconRelPos - equippedIconSize - subIconYPad + 1,
             equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
         padBR = padBR + equippedIconSize + 4
@@ -111,7 +216,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     if item:isBroken() then
         padBR = padBR + 4
         ui:drawTextureScaled(brokenItemIcon,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize,
             1, 1, 1, 1);
         padBR = padBR + subIconSize
@@ -123,7 +228,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             item:getScriptItem():isCantEat()
             or item:isBurnt()
             or item:isRotten()
-            or cell.player:isKnownPoison(item)
+            or self.player:isKnownPoison(item)
             or (item:isbDangerousUncooked() and not item:isCooked())
         )
 
@@ -137,8 +242,8 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             local str = tostring(math.floor(0.5 - item:getHungerChange() * 100))
             ui:drawTextRight(
                 str,
-                xoff + cellSize - halfPadding - padBR,
-                yoff + cellSize - halfPadding - fontSize,
+                self.x + cellSize - halfPadding - padBR,
+                self.y + cellSize - halfPadding - fontSize,
                 item:isFresh() and 0 or 0.75,
                 item:isFresh() and 1 or 0.75,
                 0,
@@ -150,16 +255,16 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
         if item:isFrozen() then
             padBR = padBR + 4
             ui:drawTextureScaled(frozenItemIcon,
-                xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
                 subIconSize, subIconSize,
                 1, 1, 1, 1);
             padBR = padBR + subIconSize
         end
 
-        if (item:isTainted() and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue()) or cell.player:isKnownPoison(item) then
+        if (item:isTainted() and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue()) or self.player:isKnownPoison(item) then
             padBR = padBR + 4
             ui:drawTextureScaled(poisonIcon,
-                xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
                 subIconSize,
                 1, 1, 1, 1);
             padBR = padBR + subIconSize
@@ -168,13 +273,13 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
                 padBR = padBR + 4
                 ISInventoryItem.renderItemIcon(
                     ui, maggots,
-                    xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                    self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
                     0.8, subIconSize, subIconSize)
                 padBR = padBR + subIconSize
             elseif not displayNumbers then
                 padBR = padBR + 4
                 ui:drawTextureScaled(clockIcon,
-                    xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+                    self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
                     subIconSize, subIconSize,
                     0.5, 0.75, 0.75, 0)
                 padBR = padBR + subIconSize
@@ -185,7 +290,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
             -- Remaining portion ring
             -- `getHungChange` is an internal value, `getHungerChange` is displayed value
             if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
-                ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getHungChange() / item:getBaseHunger())
+                ItemIcon:drawRing(ringGood, item:getHungChange() / item:getBaseHunger())
                 return
             end
 
@@ -199,16 +304,16 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     then
         padBR = padBR + 4
         ui:drawTextureScaled(wetIcon,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize,
             0.6, 0.0, 0.6, 1);
         padBR = padBR + subIconSize
     end
 
-    if ISInventoryPane:isLiteratureRead(cell.player, item) or item:hasBeenSeen(cell.player) or item:hasBeenHeard(cell.player) or cell.player:hasReadMap(item) then
+    if ISInventoryPane:isLiteratureRead(self.player, item) or item:hasBeenSeen(self.player) or item:hasBeenHeard(self.player) or self.player:hasReadMap(item) then
         padBR = padBR + 4
         ui:drawTextureScaled(getTexture("media/ui/Tick_Mark-10.png"),
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize, 1, 1, 1, 1);
         padBR = padBR + subIconSize
     end
@@ -218,7 +323,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     if fluidContainer ~= nil and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue() and (not fluidContainer:isEmpty()) and (fluidContainer:contains(Fluid.Bleach) or (fluidContainer:contains(Fluid.TaintedWater) and fluidContainer:getPoisonRatio() > 0.1)) then
         padBR = padBR + 4
         ui:drawTextureScaled(poisonIcon,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize,
             1, 1, 1, 1);
         padBR = padBR + subIconSize
@@ -227,18 +332,18 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     if item:isFavorite() then
         padBR = padBR + 4
         ui:drawTextureScaled(favoriteStar,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize,
             1, 1, 1, 1);
-    elseif item:isNoRecipes(cell.player) then
+    elseif item:isNoRecipes(self.player) then
         padBR = padBR + 4
         ui:drawTextureScaled(noFavoriteRecipeInputStar,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize, 1, 1, 1, 1);
-    elseif item:isFavouriteRecipeInput(cell.player) then
+    elseif item:isFavouriteRecipeInput(self.player) then
         padBR = padBR + 4
         ui:drawTextureScaled(favoriteRecipeInputStar,
-            xoff + subIconRelPos - subIconSize - padBR, yoff + subIconRelPos - subIconSize,
+            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize, 1, 1, 1, 1);
     end
 
@@ -247,7 +352,7 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
         and ItemIcon.bookNumber[item:getLvlSkillTrained()]
     if bookNumber then
         ui:drawTextRight(
-            bookNumber, xoff + cellSize - halfPadding, yoff + halfPadding,
+            bookNumber, self.x + cellSize - halfPadding, self.y + halfPadding,
             1, 1, 1, 0.7, UIFont.Small
         )
     end
@@ -259,88 +364,81 @@ function ItemIcon.drawDetails(cell, xoff, yoff)
     if not ItemConditionOverlay then -- Opt-out for this specific mod (keep literature)
         ISInventoryPane.drawText = noop
         ISInventoryPane.drawProgressBar = capture_drawProgressBar
-        cell.pane.native:drawItemDetails(item, 0, 0, 0)
+        self.pane.native:drawItemDetails(item, 0, 0, 0)
         ISInventoryPane.drawText = vanilla_drawText
         ISInventoryPane.drawProgressBar = vanilla_drawProgressBar
     end
 
     if fractionFromNative then
         if instanceof(item, "Drainable") and not item:hasTag(ItemTag.HIDE_REMAINING) then
-            ItemIcon.drawRingUses(cell, ringFromNative or ringGood, xoff, yoff, item:getCurrentUses(),
+            ItemIcon:drawRingUses(ringFromNative or ringGood, item:getCurrentUses(),
                 item:getMaxUses())
         else
-            ItemIcon.drawRing(cell, ringFromNative or ringGood, xoff, yoff, fractionFromNative)
+            ItemIcon:drawRing(ringFromNative or ringGood, fractionFromNative)
         end
     elseif item:getCategory() == "Literature" and item:getNumberOfPages() > 0 and item:getAlreadyReadPages() > 0 then
         local skillBook = SkillBook[item:getSkillTrained()]
-        if skillBook and cell.player:getPerkLevel(skillBook.perk) < item:getMaxLevelTrained()
+        if skillBook and self.player:getPerkLevel(skillBook.perk) < item:getMaxLevelTrained()
         then -- Not a skill book or player has level low enough to read it
-            ItemIcon.drawRing(cell, ringGood, xoff, yoff, item:getAlreadyReadPages() / item:getNumberOfPages())
+            ItemIcon:drawRing(ringGood, item:getAlreadyReadPages() / item:getNumberOfPages())
         end
     end
 
     -- Integration
     -- Lazy for now (module resolution)
     local P4HasBeenRead = require("IconsInventory/integration/P4HasBeenRead")
-    P4HasBeenRead.renderdetails(cell, xoff, yoff)
+    P4HasBeenRead.renderdetails(self)
 end
 
----@param cell IconsInventory_Cell
+---@param ui ISUIElement
+---@param tex Texture
+---@param centerX number
+---@param centerY number
+---@param angle number
+local function drawTextureAngle(ui, tex, centerX, centerY, angle)
+    -- DrawTextureAngle somehow doesn't take scroll into account
+    ui:DrawTextureAngle(tex, centerX + ui:getXScroll(), centerY + ui:getYScroll(), angle)
+end
+
 ---@param ring Texture[]
----@param xoff number
----@param yoff number
 ---@param fraction number
-function ItemIcon.drawRing(cell, ring, xoff, yoff, fraction)
+function ItemIcon:renderRing(ring, fraction)
     if fraction >= 1 then return false end
 
-    local centerX = xoff + halfPadding + ringRadius
-    local centerY = yoff + cellSize - ringRadius - halfPadding
+    local centerX = self.x + halfPadding + ringRadius
+    local centerY = self.y + cellSize - ringRadius - halfPadding
 
-    cell.pane:drawTextureScaled(ringBg,
+    self.pane:drawTextureScaled(ringBg,
         centerX - ringRadius, centerY - ringRadius,
         ringDiameter, ringDiameter,
         1)
 
     local angle = 0
     while fraction >= 0.25 do
-        ItemIcon.drawTextureAngle(cell, ring[#ringGood], centerX, centerY, angle)
+        drawTextureAngle(self.pane, ring[#ringGood], centerX, centerY, angle)
         fraction = fraction - 0.25
         angle = angle - 90
     end
 
     local step = math.floor(fraction * 4 * #ringGood + 0.499)
     if step > 0 then
-        ItemIcon.drawTextureAngle(cell, ring[step], centerX, centerY, angle)
+        drawTextureAngle(self.pane, ring[step], centerX, centerY, angle)
     end
     return true
 end
 
----@param cell IconsInventory_Cell
 ---@param ring Texture[]
----@param xoff number
----@param yoff number
 ---@param current number
 ---@param max number
-function ItemIcon.drawRingUses(cell, ring, xoff, yoff, current, max)
-    if ItemIcon.drawRing(cell, ring, xoff, yoff, current / max) and max < 20 then
-        local centerX = xoff + halfPadding + ringRadius
-        local centerY = yoff + cellSize - ringRadius - halfPadding
+function ItemIcon:renderRingUses(ring, current, max)
+    if ItemIcon:renderRing(ring, current / max) and max < 20 then
+        local centerX = self.x + halfPadding + ringRadius
+        local centerY = self.y + cellSize - ringRadius - halfPadding
         local step = 360 / max
         for i = 0, current - 1 do
-            ItemIcon.drawTextureAngle(cell, ringSeparator, centerX, centerY, -i * step)
+            drawTextureAngle(self.pane, ringSeparator, centerX, centerY, -i * step)
         end
     end
-end
-
----@param cell IconsInventory_Cell
----@param tex Texture
----@param centerX number
----@param centerY number
----@param angle number
-function ItemIcon.drawTextureAngle(cell, tex, centerX, centerY, angle)
-    local ui = cell.pane
-    -- DrawTextureAngle somehow doesn't take scroll into account
-    ui:DrawTextureAngle(tex, centerX + ui:getXScroll(), centerY + ui:getYScroll(), angle)
 end
 
 ItemIcon.bookNumber = {

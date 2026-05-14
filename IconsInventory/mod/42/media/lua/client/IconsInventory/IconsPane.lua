@@ -33,7 +33,7 @@ end
 ---@field expanded table<string, boolean>
 ---@field pool IconsInventory_CellPool
 ---@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
----@field _mouseOut? boolean
+---@field _mouseOut? IconsInventory_Cell
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
 ---@field _fakeY? number
