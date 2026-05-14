@@ -1,6 +1,6 @@
 local mod = require("IconsInventory/mod")
+local Cell = require("IconsInventory/Cell")
 local IconsPane = require("IconsInventory/IconsPane")
-local ItemIcon = require("IconsInventory/ItemIcon")
 local BetterContainers = require("IconsInventory/integration/BetterContainers")
 
 ---@param self ISInventoryPage
@@ -291,8 +291,8 @@ function Override:onJoypadDown(button)
         if row and col then
             IconsPane.stubContextMenuXY(
                 function()
-                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * ItemIcon.cellSize
-                    local y = pane:getAbsoluteY() + pane.grid.y + row * ItemIcon.cellSize + pane.native:getYScroll()
+                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * Cell.size
+                    local y = pane:getAbsoluteY() + pane.grid.y + row * Cell.size + pane.native:getYScroll()
                     return x, y
                 end,
                 vanilla.onJoypadDown, self, button

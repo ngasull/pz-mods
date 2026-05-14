@@ -1,8 +1,8 @@
 local mod = require("IconsInventory/mod")
 local Action = require("IconsInventory/Action")
-local ItemIcon = require("IconsInventory/ItemIcon")
+local CellRender = require("IconsInventory/CellRender")
 
----@class IconsInventory_Cell: IconsInventory_CellBase, IconsInventory_ItemIcon
+---@class IconsInventory_Cell: IconsInventory_CellBase, IconsInventory_CellRender
 
 ---@class IconsInventory_CellBase
 ---@field pane IconsInventory_IconsPane
@@ -16,16 +16,12 @@ local ItemIcon = require("IconsInventory/ItemIcon")
 ---@field y number
 local Cell = {}
 
+for k, v in pairs(CellRender) do Cell[k] = v end
+Cell.__index = Cell
+
 ---@param item InventoryItem
 ---@param ... any
 function Cell.new(item, ...)
-    if not Cell.__index then
-        for k, v in pairs(ItemIcon) do
-            Cell[k] = v
-        end
-        Cell.__index = Cell
-    end
-
     ---@type IconsInventory_Cell
     local self = setmetatable({}, Cell)
     self.item = item
@@ -132,5 +128,17 @@ end
 function Cell:isCleanUIHighlighted()
     return self.stack.matchesSearch
 end
+
+local function refreshResolution()
+    -- NB: Makes 2K render as 4K because PZ decides 2K text is at 4K size
+    Cell.scaling = math.max(1, math.min(2, math.floor(0.7 + getCore():getScreenHeight() / 1080)))
+    Cell.iconSize = 32 * Cell.scaling
+    Cell.padding = 4 * Cell.scaling
+    Cell.size = Cell.iconSize + 2 * Cell.padding
+end
+
+refreshResolution()
+-- ! -- Not reliably called
+-- Events.OnResolutionChange.Add(refreshResolution)
 
 return Cell

@@ -1,5 +1,6 @@
 local mod = require("IconsInventory/mod")
 
+local scaling ---@type integer
 local iconSize ---@type integer
 local padding ---@type integer
 local subIconSize ---@type integer
@@ -10,7 +11,7 @@ local ringDiameter ---@type integer
 local halfPadding ---@type number
 local cellSize ---@type  integer
 local subIconRelPos ---@type  number
-local subIconYPad ---@type number
+local dotIconYPad ---@type number
 
 local ringGood = {} ---@type Texture[]
 local ringBad = {} ---@type Texture[]
@@ -19,19 +20,55 @@ local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
+---@param Cell IconsInventory_Cell
+local function refreshDimensions(Cell)
+    if scaling == Cell.scaling then return end
+
+    scaling = Cell.scaling
+    iconSize = Cell.iconSize
+    padding = Cell.padding
+    cellSize = Cell.size
+
+    subIconSize = 8 * scaling
+    equippedIconSize = 7 * scaling
+    fontSize = 15 * scaling -- Estimated
+
+    ringRadius = 5 * scaling
+    ringDiameter = ringRadius * 2
+
+    halfPadding = padding / 2
+    subIconRelPos = 1.25 * padding + iconSize
+    dotIconYPad = (2 * ringRadius - subIconSize) / 2
+
+    local scalingStr = tostring(scaling)
+    for i = 1, 16 do
+        ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-good-" .. tostring(i) .. ".png")
+        ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-bad-" .. tostring(i) .. ".png")
+    end
+    ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-separator.png")
+end
+
 -- Added by Icons Inventory
 local wetIcon = getTexture("media/ui/Entity/SlotStatus/wet_24.png")
 local clockIcon = getTexture("media/ui/speedControls/Wait_Off.png")
 local maggots = InventoryItem.new("", "", "Maggots", "Item_Insect_Maggots")
 
-local equippedItemIcon = getTexture("media/ui/icon.png")
+local equippedIcon = getTexture("media/ui/icon.png")
 local equippedInHotbar = getTexture("media/ui/iconInHotbar.png")
-local brokenItemIcon = getTexture("media/ui/icon_broken.png")
-local frozenItemIcon = getTexture("media/ui/icon_frozen.png")
+local brokenIcon = getTexture("media/ui/icon_broken.png")
+local frozenIcon = getTexture("media/ui/icon_frozen.png")
 local poisonIcon = getTexture("media/ui/SkullPoison.png")
 local favoriteStar = getTexture("media/ui/FavoriteStar.png")
 local noFavoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/nocraft.png")
 local favoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/craftok.png")
+
+local bookNumberByLvl = {
+    [1] = "I",
+    [3] = "II",
+    [5] = "III",
+    [7] = "IV",
+    [9] = "V",
+}
 
 local function noop() end
 local vanilla_drawText = ISInventoryPane.drawText
@@ -47,12 +84,13 @@ local function capture_drawProgressBar(self, x, y, w, h, f, fg)
     ringFromNative = fg.r > fg.g and ringBad or ringGood
 end
 
----@class IconsInventory_ItemIcon: IconsInventory_CellBase
-local ItemIcon = {}
+---@class IconsInventory_CellRender: IconsInventory_CellBase
+local CellRender = {}
 
 ---@param x number
 ---@param y number
-function ItemIcon:render(x, y)
+function CellRender:render(x, y)
+    refreshDimensions(self)
     self.x = x
     self.y = y
 
@@ -73,7 +111,7 @@ function ItemIcon:render(x, y)
 end
 
 -- See ISInventoryPane:renderdetails
-function ItemIcon:renderBackground()
+function CellRender:renderBackground()
     local item = self.item
     local native = self.pane.native
     local heat = (
@@ -141,12 +179,12 @@ function ItemIcon:renderBackground()
 end
 
 ---@param delta number
-function ItemIcon:renderJob(delta)
+function CellRender:renderJob(delta)
     self.pane:drawRect(self.x, self.y + (1 - delta) * cellSize, cellSize, delta * cellSize,
         0.2, 0.4, 1.0, 0.3);
 end
 
-function ItemIcon:renderQueued()
+function CellRender:renderQueued()
     local animDuration = 1000
     local animDelta = math.fmod(getTimeInMillis(), animDuration) / animDuration;
     local blinkStrength = 2 * math.abs(animDelta - 0.5)
@@ -155,11 +193,11 @@ function ItemIcon:renderQueued()
 end
 
 -- Some icons are almost invisible (like Car keys)
-function ItemIcon:renderContrast()
+function CellRender:renderContrast()
     self.pane:drawTexture(softBg, self.x + padding, self.y + padding, 1, 0.2, 0.2, 0.2)
 end
 
-function ItemIcon:renderStack()
+function CellRender:renderStack()
     local scaledIconSize = self:isCollapsed() and iconSize or 0.5 * iconSize
     local scaledPadding = (cellSize - scaledIconSize) / 2
     local scaledHalfPadding = scaledPadding / 2
@@ -179,7 +217,7 @@ function ItemIcon:renderStack()
     )
 end
 
-function ItemIcon:renderDetails()
+function CellRender:renderDetails()
     local item = self.item
     local ui = self.pane
 
@@ -195,9 +233,9 @@ function ItemIcon:renderDetails()
     local padBR = -4
     if self:isEquipped() then
         padBR = padBR + 4
-        ui:drawTextureScaled(equippedItemIcon,
+        ui:drawTextureScaled(equippedIcon,
             self.x + subIconRelPos - equippedIconSize - padBR,
-            self.y + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            self.y + subIconRelPos - equippedIconSize - dotIconYPad + 1,
             equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
         padBR = padBR + equippedIconSize
@@ -207,7 +245,7 @@ function ItemIcon:renderDetails()
         padBR = padBR + 4
         ui:drawTextureScaled(equippedInHotbar,
             self.x + subIconRelPos - equippedIconSize - padBR,
-            self.y + subIconRelPos - equippedIconSize - subIconYPad + 1,
+            self.y + subIconRelPos - equippedIconSize - dotIconYPad + 1,
             equippedIconSize, equippedIconSize,
             1, 1, 1, 1);
         padBR = padBR + equippedIconSize + 4
@@ -215,7 +253,7 @@ function ItemIcon:renderDetails()
 
     if item:isBroken() then
         padBR = padBR + 4
-        ui:drawTextureScaled(brokenItemIcon,
+        ui:drawTextureScaled(brokenIcon,
             self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
             subIconSize, subIconSize,
             1, 1, 1, 1);
@@ -254,7 +292,7 @@ function ItemIcon:renderDetails()
 
         if item:isFrozen() then
             padBR = padBR + 4
-            ui:drawTextureScaled(frozenItemIcon,
+            ui:drawTextureScaled(frozenIcon,
                 self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
                 subIconSize, subIconSize,
                 1, 1, 1, 1);
@@ -290,7 +328,7 @@ function ItemIcon:renderDetails()
             -- Remaining portion ring
             -- `getHungChange` is an internal value, `getHungerChange` is displayed value
             if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
-                ItemIcon:drawRing(ringGood, item:getHungChange() / item:getBaseHunger())
+                self:renderRing(ringGood, item:getHungChange() / item:getBaseHunger())
                 return
             end
 
@@ -349,7 +387,7 @@ function ItemIcon:renderDetails()
 
     local bookNumber = item:getCategory() == "Literature"
         and item:getLvlSkillTrained() > -1
-        and ItemIcon.bookNumber[item:getLvlSkillTrained()]
+        and bookNumberByLvl[item:getLvlSkillTrained()]
     if bookNumber then
         ui:drawTextRight(
             bookNumber, self.x + cellSize - halfPadding, self.y + halfPadding,
@@ -371,16 +409,16 @@ function ItemIcon:renderDetails()
 
     if fractionFromNative then
         if instanceof(item, "Drainable") and not item:hasTag(ItemTag.HIDE_REMAINING) then
-            ItemIcon:drawRingUses(ringFromNative or ringGood, item:getCurrentUses(),
+            self:renderRingUses(ringFromNative or ringGood, item:getCurrentUses(),
                 item:getMaxUses())
         else
-            ItemIcon:drawRing(ringFromNative or ringGood, fractionFromNative)
+            self:renderRing(ringFromNative or ringGood, fractionFromNative)
         end
     elseif item:getCategory() == "Literature" and item:getNumberOfPages() > 0 and item:getAlreadyReadPages() > 0 then
         local skillBook = SkillBook[item:getSkillTrained()]
         if skillBook and self.player:getPerkLevel(skillBook.perk) < item:getMaxLevelTrained()
         then -- Not a skill book or player has level low enough to read it
-            ItemIcon:drawRing(ringGood, item:getAlreadyReadPages() / item:getNumberOfPages())
+            self:renderRing(ringGood, item:getAlreadyReadPages() / item:getNumberOfPages())
         end
     end
 
@@ -402,7 +440,7 @@ end
 
 ---@param ring Texture[]
 ---@param fraction number
-function ItemIcon:renderRing(ring, fraction)
+function CellRender:renderRing(ring, fraction)
     if fraction >= 1 then return false end
 
     local centerX = self.x + halfPadding + ringRadius
@@ -430,8 +468,8 @@ end
 ---@param ring Texture[]
 ---@param current number
 ---@param max number
-function ItemIcon:renderRingUses(ring, current, max)
-    if ItemIcon:renderRing(ring, current / max) and max < 20 then
+function CellRender:renderRingUses(ring, current, max)
+    if self:renderRing(ring, current / max) and max < 20 then
         local centerX = self.x + halfPadding + ringRadius
         local centerY = self.y + cellSize - ringRadius - halfPadding
         local step = 360 / max
@@ -441,46 +479,4 @@ function ItemIcon:renderRingUses(ring, current, max)
     end
 end
 
-ItemIcon.bookNumber = {
-    [1] = "I",
-    [3] = "II",
-    [5] = "III",
-    [7] = "IV",
-    [9] = "V",
-}
-
-local function refreshResolution()
-    -- NB: Makes 2K render as 4K because PZ decides 2K text is at 4K size
-    local scaling = math.max(1, math.min(2, math.floor(0.7 + getCore():getScreenHeight() / 1080)))
-    iconSize = 32 * scaling
-    padding = 4 * scaling
-    subIconSize = 8 * scaling
-    equippedIconSize = 7 * scaling
-    fontSize = 15 * scaling -- Estimated
-
-    ringRadius = 5 * scaling
-    ringDiameter = ringRadius * 2
-
-    halfPadding = padding / 2
-    cellSize = iconSize + 2 * padding
-    subIconRelPos = 1.25 * padding + iconSize
-    subIconYPad = (2 * ringRadius - subIconSize) / 2
-
-    ItemIcon.scaling = scaling
-    ItemIcon.cellSize = cellSize
-    ItemIcon.iconSize = iconSize
-    ItemIcon.padding = padding
-
-    local scalingStr = tostring(scaling)
-    for i = 1, 16 do
-        ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-good-" .. tostring(i) .. ".png")
-        ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-bad-" .. tostring(i) .. ".png")
-    end
-    ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-separator.png")
-end
-
-refreshResolution()
--- ! -- Not reliably called
--- Events.OnResolutionChange.Add(refreshResolution)
-
-return ItemIcon
+return CellRender

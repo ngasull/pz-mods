@@ -1,7 +1,7 @@
 local mod = require("IconsInventory/mod")
 local GridLayout = require("IconsInventory/GridLayout")
+local Cell = require("IconsInventory/Cell")
 local CellPool = require("IconsInventory/CellPool")
-local ItemIcon = require("IconsInventory/ItemIcon")
 
 local function True() return true end
 local function False() return false end
@@ -49,11 +49,11 @@ function IconsPane.new(emptyPage)
     self.anchorRight = true
     self.anchorTop = true
 
-    self.grid = GridLayout.new(2 * ItemIcon.padding)
+    self.grid = GridLayout.new(2 * Cell.padding)
     self.expanded = {}
     self.pool = CellPool:new()
-    self.minXPadding = 2 * ItemIcon.padding
-    self.yPadding = ItemIcon.padding
+    self.minXPadding = 2 * Cell.padding
+    self.yPadding = Cell.padding
 
     return self
 end
@@ -125,7 +125,7 @@ function IconsPane:refresh()
     end
 
     local maxWidth = self.width - 2 * self.minXPadding
-    local gridWidth = math.floor(maxWidth / ItemIcon.cellSize)
+    local gridWidth = math.floor(maxWidth / Cell.size)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
         gridWidth = math.min(mod.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
     end
@@ -173,7 +173,7 @@ function IconsPane:renderBase()
     local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = self.yPadding * 2 + ItemIcon.cellSize * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = self.yPadding * 2 + Cell.size * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
@@ -185,8 +185,8 @@ function IconsPane:renderBase()
 
         for i, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
-                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * ItemIcon.cellSize
-                local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * ItemIcon.cellSize
+                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * Cell.size
+                local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * Cell.size
                 cell:render(x, y)
             end
         end
@@ -211,7 +211,7 @@ function IconsPane:renderDragged()
         end
     end
 
-    local cursorOffset = -ItemIcon.padding
+    local cursorOffset = -Cell.padding
     -- Deduce scroll as draw functions automatically take it into account
     local centerX = getMouseX() - self:getAbsoluteX() - self:getXScroll() + cursorOffset
     local centerY = getMouseY() - self:getAbsoluteY() - self:getYScroll() + cursorOffset
@@ -537,7 +537,7 @@ function IconsPane:onMouseWheel(del)
     if self.parent:isCycleContainerKeyDown() then return false end
 
     if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
-    self.smoothScrollTargetY = self:getYScroll() - (del * ItemIcon.cellSize)
+    self.smoothScrollTargetY = self:getYScroll() - (del * Cell.size)
     return true;
 end
 

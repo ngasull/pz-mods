@@ -56,7 +56,7 @@ mod.reload = function()
         "integration/P4HasBeenRead",
         "DebugPanel",
         "Action",
-        "ItemIcon",
+        "CellRender",
         "Cell",
         "CellPool",
         "GridLayout",

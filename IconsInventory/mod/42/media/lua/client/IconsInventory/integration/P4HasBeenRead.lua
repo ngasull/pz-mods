@@ -1,5 +1,5 @@
 local mod = require("IconsInventory/mod")
-local ItemIcon = require("IconsInventory/ItemIcon")
+local Cell = require("IconsInventory/Cell")
 
 -- [NOTICE]
 -- The source code below is the basicaly same as the P4HasBeenRead code for Build 42.15.
@@ -330,18 +330,18 @@ function P4HasBeenRead.renderdetails(self)
 
         local tex = self.item:getTex()
         if tex ~= nil then
-            local halfPadding = ItemIcon.padding / 2
-            local scaling = ItemIcon.scaling == 2 and 1.5 or 1 -- Looks really ugly when scaled x2
+            local halfPadding = Cell.padding / 2
+            local scaling = Cell.scaling == 2 and 1.5 or 1 -- Looks really ugly when scaled x2
             if P4HasBeenRead.status and P4HasBeenRead.status ~= P4HasBeenRead.notCompletedTexture then
                 self.pane:drawTextureScaled(P4HasBeenRead.status,
-                    self.x + halfPadding, self.y + ItemIcon.cellSize - halfPadding - 16 * scaling,
+                    self.x + halfPadding, self.y + Cell.size - halfPadding - 16 * scaling,
                     P4HasBeenRead.status:getWidth() * scaling,
                     P4HasBeenRead.status:getHeight() * scaling,
                     1, 1, 1, 1)
             end
             if P4HasBeenRead.marking then
                 self.pane:drawTextureScaled(P4HasBeenRead.marking,
-                    self.x + halfPadding + 10 * scaling, self.y + ItemIcon.cellSize - halfPadding - 10 * scaling,
+                    self.x + halfPadding + 10 * scaling, self.y + Cell.size - halfPadding - 10 * scaling,
                     P4HasBeenRead.marking:getWidth() * scaling,
                     P4HasBeenRead.marking:getHeight() * scaling,
                     1, 1, 1, 1)

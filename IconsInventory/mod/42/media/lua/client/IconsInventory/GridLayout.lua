@@ -1,4 +1,4 @@
-local ItemIcon = require("IconsInventory/ItemIcon")
+local Cell = require("IconsInventory/Cell")
 
 ---@class IconsInventory_GridLayout<T>
 ---@field groupSpace number
@@ -31,11 +31,11 @@ function GridLayout:hitTest(mx, my)
     mx = mx - self.x
     my = my - self.y
     if mx >= 0 and my >= 0 then
-        local candidateColumn = math.floor(mx / ItemIcon.cellSize)
+        local candidateColumn = math.floor(mx / Cell.size)
 
         if candidateColumn < self.gridWidth then
             for i, group in ipairs(self.cells) do
-                local candidateRow = math.floor(my / ItemIcon.cellSize)
+                local candidateRow = math.floor(my / Cell.size)
                 local groupRowCount = math.ceil(#group / self.gridWidth)
                 if candidateRow < groupRowCount then
                     local candidate = candidateRow * self.gridWidth + candidateColumn
@@ -45,7 +45,7 @@ function GridLayout:hitTest(mx, my)
                         return
                     end
                 end
-                my = my - groupRowCount * ItemIcon.cellSize - self.groupSpace
+                my = my - groupRowCount * Cell.size - self.groupSpace
             end
         end
     end
@@ -58,7 +58,7 @@ function GridLayout:set(cells, gridWidth)
     self._rows = nil
 
     self.gridWidth = math.max(1, gridWidth)
-    self.width = self.gridWidth * ItemIcon.cellSize
+    self.width = self.gridWidth * Cell.size
 
     self.height = (#self.cells - 1) * self.groupSpace
     for _, group in ipairs(self.cells) do
@@ -97,7 +97,7 @@ end
 
 ---@param nRows integer
 function GridLayout:calcGroupHeight(nRows)
-    return ItemIcon.cellSize * math.ceil(nRows / self.gridWidth)
+    return Cell.size * math.ceil(nRows / self.gridWidth)
 end
 
 ---@param row integer
