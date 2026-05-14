@@ -525,7 +525,7 @@ end
 function IconsPane:onMouseDoubleClick(x, y)
     if self.vscroll and self:isVScrollBarVisible() and self.vscroll:isMouseOver() then
         self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
-    elseif self.focusedCell then
+    elseif self.focusedCell and not self.focusedCell:isCategory() then
         self.native.previousMouseUp = self.focusedCell.index
         self.native.mouseOverOption = self.focusedCell.index
         self.native:onMouseDoubleClick(self.native:getMouseX(), self.native:getMouseY())
