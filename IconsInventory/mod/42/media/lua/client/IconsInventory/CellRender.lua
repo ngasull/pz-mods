@@ -96,13 +96,6 @@ function CellRender:render(x, y)
 
     self:renderBackground()
 
-    local job = self.item:getJobDelta()
-    if job > 0 and (not self:isCategory() or self:isCollapsed()) then
-        self:renderJob(job)
-    elseif self:isQueuedForTransfer() then
-        self:renderQueued()
-    end
-
     if self:isCategory() then
         self:renderStack()
     else
@@ -112,6 +105,7 @@ end
 
 -- See ISInventoryPane:renderdetails
 function CellRender:renderBackground()
+    local drewColoredBg = false
     local item = self.item
     local native = self.pane.native
     local heat = (
@@ -131,6 +125,7 @@ function CellRender:renderBackground()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
                 self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
+                drewColoredBg = true
             end
         else
             self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
@@ -160,6 +155,7 @@ function CellRender:renderBackground()
         end
     elseif self:isCleanUIHighlighted() then
         self.pane:drawRect(self.x, self.y, cellSize, cellSize, self:isFocused() and 0.45 or 0.3, 0.5, 0.3, 0.1)
+        drewColoredBg = true
     elseif heat ~= 1 then
         local alpha = self:isFocused() and 0.45 or 0.3
         if heat > 1 then
@@ -167,6 +163,7 @@ function CellRender:renderBackground()
         else
             self.pane:drawRect(self.x, self.y, cellSize, cellSize, alpha, 0.0, 0.0, math.abs(item:getInvHeat()))
         end
+        drewColoredBg = true
     end
 
     if native.doController and self:isFocused() then
@@ -176,6 +173,17 @@ function CellRender:renderBackground()
     if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
         self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
     end
+
+    local job = item:getJobDelta()
+    if job > 0 and (not self:isCategory() or self:isCollapsed()) then
+        self:renderJob(job)
+        drewColoredBg = true
+    elseif self:isQueuedForTransfer() then
+        self:renderQueued()
+        drewColoredBg = true
+    end
+
+    return drewColoredBg
 end
 
 ---@param delta number
@@ -194,7 +202,7 @@ end
 
 -- Some icons are almost invisible (like Car keys)
 function CellRender:renderContrast()
-    self.pane:drawTexture(softBg, self.x + padding, self.y + padding, 1, 0.2, 0.2, 0.2)
+    self.pane:drawTextureScaled(softBg, self.x + padding, self.y + padding, iconSize, iconSize, 1, 0.2, 0.2, 0.2)
 end
 
 function CellRender:renderStack()

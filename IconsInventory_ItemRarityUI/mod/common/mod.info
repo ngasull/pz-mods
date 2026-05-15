@@ -1,0 +1,11 @@
+id=IconsInventory_ItemRarityUI
+name=Icons Inventory Item Rarity UI Compatibility
+description=Integrates Item Rarity UI into Icons Iventory
+poster=poster.png
+icon=icon.png
+pzversion=42
+modversion=1.1
+versionMin=42.0.0
+require=IconsInventory,ItemRarityUI
+incompatible=
+author=ngasull

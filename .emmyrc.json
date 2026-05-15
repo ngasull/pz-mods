@@ -6,6 +6,7 @@
         ],
         "workspaceRoots": [
             "IconsInventory/mod/42/media/lua",
+            "IconsInventory_ItemRarityUI/mod/42/media/lua",
             "SideBySideContainers/mod/42/media/lua",
             "StaticBags/mod/42/media/lua"
         ]
@@ -19,6 +20,9 @@
         "version": "Lua5.1"
     },
     "diagnostics": {
+        "globals": [
+            "ItemRarityUI"
+        ],
         "disable": [
             "unnecessary-if"
         ]

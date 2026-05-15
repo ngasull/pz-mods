@@ -264,6 +264,11 @@ function IconsPane:toggleExpanded(cell)
     self._dirty = true
 end
 
+IconsPane.sortOptions = {
+    { func = ISInventoryPane.itemSortByCatInc,     text = getText("IGUI_invpanel_Category") },
+    { func = ISInventoryPane.itemSortByWeightDesc, text = getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending") },
+}
+
 function IconsPane:update()
     if not self.native then return end
 
@@ -506,16 +511,11 @@ function IconsPane:onRightMouseUp(x, y)
         context.mouseOver = 1
         setJoypadFocus(self.native.player, context)
 
-        local catOption = context:addOption(getText("IGUI_invpanel_Category"),
-            self, IconsPane.setSort, ISInventoryPane.itemSortByCatInc)
-        local weightOption = context:addOption(
-            getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending"),
-            self, IconsPane.setSort, ISInventoryPane.itemSortByWeightDesc)
-
-        if self.native.itemSortFunc == ISInventoryPane.itemSortByCatInc then
-            context:setOptionChecked(catOption, true)
-        elseif self.native.itemSortFunc == ISInventoryPane.itemSortByWeightDesc then
-            context:setOptionChecked(weightOption, true)
+        for _, o in ipairs(IconsPane.sortOptions) do
+            local option = context:addOption(o.text, self, IconsPane.setSort, o.func)
+            if self.native.itemSortFunc == o.func then
+                context:setOptionChecked(option, true)
+            end
         end
     end
 

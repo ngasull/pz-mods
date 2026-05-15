@@ -141,4 +141,5 @@ refreshResolution()
 -- ! -- Not reliably called
 -- Events.OnResolutionChange.Add(refreshResolution)
 
+---@cast Cell IconsInventory_Cell
 return Cell
