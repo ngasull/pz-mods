@@ -50,6 +50,8 @@ function Override:createChildren()
     initPage(self)
     vanilla.createChildren(self)
     self:removeChild(self.inventoryPane)
+    self.inventoryPane:setVisible(false)
+    self.inventoryPane:setEnabled(false)
     self.inventoryPane:removeFromUIManager()
 end
 
@@ -119,6 +121,7 @@ local function switchToList(self)
             self.inventoryPane.toolRender:setOwner(self.inventoryPane)
         end
         self.inventoryPane:setVisible(true)
+        self.inventoryPane:setEnabled(true)
         self.inventoryPane:setWidth(self._IconsInventory:getWidth())
         ISInventoryPane.collapseAll(self.inventoryPane, self.inventoryPane.collapseAll)
         self:addChild(self.inventoryPane)
@@ -132,6 +135,7 @@ local function switchToIcons(self)
         self.inventoryPane:setYScroll(0) -- Impacts stubbed mouse
         self.inventoryPane:setVisible(false)
         self.inventoryPane:removeFromUIManager()
+        self.inventoryPane:setEnabled(false)
 
         self._IconsInventory:setVisible(true)
         self._IconsInventory:setEnabled(true)

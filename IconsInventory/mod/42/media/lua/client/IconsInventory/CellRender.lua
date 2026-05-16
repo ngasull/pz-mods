@@ -11,7 +11,6 @@ local ringDiameter ---@type integer
 local halfPadding ---@type number
 local cellSize ---@type  integer
 local subIconRelPos ---@type  number
-local dotIconYPad ---@type number
 
 local ringGood = {} ---@type Texture[]
 local ringBad = {} ---@type Texture[]
@@ -38,7 +37,6 @@ local function refreshDimensions(Cell)
 
     halfPadding = padding / 2
     subIconRelPos = 1.25 * padding + iconSize
-    dotIconYPad = (2 * ringRadius - subIconSize) / 2
 
     local scalingStr = tostring(scaling)
     for i = 1, 16 do
@@ -353,13 +351,13 @@ function CellRender:renderDetails()
     ringFromNative = nil
     ---@diagnostic disable-next-line: undefined-global
     if not ItemConditionOverlay then -- Opt-out for this specific mod (keep literature)
-        local vanilla_drawText = ISInventoryPane.drawText
-        local vanilla_drawProgressBar = ISInventoryPane.drawProgressBar
-        ISInventoryPane.drawText = noop
-        ISInventoryPane.drawProgressBar = capture_drawProgressBar
-        self.pane.native:drawItemDetails(item, 0, 0, 0)
-        ISInventoryPane.drawText = vanilla_drawText
-        ISInventoryPane.drawProgressBar = vanilla_drawProgressBar
+        local javaObject = ui.native.javaObject
+        local vanilla_drawProgressBar = ui.native.drawProgressBar
+        ui.native.javaObject = nil -- Block any rendering action
+        ui.native.drawProgressBar = capture_drawProgressBar
+        pcall(ui.drawItemDetails, ui, item, 0, 0, 0)
+        ui.native.javaObject = javaObject
+        ui.native.drawProgressBar = vanilla_drawProgressBar
     end
 
     if fractionFromNative then
