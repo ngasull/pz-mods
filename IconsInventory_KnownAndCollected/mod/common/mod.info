@@ -1,0 +1,11 @@
+id=IconsInventory_KnownAndCollected
+name=Icons Inventory Known And Collected Compatibility
+description=Integrates Known And Collected into Icons Iventory
+poster=poster.png
+icon=icon.png
+pzversion=42
+modversion=1.1
+versionMin=42.0.0
+require=IconsInventory,KnownAndCollected42.13.2patch
+incompatible=
+author=ngasull
