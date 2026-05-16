@@ -1,0 +1,11 @@
+id=IconsInventory_P4HasBeenRead
+name=Icons Inventory Has Been Read Compatibility
+description=Integrates Has Been Read into Icons Iventory
+poster=poster.png
+icon=icon.png
+pzversion=42
+modversion=1.1
+versionMin=42.0.0
+require=IconsInventory,P4HasBeenRead
+incompatible=
+author=ngasull

@@ -14,6 +14,7 @@ local CellRender = require("IconsInventory/CellRender")
 --- Current render loop's state:
 ---@field x number
 ---@field y number
+---@field padSubIcon integer
 local Cell = {}
 
 for k, v in pairs(CellRender) do Cell[k] = v end

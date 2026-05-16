@@ -3,8 +3,12 @@ local GridLayout = require("IconsInventory/GridLayout")
 local Cell = require("IconsInventory/Cell")
 local CellPool = require("IconsInventory/CellPool")
 
-local function True() return true end
-local function False() return false end
+local function True()
+    return true
+end
+local function False()
+    return false
+end
 
 -- Directly from ISInventoryPane
 local function isSelectAllPossible(page)
@@ -13,7 +17,7 @@ local function isSelectAllPossible(page)
     if page.isCollapsed then return false end
     if not page:isMouseOver() then return false end
     -- for _, v in pairs(page.inventoryPane.selected) do
-    --     return true
+    -- return true
     -- end
     return true
 end
@@ -25,18 +29,18 @@ local function getTheOtherPage(page)
 end
 
 ---@class IconsInventory_IconsPane: ISPanel
----@field parent IconsInventory_ISInventoryPageOverride
----@field native IconsInventory_ISInventoryPaneOverride
----@field grid IconsInventory_GridLayout<IconsInventory_Cell>
----@field focusedCell? IconsInventory_Cell
----@field prevContainer? ItemContainer
----@field expanded table<string, boolean>
----@field pool IconsInventory_CellPool
----@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
----@field _mouseOut? IconsInventory_Cell
+---@field parent          IconsInventory_ISInventoryPageOverride
+---@field native          IconsInventory_ISInventoryPaneOverride
+---@field grid            IconsInventory_GridLayout<IconsInventory_Cell>
+---@field focusedCell?    IconsInventory_Cell
+---@field prevContainer?  ItemContainer
+---@field expanded        table<string, boolean>
+---@field pool            IconsInventory_CellPool
+---@field mouseDown?      { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
+---@field _mouseOut?      IconsInventory_Cell
 ---@field _cancelMouseUp? true
----@field _fakeX? number
----@field _fakeY? number
+---@field _fakeX?         number
+---@field _fakeY?         number
 local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
 
@@ -59,7 +63,7 @@ function IconsPane.new(emptyPage)
 end
 
 function IconsPane:createChildren()
-    self:addScrollBars();
+    self:addScrollBars()
 end
 
 function IconsPane:refreshContainer()
@@ -103,10 +107,14 @@ function IconsPane:refresh()
 
                     -- stack.inHotbar may also be flagged as equipped by mods
                     if cell:isInHotbar() then
-                        if not hotbarCells then hotbarCells = {} end
+                        if not hotbarCells then
+                            hotbarCells = {}
+                        end
                         table.insert(hotbarCells, cell)
                     elseif stack.equipped then
-                        if not equippedCells then equippedCells = {} end
+                        if not equippedCells then
+                            equippedCells = {}
+                        end
                         table.insert(equippedCells, cell)
                     else
                         table.insert(cells, cell)
@@ -177,17 +185,14 @@ function IconsPane:renderBase()
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
-            self:drawRect(
-                0, self.grid.y - self.yPadding,
-                self:getWidth(), groupHeight - 1,
-                0.5, 0, 0, 0)
+            self:drawRect(0, self.grid.y - self.yPadding, self:getWidth(), groupHeight - 1, 0.5, 0, 0, 0)
         end
 
         for i, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
                 local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * Cell.size
                 local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * Cell.size
-                cell:render(x, y)
+                cell:renderAt(x, y)
             end
         end
 
@@ -219,9 +224,8 @@ function IconsPane:renderDragged()
     self:suspendStencil()
     for i, cell in ipairs(draggedCells) do
         self.native:getAbsoluteX()
-        cell:render(
-            centerX - (i - #draggedCells / 2) * dragStackPad,
-            centerY + (i - #draggedCells / 2) * dragStackPad
+        cell:renderAt(
+            centerX - (i - #draggedCells / 2) * dragStackPad, centerY + (i - #draggedCells / 2) * dragStackPad
         )
     end
     self:resumeStencil()
@@ -242,7 +246,7 @@ end
 
 ---@generic R
 ---@param calcXY fun(): number, number
----@param cb fun(...): R
+---@param cb     fun(...): R
 ---@return R
 function IconsPane.stubContextMenuXY(calcXY, cb, ...)
     _stubContextMenu_calcXY = calcXY
@@ -265,8 +269,11 @@ function IconsPane:toggleExpanded(cell)
 end
 
 IconsPane.sortOptions = {
-    { func = ISInventoryPane.itemSortByCatInc,     text = getText("IGUI_invpanel_Category") },
-    { func = ISInventoryPane.itemSortByWeightDesc, text = getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending") },
+    { func = ISInventoryPane.itemSortByCatInc, text = getText("IGUI_invpanel_Category") },
+    {
+        func = ISInventoryPane.itemSortByWeightDesc,
+        text = getText("IGUI_invpanel_weight") .. " " .. getText("IGUI_invpanel_descending")
+    }
 }
 
 function IconsPane:update()
@@ -313,8 +320,9 @@ function IconsPane:prerender()
     -- Round target dimensions: floating point fails comparisons afterwards
     local desiredWidth = math.floor(0.49 + self.parent:getWidth() - containersWidth)
     local desiredHeight = math.floor(0.49 + 1 + self.parent:getHeight() - y
-        - (controlsY > y and self.parent.controlsUI:getHeight() or 0)
-        - (self.parent.resizeWidget2 and self.parent.resizeWidget2:getHeight() or 0))
+            - (controlsY > y and self.parent.controlsUI:getHeight() or 0) - (self.parent.resizeWidget2
+                and self.parent.resizeWidget2:getHeight()
+                or 0))
 
     if self.x ~= self.native.x then self:setX(self.native.x) end
     if self:getWidth() ~= desiredWidth then
@@ -357,7 +365,7 @@ end
 
 function IconsPane:render()
     self:renderDragged()
-    self.native:updateWorldObjectHighlight();
+    self.native:updateWorldObjectHighlight()
 end
 
 function IconsPane:onMouseMove(dx, dy)
@@ -426,9 +434,9 @@ end
 ---@param y number
 function IconsPane:handleShiftClick(x, y)
     if isShiftKeyDown() and not isCtrlKeyDown() and self.focusedCell then
-        local target = self.parent.onCharacter and getPlayerLoot(self.native.player) or
-            getPlayerInventory(self.native.player)
-        ---@cast target -nil
+        local target = self.parent.onCharacter and getPlayerLoot(self.native.player)
+            or getPlayerInventory(self.native.player)
+        ---@cast target - nil
         local itemsSet = {}
 
         if self.focusedCell:isCategory() then
@@ -465,10 +473,9 @@ end
 function IconsPane:onMouseUp(x, y)
     local wasDragging = self:isDragging()
 
-    if self.focusedCell and self.focusedCell:isCategory()
-        and self.mouseDown and self.mouseDown.cell.item == self.focusedCell.item
-        and not self:isDragging() and not isCtrlKeyDown() and not isShiftKeyDown()
-    then
+    if self.focusedCell and self.focusedCell:isCategory() and self.mouseDown
+        and self.mouseDown.cell.item == self.focusedCell.item and not self:isDragging() and not isCtrlKeyDown()
+        and not isShiftKeyDown() then
         self:toggleExpanded(self.focusedCell)
     else
         -- Handle drag from other pane
@@ -496,17 +503,15 @@ function IconsPane:onRightMouseUp(x, y)
 
     if self.focusedCell then
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
-        handled = IconsPane.stubContextMenuXY(
-            function()
-                local ctxX = self:getAbsoluteX() + x
-                local ctxY = self:getAbsoluteY() + y + self:getYScroll()
-                return ctxX, ctxY
-            end,
-            self.native.onRightMouseUp, self.native, self.native:getMouseX(), self.native:getMouseY()
-        )
+        handled = IconsPane.stubContextMenuXY(function ()
+            local ctxX = self:getAbsoluteX() + x
+            local ctxY = self:getAbsoluteY() + y + self:getYScroll()
+            return ctxX, ctxY
+        end, self.native.onRightMouseUp, self.native, self.native:getMouseX(), self.native:getMouseY())
     else
-        local context = ISContextMenu.get(self.native.player,
-            self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll())
+        local context = ISContextMenu.get(
+            self.native.player, self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll()
+        )
         context.origin = self.parent
         context.mouseOver = 1
         setJoypadFocus(self.native.player, context)
@@ -538,7 +543,7 @@ function IconsPane:onMouseWheel(del)
 
     if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
     self.smoothScrollTargetY = self:getYScroll() - (del * Cell.size)
-    return true;
+    return true
 end
 
 -- Copy/Pastadapted from ISInventoryPane
@@ -549,8 +554,7 @@ function IconsPane:updateSmoothScrolling()
     local frameRateFrac = UIManager.getMillisSinceLastRender() / 33.3
     local targetY = self.smoothScrollY + dy * math.min(0.5, 0.5 * frameRateFrac)
     if frameRateFrac > 1 then
-        targetY = self.smoothScrollY +
-            dy * math.min(1.0, math.min(0.5, 0.5 * frameRateFrac) * frameRateFrac)
+        targetY = self.smoothScrollY + dy * math.min(1.0, math.min(0.5, 0.5 * frameRateFrac) * frameRateFrac)
     end
     if targetY > 0 then targetY = 0 end
     if targetY < -maxYScroll then targetY = -maxYScroll end

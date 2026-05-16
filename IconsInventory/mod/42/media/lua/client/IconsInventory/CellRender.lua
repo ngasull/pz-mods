@@ -71,8 +71,6 @@ local bookNumberByLvl = {
 }
 
 local function noop() end
-local vanilla_drawText = ISInventoryPane.drawText
-local vanilla_drawProgressBar = ISInventoryPane.drawProgressBar
 
 ---@type number
 local fractionFromNative
@@ -87,13 +85,19 @@ end
 ---@class IconsInventory_CellRender: IconsInventory_CellBase
 local CellRender = {}
 
+-- Internal rendering API
 ---@param x number
 ---@param y number
-function CellRender:render(x, y)
+function CellRender:renderAt(x, y)
     refreshDimensions(self)
     self.x = x
     self.y = y
+    self.padSubIcon = 0
+    self:render()
+end
 
+-- Moddable rendering API
+function CellRender:render()
     self:renderBackground()
 
     if self:isCategory() then
@@ -219,7 +223,7 @@ function CellRender:renderStack()
     )
     self.pane:drawTextRight(
         tostring(self:getStackSize()),
-        self.x + cellSize - scaledHalfPadding,
+        self.x + cellSize - scaledHalfPadding - self.padSubIcon,
         self.y + cellSize - scaledHalfPadding - fontSize,
         1, 1, 1, 1, UIFont.Small
     )
@@ -238,34 +242,16 @@ function CellRender:renderDetails()
 
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
-    local padBR = -4
     if self:isEquipped() then
-        padBR = padBR + 4
-        ui:drawTextureScaled(equippedIcon,
-            self.x + subIconRelPos - equippedIconSize - padBR,
-            self.y + subIconRelPos - equippedIconSize - dotIconYPad + 1,
-            equippedIconSize, equippedIconSize,
-            1, 1, 1, 1);
-        padBR = padBR + equippedIconSize
+        self:renderSubIcon(equippedIcon, equippedIconSize, equippedIconSize)
     end
 
     if self:isInHotbar() then
-        padBR = padBR + 4
-        ui:drawTextureScaled(equippedInHotbar,
-            self.x + subIconRelPos - equippedIconSize - padBR,
-            self.y + subIconRelPos - equippedIconSize - dotIconYPad + 1,
-            equippedIconSize, equippedIconSize,
-            1, 1, 1, 1);
-        padBR = padBR + equippedIconSize + 4
+        self:renderSubIcon(equippedInHotbar, equippedIconSize, equippedIconSize);
     end
 
     if item:isBroken() then
-        padBR = padBR + 4
-        ui:drawTextureScaled(brokenIcon,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize,
-            1, 1, 1, 1);
-        padBR = padBR + subIconSize
+        self:renderSubIcon(brokenIcon, subIconSize, subIconSize)
     end
 
     if instanceof(item, "Food") then
@@ -284,51 +270,34 @@ function CellRender:renderDetails()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
         then
             displayNumbers = true
-            padBR = padBR + 4
             local str = tostring(math.floor(0.5 - item:getHungerChange() * 100))
             ui:drawTextRight(
                 str,
-                self.x + cellSize - halfPadding - padBR,
+                self.x + cellSize - halfPadding - self.padSubIcon,
                 self.y + cellSize - halfPadding - fontSize,
                 item:isFresh() and 0 or 0.75,
                 item:isFresh() and 1 or 0.75,
                 0,
                 0.7, UIFont.Small
             )
-            padBR = padBR + getTextManager():MeasureStringX(UIFont.Small, str)
+            self.padSubIcon = self.padSubIcon + getTextManager():MeasureStringX(UIFont.Small, str) + 4
         end
 
         if item:isFrozen() then
-            padBR = padBR + 4
-            ui:drawTextureScaled(frozenIcon,
-                self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-                subIconSize, subIconSize,
-                1, 1, 1, 1);
-            padBR = padBR + subIconSize
+            self:renderSubIcon(frozenIcon, subIconSize, subIconSize)
         end
 
         if (item:isTainted() and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue()) or self.player:isKnownPoison(item) then
-            padBR = padBR + 4
-            ui:drawTextureScaled(poisonIcon,
-                self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-                subIconSize,
-                1, 1, 1, 1);
-            padBR = padBR + subIconSize
+            self:renderSubIcon(poisonIcon, subIconSize, subIconSize)
         elseif not item:isFresh() then
             if item:isRotten() then
-                padBR = padBR + 4
                 ISInventoryItem.renderItemIcon(
                     ui, maggots,
-                    self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
+                    self.x + subIconRelPos - subIconSize - self.padSubIcon, self.y + subIconRelPos - subIconSize,
                     0.8, subIconSize, subIconSize)
-                padBR = padBR + subIconSize
+                self.padSubIcon = self.padSubIcon + subIconSize + 4
             elseif not displayNumbers then
-                padBR = padBR + 4
-                ui:drawTextureScaled(clockIcon,
-                    self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-                    subIconSize, subIconSize,
-                    0.5, 0.75, 0.75, 0)
-                padBR = padBR + subIconSize
+                self:renderSubIcon(clockIcon, subIconSize, subIconSize, 0.5, 0.75, 0.75, 0)
             end
         end
 
@@ -348,49 +317,25 @@ function CellRender:renderDetails()
             or item:getWetness() > 10
         )
     then
-        padBR = padBR + 4
-        ui:drawTextureScaled(wetIcon,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize,
-            0.6, 0.0, 0.6, 1);
-        padBR = padBR + subIconSize
+        self:renderSubIcon(wetIcon, subIconSize, subIconSize, 0.6, 0.0, 0.6, 1);
     end
 
     if ISInventoryPane:isLiteratureRead(self.player, item) or item:hasBeenSeen(self.player) or item:hasBeenHeard(self.player) or self.player:hasReadMap(item) then
-        padBR = padBR + 4
-        ui:drawTextureScaled(getTexture("media/ui/Tick_Mark-10.png"),
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize, 1, 1, 1, 1);
-        padBR = padBR + subIconSize
+        self:renderSubIcon(getTexture("media/ui/Tick_Mark-10.png"), subIconSize, subIconSize);
     end
 
     local fluidContainer = item:getFluidContainer() or
         (item:getWorldItem() and item:getWorldItem():getFluidContainer());
     if fluidContainer ~= nil and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue() and (not fluidContainer:isEmpty()) and (fluidContainer:contains(Fluid.Bleach) or (fluidContainer:contains(Fluid.TaintedWater) and fluidContainer:getPoisonRatio() > 0.1)) then
-        padBR = padBR + 4
-        ui:drawTextureScaled(poisonIcon,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize,
-            1, 1, 1, 1);
-        padBR = padBR + subIconSize
+        self:renderSubIcon(poisonIcon, subIconSize, subIconSize);
     end
 
     if item:isFavorite() then
-        padBR = padBR + 4
-        ui:drawTextureScaled(favoriteStar,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize,
-            1, 1, 1, 1);
+        self:renderSubIcon(favoriteStar, subIconSize, subIconSize)
     elseif item:isNoRecipes(self.player) then
-        padBR = padBR + 4
-        ui:drawTextureScaled(noFavoriteRecipeInputStar,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize, 1, 1, 1, 1);
+        self:renderSubIcon(noFavoriteRecipeInputStar, subIconSize, subIconSize)
     elseif item:isFavouriteRecipeInput(self.player) then
-        padBR = padBR + 4
-        ui:drawTextureScaled(favoriteRecipeInputStar,
-            self.x + subIconRelPos - subIconSize - padBR, self.y + subIconRelPos - subIconSize,
-            subIconSize, subIconSize, 1, 1, 1, 1);
+        self:renderSubIcon(favoriteRecipeInputStar, subIconSize, subIconSize)
     end
 
     local bookNumber = item:getCategory() == "Literature"
@@ -408,6 +353,8 @@ function CellRender:renderDetails()
     ringFromNative = nil
     ---@diagnostic disable-next-line: undefined-global
     if not ItemConditionOverlay then -- Opt-out for this specific mod (keep literature)
+        local vanilla_drawText = ISInventoryPane.drawText
+        local vanilla_drawProgressBar = ISInventoryPane.drawProgressBar
         ISInventoryPane.drawText = noop
         ISInventoryPane.drawProgressBar = capture_drawProgressBar
         self.pane.native:drawItemDetails(item, 0, 0, 0)
@@ -429,11 +376,22 @@ function CellRender:renderDetails()
             self:renderRing(ringGood, item:getAlreadyReadPages() / item:getNumberOfPages())
         end
     end
+end
 
-    -- Integration
-    -- Lazy for now (module resolution)
-    local P4HasBeenRead = require("IconsInventory/integration/P4HasBeenRead")
-    P4HasBeenRead.renderdetails(self)
+---@param icon Texture
+---@param w? integer
+---@param h? integer
+---@param a? number
+---@param r? number
+---@param g? number
+---@param b? number
+function CellRender:renderSubIcon(icon, w, h, a, r, g, b)
+    if not w then w = icon:getWidth() end
+    if not h then h = icon:getHeight() end
+    self.pane:drawTextureScaled(icon,
+        self.x + subIconRelPos - self.padSubIcon - w, self.y + subIconRelPos - subIconSize + (subIconSize - h) / 2,
+        w, h, a or 1, r or 1, g or 1, b or 1);
+    self.padSubIcon = self.padSubIcon + w + 4
 end
 
 ---@param ui ISUIElement
