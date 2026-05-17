@@ -1,5 +1,3 @@
-local mod = require("IconsInventory/mod")
-
 ---@class IconsInventory_ISInventoryPane: ISInventoryPane
 local vanilla = {}
 

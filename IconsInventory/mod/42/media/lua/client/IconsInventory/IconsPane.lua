@@ -29,18 +29,21 @@ local function getTheOtherPage(page)
 end
 
 ---@class IconsInventory_IconsPane: ISPanel
----@field parent          IconsInventory_ISInventoryPageOverride
----@field native          IconsInventory_ISInventoryPaneOverride
----@field grid            IconsInventory_GridLayout<IconsInventory_Cell>
----@field focusedCell?    IconsInventory_Cell
----@field prevContainer?  ItemContainer
----@field expanded        table<string, boolean>
----@field pool            IconsInventory_CellPool
----@field mouseDown?      { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
----@field _mouseOut?      IconsInventory_Cell
+---@field parent IconsInventory_ISInventoryPageOverrideIconsInventory_ISInventoryPageOverride
+---@field native IconsInventory_ISInventoryPaneOverride
+---@field grid IconsInventory_GridLayout<IconsInventory_Cell>
+---@field focusedCell? IconsInventory_Cell
+---@field prevContainer? ItemContainer
+---@field expanded table<string, boolean>
+---@field pool IconsInventory_CellPool
+---@field minXPadding integer
+---@field yPadding integer
+---@field isMouseAllowed boolean
+---@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
+---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
----@field _fakeX?         number
----@field _fakeY?         number
+---@field _fakeX? number
+---@field _fakeY? number
 local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
 
@@ -58,6 +61,7 @@ function IconsPane.new(emptyPage)
     self.pool = CellPool:new()
     self.minXPadding = 2 * Cell.padding
     self.yPadding = Cell.padding
+    self.isMouseAllowed = getNumActivePlayers() == 1 or getSpecificPlayer(emptyPage.player):getJoypadBind() < 0
 
     return self
 end
@@ -320,9 +324,9 @@ function IconsPane:prerender()
     -- Round target dimensions: floating point fails comparisons afterwards
     local desiredWidth = math.floor(0.49 + self.parent:getWidth() - containersWidth)
     local desiredHeight = math.floor(0.49 + 1 + self.parent:getHeight() - y
-            - (controlsY > y and self.parent.controlsUI:getHeight() or 0) - (self.parent.resizeWidget2
-                and self.parent.resizeWidget2:getHeight()
-                or 0))
+        - (controlsY > y and self.parent.controlsUI:getHeight() or 0) - (self.parent.resizeWidget2
+            and self.parent.resizeWidget2:getHeight()
+            or 0))
 
     if self.x ~= self.native.x then self:setX(self.native.x) end
     if self:getWidth() ~= desiredWidth then
@@ -369,12 +373,10 @@ function IconsPane:render()
 end
 
 function IconsPane:onMouseMove(dx, dy)
+    self._mouseOut = false
     self.native.mouseOverOption = 0
 
-    if self.native.doController then
-        self:setFocusedCell(nil)
-    else
-        self._mouseOut = false
+    if self.isMouseAllowed then
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
 
@@ -394,13 +396,18 @@ end
 
 function IconsPane:onMouseMoveOutside(dx, dy)
     self._mouseOut = true
-    if not self.native.doController then
-        self:setFocusedCell(nil)
+
+    if self.isMouseAllowed then
+        if not self.native.doController then
+            self:setFocusedCell(nil)
+        end
+        self.native:onMouseMoveOutside(dx, dy)
     end
-    self.native:onMouseMoveOutside(dx, dy)
 end
 
 function IconsPane:onMouseDown(x, y)
+    if not self.isMouseAllowed then return end
+
     if self:handleShiftClick(x, y) then
         -- Done
     elseif self.focusedCell then
@@ -471,6 +478,8 @@ function IconsPane:handleShiftClick(x, y)
 end
 
 function IconsPane:onMouseUp(x, y)
+    if not self.isMouseAllowed then return end
+
     local wasDragging = self:isDragging()
 
     if self.focusedCell and self.focusedCell:isCategory() and self.mouseDown
@@ -503,7 +512,7 @@ function IconsPane:onRightMouseUp(x, y)
 
     if self.focusedCell then
         self.native.mouseOverOption = self.focusedCell and self.focusedCell.index or 0
-        handled = IconsPane.stubContextMenuXY(function ()
+        handled = IconsPane.stubContextMenuXY(function()
             local ctxX = self:getAbsoluteX() + x
             local ctxY = self:getAbsoluteY() + y + self:getYScroll()
             return ctxX, ctxY
@@ -528,6 +537,8 @@ function IconsPane:onRightMouseUp(x, y)
 end
 
 function IconsPane:onMouseDoubleClick(x, y)
+    if not self.isMouseAllowed then return end
+
     if self.vscroll and self:isVScrollBarVisible() and self.vscroll:isMouseOver() then
         self.vscroll:onMouseDoubleClick(x - self.vscroll.x, y + self:getYScroll() - self.vscroll.y)
     elseif self.focusedCell and not self.focusedCell:isCategory() then
@@ -538,6 +549,8 @@ function IconsPane:onMouseDoubleClick(x, y)
 end
 
 function IconsPane:onMouseWheel(del)
+    if not self.isMouseAllowed then return false end
+
     if self.parent.isCollapsed then return false end
     if self.parent:isCycleContainerKeyDown() then return false end
 
