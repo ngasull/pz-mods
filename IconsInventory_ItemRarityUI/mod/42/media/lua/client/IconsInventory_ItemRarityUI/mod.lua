@@ -21,22 +21,28 @@ local vanilla = {}
 local Override = {}
 
 function Override:renderBackground()
-    local drewColoredBg = vanilla.renderBackground(self)
+    if not ItemRarityUI.dataLoaded then
+        ItemRarityUI.loadRarityData()
+    end
+
+    local color = ItemRarityUI.getColor(self.item:getFullType())
+    if color == ItemRarityUI.rarityTiers.common.color or color == ItemRarityUI.rarityTiers.unknown.color then
+        return vanilla.renderBackground(self)
+    end
+
+    local prevFocusColor = Cell.color.focus
+    Cell.color.focus = { color.r / 2, color.g / 2, color.b / 2 }
+    local ok, drewColoredBg = pcall(vanilla.renderBackground, self)
+    Cell.color.focus = prevFocusColor
+
+    if not ok then error(drewColoredBg) end
 
     if not drewColoredBg then
-        if not ItemRarityUI.dataLoaded then
-            ItemRarityUI.loadRarityData()
-        end
-
-        local color = ItemRarityUI.getColor(self.item:getFullType())
-
-        if color ~= ItemRarityUI.rarityTiers.common.color and color ~= ItemRarityUI.rarityTiers.unknown.color then
-            self.pane:drawTextureTiledX(rarityBg, self.x, self.y,
-                self.size, self.size, color.r, color.g, color.b, 0.2)
-            self.pane:drawRectBorder(self.x, self.y,
-                self.size, self.size, 0.04, color.r, color.g, color.b)
-            drewColoredBg = true
-        end
+        self.pane:drawTextureTiledX(rarityBg, self.x, self.y,
+            self.size, self.size, color.r, color.g, color.b, 0.2)
+        self.pane:drawRectBorder(self.x, self.y,
+            self.size, self.size, 0.04, color.r, color.g, color.b)
+        drewColoredBg = true
     end
 
     return drewColoredBg

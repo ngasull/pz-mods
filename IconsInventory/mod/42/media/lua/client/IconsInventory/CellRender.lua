@@ -68,8 +68,6 @@ local bookNumberByLvl = {
     [9] = "V",
 }
 
-local function noop() end
-
 ---@type number
 local fractionFromNative
 ---@type Texture[]
@@ -82,6 +80,13 @@ end
 
 ---@class IconsInventory_CellRender: IconsInventory_CellBase
 local CellRender = {}
+
+CellRender.color = {
+    cannotDrop = { 1, 0, 0 },
+    selected = { 1, 1, 1 },
+    focus = { 0.25, 0.25, 0.25 },
+    controllerFocus = { 0.2, 1, 1 },
+}
 
 -- Internal rendering API
 ---@param x number
@@ -126,19 +131,17 @@ function CellRender:renderBackground()
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
-                self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.20, 1.0, 0.0, 0.0)
+                self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, unpack(CellRender.color.cannotDrop))
                 drewColoredBg = true
             end
         else
-            self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.20, 1.0, 1.0, 1.0)
-            self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.10, 1.0, 1.0, 1.0)
+            local r, g, b = unpack(CellRender.color.selected)
+            self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.2, r, g, b)
+            self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.1, r, g, b)
         end
     elseif self:isFocused() and heat == 1 and not self:isCleanUIHighlighted() then
-        if native.doController then
-            self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 0.2, 1.0, 1.0)
-        else
-            self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.05, 1.0, 1.0, 1.0)
-        end
+        local r, g, b = unpack(native.doController and CellRender.color.controllerFocus or CellRender.color.focus)
+        self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, r, g, b)
     elseif native.highlightItem and native.highlightItem == item:getType() then
         if not native.blinkAlpha then native.blinkAlpha = 0.5; end
         self.pane:drawRect(self.x, self.y, cellSize, cellSize, native.blinkAlpha, 1, 1, 1)
@@ -173,7 +176,7 @@ function CellRender:renderBackground()
     end
 
     if native.itemsToHighlight ~= nil and native.itemsToHighlight[item] == true then
-        self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 1.0, 1.0, 1.0)
+        self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, 1, 1, 1)
     end
 
     local job = item:getJobDelta()
