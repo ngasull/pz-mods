@@ -358,7 +358,7 @@ function CellRender:renderDetails()
         local vanilla_drawProgressBar = ui.native.drawProgressBar
         ui.native.javaObject = nil -- Block any rendering action
         ui.native.drawProgressBar = capture_drawProgressBar
-        pcall(ui.drawItemDetails, ui, item, 0, 0, 0)
+        pcall(ui.native.drawItemDetails, ui.native, item, 0, 0, 0)
         ui.native.javaObject = javaObject
         ui.native.drawProgressBar = vanilla_drawProgressBar
     end
