@@ -2,7 +2,8 @@ require("ISUI/ISInventoryPane")
 local Cell = require("IconsInventory/Cell")
 local IconsPane = require("IconsInventory/IconsPane")
 
-local rarityBg = getTexture("media/ui/IconsInventory_ItemRarityUI/rarity-bg.png")
+local prevScaling ---@type integer?
+local rarityBg ---@type Texture?
 
 local vanilla_sortOptions = IconsPane.sortOptions
 IconsPane.sortOptions = {}
@@ -21,6 +22,11 @@ local vanilla = {}
 local Override = {}
 
 function Override:renderBackground()
+    if Cell.scaling ~= prevScaling then
+        rarityBg = getTexture("media/ui/IconsInventory_ItemRarityUI/rarity-bg-" .. Cell.scaling .. ".png")
+        prevScaling = Cell.scaling
+    end
+
     if not ItemRarityUI.dataLoaded then
         ItemRarityUI.loadRarityData()
     end
