@@ -28,17 +28,18 @@ local function refreshDimensions(Cell)
     padding = Cell.padding
     cellSize = Cell.size
 
-    subIconSize = 8 * scaling
-    equippedIconSize = 7 * scaling
-    fontSize = 15 * scaling -- Estimated
+    subIconSize = math.floor(8 * scaling + 0.5)
+    equippedIconSize = math.floor(7 * scaling + 0.5)
+    fontSize = getTextManager():getFontHeight(UIFont.Small)
 
-    ringRadius = 5 * scaling
+    ringRadius = math.floor(5 * scaling + 0.5)
     ringDiameter = ringRadius * 2
 
     halfPadding = padding / 2
     subIconRelPos = 1.25 * padding + iconSize
 
-    local scalingStr = tostring(scaling)
+    -- Ring textures only exist at 1x/2x; drawTextureAngle rescales them to ringDiameter
+    local scalingStr = tostring(scaling >= 1.5 and 2 or 1)
     for i = 1, 16 do
         ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-good-" .. tostring(i) .. ".png")
         ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-bad-" .. tostring(i) .. ".png")
@@ -67,6 +68,36 @@ local bookNumberByLvl = {
     [7] = "IV",
     [9] = "V",
 }
+
+-- Alpha alone still reads as normal on bright icons, so grey like vanilla's
+-- unwanted row text. DrawItemIcon has no color channel: its passes, rgb scaled.
+local function drawItemIconGrey(ui, item, x, y, w, h)
+    local tex = item:getTex()
+    if not tex then return end
+
+    local mul, alpha = 0.5, 0.7
+    local r, g, b = item:getR() * mul, item:getG() * mul, item:getB() * mul
+    if item:getTextureColorMask() then
+        r, g, b = mul, mul, mul
+    end
+
+    local java = ui.javaObject
+    local fluidContainer = item:getFluidContainer()
+        or (item:getWorldItem() and item:getWorldItem():getFluidContainer())
+    if fluidContainer and item:getTextureFluidMask() then
+        local c = fluidContainer:getColor()
+        java:DrawTextureIcon(tex, x, y, w, h, r, g, b, alpha)
+        java:DrawTextureIconMask(item:getTextureFluidMask(),
+            fluidContainer:getAmount() / fluidContainer:getCapacity(),
+            x, y, w, h, c:getR() * mul, c:getG() * mul, c:getB() * mul, alpha)
+    else
+        java:DrawTextureScaledAspect(tex, x, y, w, h, r, g, b, alpha)
+    end
+    if item:getTextureColorMask() then
+        java:DrawTextureIconMask(item:getTextureColorMask(), 1.0, x, y, w, h,
+            item:getR() * mul, item:getG() * mul, item:getB() * mul, alpha)
+    end
+end
 
 ---@type number
 local fractionFromNative
@@ -214,19 +245,29 @@ function CellRender:renderStack()
     local scaledIconSize = self:isCollapsed() and iconSize or 0.5 * iconSize
     local scaledPadding = (cellSize - scaledIconSize) / 2
     local scaledHalfPadding = scaledPadding / 2
+    -- Stacks follow their representative item, like the list's row text does
+    local unwanted = self.item:isUnwanted(self.player)
 
     self:renderContrast()
 
-    ISInventoryItem.renderItemIcon(
-        self.pane, self.item,
-        self.x + scaledPadding, self.y + scaledPadding,
-        1, scaledIconSize, scaledIconSize
-    )
+    if unwanted then
+        drawItemIconGrey(self.pane, self.item,
+            self.x + scaledPadding, self.y + scaledPadding, scaledIconSize, scaledIconSize)
+    else
+        ISInventoryItem.renderItemIcon(
+            self.pane, self.item,
+            self.x + scaledPadding, self.y + scaledPadding,
+            1, scaledIconSize, scaledIconSize
+        )
+    end
+
+    local tr, ta = 1, 1
+    if unwanted then tr, ta = 0.5, 0.65 end -- vanilla's unwantedTextColor
     self.pane:drawTextRight(
         tostring(self:getStackSize()),
         self.x + cellSize - scaledHalfPadding - self.padSubIcon,
         self.y + cellSize - scaledHalfPadding - fontSize,
-        1, 1, 1, 1, UIFont.Small
+        tr, tr, tr, ta, UIFont.Small
     )
 end
 
@@ -235,11 +276,15 @@ function CellRender:renderDetails()
     local ui = self.pane
 
     self:renderContrast()
-    ISInventoryItem.renderItemIcon(
-        ui, item,
-        self.x + padding, self.y + padding,
-        1, iconSize, iconSize
-    )
+    if item:isUnwanted(self.player) then
+        drawItemIconGrey(ui, item, self.x + padding, self.y + padding, iconSize, iconSize)
+    else
+        ISInventoryItem.renderItemIcon(
+            ui, item,
+            self.x + padding, self.y + padding,
+            1, iconSize, iconSize
+        )
+    end
 
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
@@ -401,8 +446,23 @@ end
 ---@param centerY number
 ---@param angle number
 local function drawTextureAngle(ui, tex, centerX, centerY, angle)
-    -- DrawTextureAngle somehow doesn't take scroll into account
-    ui:DrawTextureAngle(tex, centerX + ui:getXScroll(), centerY + ui:getYScroll(), angle)
+    -- DrawTextureAngle can't scale: same corner math at ring size, fed to the
+    -- quad DrawTexture (raw screen space, absolute position and scroll added here)
+    local scale = ringDiameter / tex:getWidth()
+    local dx = tex:getWidth() * 0.5 * scale
+    local dy = tex:getHeight() * 0.5 * scale
+    local radian = math.rad(180 + angle)
+    local cos, sin = math.cos(radian), math.sin(radian)
+    local xCos, xSin = cos * dx, sin * dx
+    local yCos, ySin = cos * dy, sin * dy
+    local cx = ui:getAbsoluteX() + ui:getXScroll() + centerX
+    local cy = ui:getAbsoluteY() + ui:getYScroll() + centerY
+    ui:drawTextureAllPoint(tex,
+        cx + xCos - ySin, cy + yCos + xSin,
+        cx - xCos - ySin, cy + yCos - xSin,
+        cx - xCos + ySin, cy - yCos - xSin,
+        cx + xCos + ySin, cy - yCos + xSin,
+        1, 1, 1, 1)
 end
 
 ---@param ring Texture[]

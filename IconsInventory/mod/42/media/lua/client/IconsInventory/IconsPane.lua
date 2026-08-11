@@ -40,6 +40,7 @@ end
 ---@field yPadding integer
 ---@field isMouseAllowed boolean
 ---@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
+---@field band? { x0: number, y0: number, x1: number, y1: number, active?: boolean, baseline?: table<integer, unknown> }
 ---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
@@ -128,11 +129,14 @@ function IconsPane:refresh()
         end
     end
 
+    -- Display-only: the native backend keeps every cell, so indices and selection stay intact
+    local hideEquipped = self.parent.onCharacter and mod.option.hideEquipped:getValue()
+
     local groups = { cells }
-    if hotbarCells then
+    if hotbarCells and not hideEquipped then
         table.insert(groups, hotbarCells)
     end
-    if equippedCells then
+    if equippedCells and not hideEquipped then
         table.insert(groups, equippedCells)
     end
 
@@ -362,6 +366,7 @@ function IconsPane:prerender()
     -- Height -1 to avoid removing controlsUI line
     self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self:getHeight() - 1)
     self:renderBase()
+    self:renderBand()
     self:clearStencilRect()
 
     self:updateSmoothScrolling()
@@ -379,6 +384,18 @@ function IconsPane:onMouseMove(dx, dy)
     if self.isMouseAllowed then
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
+
+        if self.band then
+            self.band.x1, self.band.y1 = x, y
+            if not self.band.active
+                and math.abs(x - self.band.x0) + math.abs(y - self.band.y0) > 6
+            then
+                self.band.active = true
+            end
+            if self.band.active then
+                self:applyBandSelection()
+            end
+        end
 
         if self.mouseDown and not self:isDragging() then
             if self.mouseDown.ctrl then
@@ -433,8 +450,48 @@ function IconsPane:onMouseDown(x, y)
             end
         end
     else
-        table.wipe(self.native.selected)
+        local baseline
+        if isCtrlKeyDown() then
+            baseline = {}
+            for k, v in pairs(self.native.selected) do
+                baseline[k] = v
+            end
+        else
+            table.wipe(self.native.selected)
+        end
+
+        local mx, my = self:getMouseX(), self:getMouseY()
+        self.band = { x0 = mx, y0 = my, x1 = mx, y1 = my, baseline = baseline }
     end
+end
+
+function IconsPane:applyBandSelection()
+    local band = self.band
+    table.wipe(self.native.selected)
+    if band.baseline then
+        for k, v in pairs(band.baseline) do
+            self.native.selected[k] = v
+        end
+    end
+
+    local cells = {}
+    self.grid:collectCellsInRect(band.x0, band.y0, band.x1, band.y1, cells)
+    for _, cell in ipairs(cells) do
+        -- Same exclusion as Ctrl+A
+        if not (cell:isInEquippedGroup() or cell:isInHotbar()) then
+            cell:setSelected(true)
+        end
+    end
+end
+
+function IconsPane:renderBand()
+    local band = self.band
+    if not band or not band.active then return end
+
+    local x, y = math.min(band.x0, band.x1), math.min(band.y0, band.y1)
+    local w, h = math.abs(band.x1 - band.x0), math.abs(band.y1 - band.y0)
+    self:drawRect(x, y, w, h, 0.1, 1, 1, 1)
+    self:drawRectBorder(x, y, w, h, 0.4, 1, 1, 1)
 end
 
 ---@param x number
@@ -480,6 +537,10 @@ end
 function IconsPane:onMouseUp(x, y)
     if not self.isMouseAllowed then return end
 
+    local band = self.band
+    self.band = nil
+    if band and band.active then return end
+
     local wasDragging = self:isDragging()
 
     if self.focusedCell and self.focusedCell:isCategory() and self.mouseDown
@@ -504,6 +565,7 @@ end
 
 function IconsPane:onMouseUpOutside(x, y)
     self.mouseDown = nil
+    self.band = nil
     return self.native:onMouseUpOutside(x, y)
 end
 

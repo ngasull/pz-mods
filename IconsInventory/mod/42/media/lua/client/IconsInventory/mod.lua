@@ -40,6 +40,23 @@ mod.option.hungerMode_portion = 1
 mod.option.hungerMode:addItem("Restored hunger value")
 mod.option.hungerMode_numbers = 2
 
+local iconSizes = { 24, 32, 40, 48, 56, 64, 80, 96 }
+
+mod.option.iconSize = mod.options:addComboBox("iconSize", "Icon size")
+mod.option.iconSize:addItem("Auto (by resolution)", true)
+for _, px in ipairs(iconSizes) do
+    mod.option.iconSize:addItem(px .. " px")
+end
+mod.options:addDescription("Base icon art is 32 px, larger sizes upscale it. Default: Auto")
+
+---@return integer? # pixels, nil when Auto
+mod.option.getIconSizePx = function()
+    return iconSizes[mod.option.iconSize:getValue() - 1]
+end
+
+mod.option.hideEquipped = mod.options:addTickBox("hideEquipped", "Hide equipped items", false)
+mod.options:addDescription("Hides the worn/held and hotbar sections from the character inventory. Default: off")
+
 mod.options:addTitle("Gamepad")
 
 mod.option.maxJoypadColumns = mod.options:addSlider(

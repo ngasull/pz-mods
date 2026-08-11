@@ -405,7 +405,7 @@ function Cell:renderDetails()
         local tex = self.item:getTex()
         if tex ~= nil then
             local halfPadding = Cell.padding / 2
-            local scaling = Cell.scaling == 2 and 1.5 or 1 -- Looks really ugly when scaled x2
+            local scaling = 0.5 + Cell.scaling * 0.5 -- damped ramp, keeps the 1 -> 1 and 2 -> 1.5 anchors
             if statusTexture and statusTexture ~= P4HasBeenRead.notCompletedTexture then
                 self.pane:drawTextureScaled(statusTexture,
                     self.x + halfPadding, self.y + Cell.size - halfPadding - 16 * scaling,

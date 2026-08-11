@@ -144,6 +144,20 @@ local function switchToIcons(self)
     end
 end
 
+--- Vanilla collapses unpinned windows on any outside click; drags were exempt
+--- via ISMouseDrag. Icons interactions are clicks, so exempt the sibling window too
+function Override:onMouseDownOutside(x, y)
+    local other = getTheOtherPage(self)
+    if other and other:isReallyVisible() and other:isMouseOver() then return end
+    vanilla.onMouseDownOutside(self, x, y)
+end
+
+function Override:onRightMouseDownOutside(x, y)
+    local other = getTheOtherPage(self)
+    if other and other:isReallyVisible() and other:isMouseOver() then return end
+    vanilla.onRightMouseDownOutside(self, x, y)
+end
+
 function Override:onRightMouseUp(x, y)
     if vanilla.onRightMouseUp then vanilla.onRightMouseUp(self, x, y) end
 
