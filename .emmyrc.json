@@ -7,6 +7,8 @@
         "workspaceRoots": [
             "IconsInventory/mod/42/media/lua",
             "IconsInventory_ItemRarityUI/mod/42/media/lua",
+            "IconsInventory_KnownAndCollected/mod/42/media/lua",
+            "IconsInventory_P4HasBeenRead/mod/42/media/lua",
             "SideBySideContainers/mod/42/media/lua",
             "StaticBags/mod/42/media/lua"
         ]
