@@ -90,6 +90,11 @@ function Cell:isSelected()
     return not not (selected and selected[self.index])
 end
 
+function Cell:isBeingSelected()
+    local band = self.pane.band
+    return not not (band and band.beingSelected[self])
+end
+
 ---@param isSelected boolean
 function Cell:setSelected(isSelected)
     if self:isCategory() then

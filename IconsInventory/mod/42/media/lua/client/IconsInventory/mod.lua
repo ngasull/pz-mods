@@ -73,6 +73,7 @@ mod.reload = function()
         "integration/P4HasBeenRead",
         "DebugPanel",
         "Action",
+        "Band",
         "CellRender",
         "Cell",
         "CellPool",

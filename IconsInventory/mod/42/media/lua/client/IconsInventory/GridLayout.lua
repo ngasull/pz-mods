@@ -51,28 +51,6 @@ function GridLayout:hitTest(mx, my)
     end
 end
 
----@param x1 number
----@param y1 number
----@param x2 number
----@param y2 number
----@param out T[]
-function GridLayout:collectCellsInRect(x1, y1, x2, y2, out)
-    local left, right = math.min(x1, x2) - self.x, math.max(x1, x2) - self.x
-    local top, bottom = math.min(y1, y2) - self.y, math.max(y1, y2) - self.y
-
-    local yOffset = 0
-    for _, group in ipairs(self.cells) do
-        for i, cell in ipairs(group) do
-            local cx = ((i - 1) % self.gridWidth) * Cell.size
-            local cy = yOffset + math.floor((i - 1) / self.gridWidth) * Cell.size
-            if cx < right and cx + Cell.size > left and cy < bottom and cy + Cell.size > top then
-                table.insert(out, cell)
-            end
-        end
-        yOffset = yOffset + math.ceil(#group / self.gridWidth) * Cell.size + self.groupSpace
-    end
-end
-
 ---@param cells T[][]
 ---@param gridWidth integer
 function GridLayout:set(cells, gridWidth)

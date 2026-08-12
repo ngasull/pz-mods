@@ -157,7 +157,7 @@ function CellRender:renderBackground()
         item:updateWetness()
     end
 
-    if self:isSelected() then
+    if self:isSelected() or self:isBeingSelected() then
         if native.dragging ~= nil and native.dragStarted then
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
