@@ -69,36 +69,6 @@ local bookNumberByLvl = {
     [9] = "V",
 }
 
--- Alpha alone still reads as normal on bright icons, so grey like vanilla's
--- unwanted row text. DrawItemIcon has no color channel: its passes, rgb scaled.
-local function drawItemIconGrey(ui, item, x, y, w, h)
-    local tex = item:getTex()
-    if not tex then return end
-
-    local mul, alpha = 0.5, 0.7
-    local r, g, b = item:getR() * mul, item:getG() * mul, item:getB() * mul
-    if item:getTextureColorMask() then
-        r, g, b = mul, mul, mul
-    end
-
-    local java = ui.javaObject
-    local fluidContainer = item:getFluidContainer()
-        or (item:getWorldItem() and item:getWorldItem():getFluidContainer())
-    if fluidContainer and item:getTextureFluidMask() then
-        local c = fluidContainer:getColor()
-        java:DrawTextureIcon(tex, x, y, w, h, r, g, b, alpha)
-        java:DrawTextureIconMask(item:getTextureFluidMask(),
-            fluidContainer:getAmount() / fluidContainer:getCapacity(),
-            x, y, w, h, c:getR() * mul, c:getG() * mul, c:getB() * mul, alpha)
-    else
-        java:DrawTextureScaledAspect(tex, x, y, w, h, r, g, b, alpha)
-    end
-    if item:getTextureColorMask() then
-        java:DrawTextureIconMask(item:getTextureColorMask(), 1.0, x, y, w, h,
-            item:getR() * mul, item:getG() * mul, item:getB() * mul, alpha)
-    end
-end
-
 ---@type number
 local fractionFromNative
 ---@type Texture[]
@@ -241,33 +211,36 @@ function CellRender:renderContrast()
     self.pane:drawTextureScaled(softBg, self.x + padding, self.y + padding, iconSize, iconSize, 1, 0.2, 0.2, 0.2)
 end
 
+---@param x number
+---@param y number
+---@param w number
+---@param h number
+---@param gray? boolean
+function CellRender:renderItem(x, y, w, h, gray)
+    ISInventoryItem.renderItemIcon(self.pane, self.item, x, y, gray and 0.5 or 1, w, h)
+end
+
 function CellRender:renderStack()
     local scaledIconSize = self:isCollapsed() and iconSize or 0.5 * iconSize
     local scaledPadding = (cellSize - scaledIconSize) / 2
     local scaledHalfPadding = scaledPadding / 2
-    -- Stacks follow their representative item, like the list's row text does
+
     local unwanted = self.item:isUnwanted(self.player)
+    local trgb, ta = 1.0, 1.0
+    if unwanted then trgb, ta = 0.5, 0.65 end -- vanilla's unwantedTextColor
 
     self:renderContrast()
 
-    if unwanted then
-        drawItemIconGrey(self.pane, self.item,
-            self.x + scaledPadding, self.y + scaledPadding, scaledIconSize, scaledIconSize)
-    else
-        ISInventoryItem.renderItemIcon(
-            self.pane, self.item,
-            self.x + scaledPadding, self.y + scaledPadding,
-            1, scaledIconSize, scaledIconSize
-        )
-    end
+    self:renderItem(
+        self.x + scaledPadding, self.y + scaledPadding,
+        scaledIconSize, scaledIconSize, unwanted
+    )
 
-    local tr, ta = 1, 1
-    if unwanted then tr, ta = 0.5, 0.65 end -- vanilla's unwantedTextColor
     self.pane:drawTextRight(
         tostring(self:getStackSize()),
         self.x + cellSize - scaledHalfPadding - self.padSubIcon,
         self.y + cellSize - scaledHalfPadding - fontSize,
-        tr, tr, tr, ta, UIFont.Small
+        trgb, trgb, trgb, ta, UIFont.Small
     )
 end
 
@@ -276,15 +249,11 @@ function CellRender:renderDetails()
     local ui = self.pane
 
     self:renderContrast()
-    if item:isUnwanted(self.player) then
-        drawItemIconGrey(ui, item, self.x + padding, self.y + padding, iconSize, iconSize)
-    else
-        ISInventoryItem.renderItemIcon(
-            ui, item,
-            self.x + padding, self.y + padding,
-            1, iconSize, iconSize
-        )
-    end
+    self:renderItem(
+        self.x + padding, self.y + padding,
+        iconSize, iconSize,
+        item:isUnwanted(self.player)
+    )
 
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
