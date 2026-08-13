@@ -81,6 +81,7 @@ mod.option.maxJoypadColumns = mod.options:addSlider(
 mod.reload = function()
     isInit = false
     table.wipe(applies)
+
     local modules = {
         "integration/BetterContainers",
         "integration/P4HasBeenRead",
@@ -104,6 +105,8 @@ mod.reload = function()
             end
         end
     end
+
+    mod.init()
 end
 
 mod.isDebugEnabled = isDebugEnabled()
