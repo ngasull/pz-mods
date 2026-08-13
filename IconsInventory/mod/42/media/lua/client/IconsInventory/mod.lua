@@ -49,8 +49,11 @@ mod.option.hungerMode_portion = 1
 mod.option.hungerMode:addItem("Restored hunger value")
 mod.option.hungerMode_numbers = 2
 
-mod.option.hideEquipped = mod.options:addTickBox("hideEquipped", "Hide equipped items", false)
-mod.options:addDescription("Hides the worn/held and hotbar sections from the character inventory. Default: off")
+mod.option.hideEquipped = mod.options:addTickBox(
+    "hideEquipped",
+    "Hide equipped items (not recommended without equipment mod)",
+    false
+)
 
 mod.options:addTitle("Gamepad")
 
