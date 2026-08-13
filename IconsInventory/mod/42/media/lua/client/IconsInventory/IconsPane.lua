@@ -3,6 +3,7 @@ local Band = require("IconsInventory/Band")
 local Cell = require("IconsInventory/Cell")
 local CellPool = require("IconsInventory/CellPool")
 local GridLayout = require("IconsInventory/GridLayout")
+local ShiftSelect = require("IconsInventory/ShiftSelect")
 
 local function True()
     return true
@@ -40,8 +41,10 @@ end
 ---@field minXPadding integer
 ---@field yPadding integer
 ---@field isMouseAllowed boolean
+---@field beingSelected table<IconsInventory_Cell, boolean>
 ---@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
 ---@field band? IconsInventory_Band
+---@field shiftSelect? IconsInventory_ShiftSelect
 ---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
@@ -64,6 +67,7 @@ function IconsPane.new(emptyPage)
     self.minXPadding = 2 * Cell.padding
     self.yPadding = Cell.padding
     self.isMouseAllowed = getNumActivePlayers() == 1 or getSpecificPlayer(emptyPage.player):getJoypadBind() < 0
+    self.beingSelected = {}
 
     return self
 end
@@ -386,7 +390,11 @@ function IconsPane:onMouseMove(dx, dy)
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
 
-        if self.mouseDown and not self:isDragging() then
+        if self.shiftSelect then
+            if self.focusedCell then
+                self.shiftSelect:setTo(self.focusedCell)
+            end
+        elseif self.mouseDown and not self:isDragging() then
             if self.mouseDown.ctrl then
                 if self.focusedCell and self.focusedCell:isSelected() ~= self.mouseDown.cell:isSelected() then
                     self.focusedCell:setSelected(self.mouseDown.cell:isSelected())
@@ -422,18 +430,15 @@ function IconsPane:onMouseDown(x, y)
     elseif self.focusedCell then
         self.native.dragging = nil
 
-        local vx, vy = self.native:getMouseX(), self.native:getMouseY()
-        self.mouseDown = { x = x, y = y, cell = self.focusedCell, vx = vx, vy = vy, ctrl = isCtrlKeyDown() }
-
-        if self.mouseDown.ctrl and isShiftKeyDown() then
-            self.mouseDown = nil
-            self.native.mouseOverOption = self.focusedCell.index
-            local vanilla_isCtrlKeyDown = isCtrlKeyDown
-            isCtrlKeyDown = False
-            local ok, res = pcall(self.native.onMouseDown, self.native, vx, vy)
-            isCtrlKeyDown = vanilla_isCtrlKeyDown
-            if not ok then error(res) end
+        if isShiftKeyDown() then
+            if not isCtrlKeyDown() then
+                table.wipe(self.native.selected)
+            end
+            self.shiftSelect = ShiftSelect.new(self, self.focusedCell)
         else
+            local vx, vy = self.native:getMouseX(), self.native:getMouseY()
+            self.mouseDown = { x = x, y = y, cell = self.focusedCell, vx = vx, vy = vy, ctrl = isCtrlKeyDown() }
+
             -- Marks current cell as native shift-click start
             self.native.firstSelect = self.focusedCell.index
 
@@ -454,7 +459,7 @@ end
 ---@param x number
 ---@param y number
 function IconsPane:handleShiftClick(x, y)
-    if isShiftKeyDown() and not isCtrlKeyDown() and self.focusedCell then
+    if false and isShiftKeyDown() and not isCtrlKeyDown() and self.focusedCell then
         local target = self.parent.onCharacter and getPlayerLoot(self.native.player)
             or getPlayerInventory(self.native.player)
         ---@cast target - nil
@@ -500,6 +505,8 @@ function IconsPane:onMouseUp(x, y)
         and self.mouseDown.cell.item == self.focusedCell.item and not self:isDragging() and not isCtrlKeyDown()
         and not isShiftKeyDown() then
         self:toggleExpanded(self.focusedCell)
+    elseif self.shiftSelect then
+        self.shiftSelect:apply()
     elseif self.band then
         self.band:apply()
     else
@@ -520,7 +527,9 @@ end
 
 function IconsPane:onMouseUpOutside(x, y)
     self.mouseDown = nil
-    if self.band then
+    if self.shiftSelect then
+        self.shiftSelect:apply()
+    elseif self.band then
         self.band:apply()
     else
         return self.native:onMouseUpOutside(x, y)

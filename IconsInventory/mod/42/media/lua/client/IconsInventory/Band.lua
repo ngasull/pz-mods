@@ -6,7 +6,6 @@ local Cell = require("IconsInventory/Cell")
 ---@field y0 number
 ---@field x1 number
 ---@field y1 number
----@field beingSelected table<IconsInventory_Cell, boolean>
 ---@field active? boolean
 local Band = {}
 Band.__index = Band
@@ -19,18 +18,17 @@ function Band.new(pane)
     self.y0 = pane:getMouseY()
     self.x1 = self.x0
     self.y1 = self.y0
-    self.beingSelected = {}
     return self
 end
 
 function Band:update()
     local mx, my = self.pane:getMouseX(), self.pane:getMouseY()
     self.x1 = math.max(0, math.min(self.pane:getWidth(), mx))
-    self.y1 = math.max(0, math.min(self.pane:getScrollHeight(), my))
+    self.y1 = math.max(0, math.min(self.pane:getHeight(), my))
     self.active = self.active or math.abs(self.x1 - self.x0) + math.abs(self.y1 - self.y0) > 6
 
     if self.active then
-        table.wipe(self.beingSelected)
+        table.wipe(self.pane.beingSelected)
 
         local left = math.min(self.x0, self.x1) - self.pane.grid.x
         local right = math.max(self.x0, self.x1) - self.pane.grid.x
@@ -44,7 +42,7 @@ function Band:update()
                     local cx = ((i - 1) % self.pane.grid.gridWidth) * Cell.size
                     local cy = yOffset + math.floor((i - 1) / self.pane.grid.gridWidth) * Cell.size
                     if cx < right and cx + Cell.size > left and cy < bottom and cy + Cell.size > top then
-                        self.beingSelected[cell] = true
+                        self.pane.beingSelected[cell] = true
                     end
                 end
             end
@@ -62,16 +60,19 @@ end
 
 function Band:apply()
     self.pane.band = nil
-    for cell in pairs(self.beingSelected) do
+    for cell in pairs(self.pane.beingSelected) do
         cell:setSelected(true)
     end
+    table.wipe(self.pane.beingSelected)
 end
 
 function Band:render()
-    local x, y = math.min(self.x0, self.x1), math.min(self.y0, self.y1)
-    local w, h = math.abs(self.x1 - self.x0), math.abs(self.y1 - self.y0)
-    self.pane:drawRect(x, y, w, h, 0.1, 1, 1, 1)
-    self.pane:drawRectBorder(x, y, w, h, 0.4, 1, 1, 1)
+    if self.active then
+        local x, y = math.min(self.x0, self.x1), math.min(self.y0, self.y1)
+        local w, h = math.abs(self.x1 - self.x0), math.abs(self.y1 - self.y0)
+        self.pane:drawRect(x, y, w, h, 0.1, 1, 1, 1)
+        self.pane:drawRectBorder(x, y, w, h, 0.4, 1, 1, 1)
+    end
 end
 
 return Band

@@ -110,8 +110,7 @@ function Cell:isSelected()
 end
 
 function Cell:isBeingSelected()
-    local band = self.pane.band
-    return not not (band and band.beingSelected[self])
+    return not not self.pane.beingSelected[self]
 end
 
 ---@param isSelected boolean

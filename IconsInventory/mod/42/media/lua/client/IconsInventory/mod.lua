@@ -88,6 +88,7 @@ mod.reload = function()
         "DebugPanel",
         "Action",
         "Band",
+        "ShiftSelect",
         "CellRender",
         "Cell",
         "CellPool",
