@@ -2,18 +2,28 @@ local mod = {
     option = {},
 }
 
-mod.options = PZAPI.ModOptions:create("IconsInventory", "Icons Inventory")
-
-local applies = {}
-mod.options.apply = function()
-    for _, apply in ipairs(applies) do
-        apply()
+local isInit = false
+mod.init = function()
+    if not isInit then
+        require("IconsInventory/Cell")._init()
+        isInit = true
     end
 end
 
+local applies = {}
 ---@param apply fun()
 mod.addApply = function(apply)
     table.insert(applies, apply)
+end
+
+mod.options = PZAPI.ModOptions:create("IconsInventory", "Icons Inventory")
+
+mod.options.apply = function()
+    isInit = false
+    mod.init()
+    for _, apply in ipairs(applies) do
+        apply()
+    end
 end
 
 local default = {
@@ -65,6 +75,7 @@ mod.options:addDescription("Default: " .. tostring(default.maxJoypadColumns))
 
 -- ! -- Add mod last or don't load other mods in development
 mod.reload = function()
+    isInit = false
     table.wipe(applies)
     local modules = {
         "integration/BetterContainers",

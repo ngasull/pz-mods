@@ -137,7 +137,7 @@ end
 
 local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
 
-function Cell.refreshResolution()
+function Cell._init()
     local SIZE = 32 -- Native icon size
     local userSize = mod.option.iconSize:getValue()
     local font = iconFonts[userSize] ---@cast font -nil

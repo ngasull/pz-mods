@@ -57,16 +57,13 @@ function Override:isMouseOver()
     end
 end
 
-local function install()
-    for k, v in pairs(Override) do
-        vanilla[k] = ISInventoryPane[k]
-        ISInventoryPane[k] = v
-    end
-end
-
+-- Install --
 local Prev = require("IconsInventory/PaneOverride")
 if Prev then Prev._clean() end
-install()
+for k, v in pairs(Override) do
+    vanilla[k] = ISInventoryPane[k]
+    ISInventoryPane[k] = v
+end
 
 return {
     _clean = function()

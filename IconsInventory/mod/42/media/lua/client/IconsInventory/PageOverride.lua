@@ -47,6 +47,7 @@ local function initPage(self)
 end
 
 function Override:createChildren()
+    mod.init()
     initPage(self)
     vanilla.createChildren(self)
     self:removeChild(self.inventoryPane)
@@ -318,13 +319,7 @@ function Override:onJoypadDown(button)
     end
 end
 
-local function install()
-    for k, v in pairs(Override) do
-        vanilla[k] = ISInventoryPage[k]
-        ISInventoryPage[k] = v
-    end
-end
-
+-- Install --
 local isReload
 local Prev = require("IconsInventory/PageOverride")
 if Prev then
@@ -332,7 +327,10 @@ if Prev then
     isReload = true
 end
 
-install()
+for k, v in pairs(Override) do
+    vanilla[k] = ISInventoryPage[k]
+    ISInventoryPage[k] = v
+end
 
 ---@param page IconsInventory_ISInventoryPageOverride
 local function applyPage(page)
