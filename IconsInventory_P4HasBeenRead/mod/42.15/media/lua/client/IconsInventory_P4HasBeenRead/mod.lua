@@ -405,27 +405,31 @@ function Cell:renderDetails()
         local tex = self.item:getTex()
         if tex ~= nil then
             local halfPadding = Cell.padding / 2
-            local scaling = 0.5 + Cell.scaling * 0.5 -- damped ramp, keeps the 1 -> 1 and 2 -> 1.5 anchors
+            local scaling = 0.5 + Cell.scaling * 0.5 -- Looks really ugly when too upscaled
+            local mainSize = P4HasBeenRead.textureBookNR:getHeight() * scaling
+            local yOffset = Cell.size - Cell.subAlign - mainSize / 2
+
             if statusTexture and statusTexture ~= P4HasBeenRead.notCompletedTexture then
+                local w, h = statusTexture:getWidth() * scaling, statusTexture:getHeight() * scaling
                 self.pane:drawTextureScaled(statusTexture,
-                    self.x + halfPadding, self.y + Cell.size - halfPadding - 16 * scaling,
-                    statusTexture:getWidth() * scaling,
-                    statusTexture:getHeight() * scaling,
-                    1, 1, 1, 1)
+                    self.x + halfPadding, self.y + yOffset,
+                    w, h, 1, 1, 1, 1
+                )
             end
             if selfMarkingTexture then
+                local w, h = selfMarkingTexture:getWidth() * scaling, selfMarkingTexture:getHeight() * scaling
                 self.pane:drawTextureScaled(selfMarkingTexture,
-                    self.x + halfPadding + 10 * scaling, self.y + Cell.size - halfPadding - 10 * scaling,
-                    selfMarkingTexture:getWidth() * scaling,
-                    selfMarkingTexture:getHeight() * scaling,
-                    1, 1, 1, 1)
+                    self.x + halfPadding + mainSize - w * 2 / 3,
+                    self.y + yOffset + mainSize - h,
+                    w, h, 1, 1, 1, 1
+                )
             end
             if currentTargetTexture then
+                local w, h = currentTargetTexture:getWidth() * scaling, currentTargetTexture:getHeight() * scaling
                 self.pane:drawTextureScaled(currentTargetTexture,
                     self.x + halfPadding, self.y + halfPadding,
-                    currentTargetTexture:getWidth() * scaling,
-                    currentTargetTexture:getHeight() * scaling,
-                    1, 1, 1, 1)
+                    w, h, 1, 1, 1, 1
+                )
             end
         end
     end

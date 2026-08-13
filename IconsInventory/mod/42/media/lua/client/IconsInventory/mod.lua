@@ -84,6 +84,7 @@ mod.reload = function()
 
     local modules = {
         "integration/BetterContainers",
+        "util/texture",
         "integration/P4HasBeenRead",
         "DebugPanel",
         "Action",

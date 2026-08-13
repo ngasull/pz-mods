@@ -14,7 +14,7 @@ local CellRender = require("IconsInventory/CellRender")
 --- Current render loop's state:
 ---@field x number
 ---@field y number
----@field padSubIcon integer
+---@field padSubIcon number
 local Cell = {}
 
 for k, v in pairs(CellRender) do Cell[k] = v end
@@ -32,9 +32,11 @@ function Cell._init()
 
     Cell.font = font
     Cell.scaling = smallScaling + 0.5 * (userSize - 1)
-    Cell.iconSize = math.floor(0.5 + 32 * Cell.scaling)
-    Cell.padding = math.floor(0.5 + 4 * Cell.scaling)
+    Cell.iconSize = math.floor(32 * Cell.scaling)
+    Cell.padding = math.floor(4 * Cell.scaling)
     Cell.size = Cell.iconSize + 2 * Cell.padding
+    -- Offset to which sub-infos center should be aligned
+    Cell.subAlign = math.floor(Cell.padding / 2 + 6 * Cell.scaling)
 end
 
 ---@param item InventoryItem

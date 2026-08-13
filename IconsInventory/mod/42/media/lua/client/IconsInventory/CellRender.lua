@@ -1,4 +1,5 @@
 local mod = require("IconsInventory/mod")
+local texture = require("IconsInventory/util/texture")
 
 local font ---@type UIFont
 local fontHeight ---@type integer
@@ -8,7 +9,7 @@ local iconSize ---@type integer
 local padding ---@type integer
 local subIconSize ---@type integer
 local equippedIconSize ---@type integer
-local ringRadius ---@type integer
+local ringRadius ---@type number
 local ringDiameter ---@type integer
 local subAlign ---@type number
 local subPadding ---@type number
@@ -34,21 +35,18 @@ local function refreshDimensions(Cell)
     iconSize = Cell.iconSize
     padding = Cell.padding
     cellSize = Cell.size
+    subAlign = Cell.subAlign
 
     local tm = getTextManager()
     fontHeight = tm:MeasureStringY(Cell.font, "I")
     fontHeightReal = getTextManager():MeasureStringYReal(Cell.font, "I")
 
+    subPadding = padding / 2
     subIconSize = math.floor(8 * scaling + 0.5)
     equippedIconSize = math.floor(7 * scaling + 0.5)
 
-    ringRadius = math.floor(5 * scaling + 0.5)
-    ringDiameter = ringRadius * 2
-
-    subPadding = padding / 2
-    -- Offset to which sub-infos center should be aligned (calibrated on the biggest = ring)
-    subAlign = subPadding + ringRadius
-
+    ringRadius = 5 * scaling                        -- Can be fractional
+    ringDiameter = math.floor(0.5 + ringRadius * 2) -- Not fractional (pixel rendering)
 end
 
 -- Added by Icons Inventory
@@ -100,7 +98,7 @@ function CellRender:renderAt(x, y)
     refreshDimensions(self)
     self.x = x
     self.y = y
-    self.padSubIcon = 0
+    self.padSubIcon = subPadding
     self:render()
 end
 
@@ -244,7 +242,7 @@ function CellRender:renderStack()
     self.pane:drawTextRight(
         tostring(self:getStackSize()),
         self.x + cellSize - scaledHalfPadding - self.padSubIcon,
-        self.y + cellSize - scaledAlign - fontHeight / 2,
+        self.y + cellSize - scaledAlign - fontHeight * 0.55, -- Font isn't perfectly centered
         trgb, trgb, trgb, ta, font
     )
 end
@@ -300,7 +298,7 @@ function CellRender:renderDetails()
                 0,
                 0.7, font
             )
-            self.padSubIcon = self.padSubIcon + getTextManager():MeasureStringX(font, str) + 4
+            self.padSubIcon = self.padSubIcon + getTextManager():MeasureStringX(font, str) + subPadding
         end
 
         if item:isFrozen() then
@@ -316,7 +314,7 @@ function CellRender:renderDetails()
                     self.x + cellSize - subAlign - subIconSize / 2 - self.padSubIcon,
                     self.y + cellSize - subAlign - subIconSize / 2,
                     0.8, subIconSize, subIconSize)
-                self.padSubIcon = self.padSubIcon + subIconSize + 4
+                self.padSubIcon = self.padSubIcon + subIconSize + subPadding
             elseif not displayNumbers then
                 self:renderSubIcon(clockIcon, subIconSize, subIconSize, 0.5, 0.75, 0.75, 0)
             end
@@ -411,37 +409,10 @@ function CellRender:renderSubIcon(icon, w, h, a, r, g, b)
     if not w then w = icon:getWidth() end
     if not h then h = icon:getHeight() end
     self.pane:drawTextureScaled(icon,
-        self.x + cellSize - subAlign - w / 2 - self.padSubIcon,
+        self.x + cellSize - w - self.padSubIcon,
         self.y + cellSize - subAlign - h / 2,
         w, h, a or 1, r or 1, g or 1, b or 1);
-    self.padSubIcon = self.padSubIcon + w + 4
-end
-
----@param ui ISUIElement
----@param tex Texture
----@param centerX number
----@param centerY number
----@param angle number
----@param w? integer
----@param h? integer
-local function drawTextureAngle(ui, tex, centerX, centerY, angle, w, h)
-    centerX = ui:getAbsoluteX() + ui:getXScroll() + centerX
-    centerY = ui:getAbsoluteY() + ui:getYScroll() + centerY
-    w = w or tex:getWidth()
-    h = h or tex:getHeight()
-
-    -- DrawTextureAngle can't scale: same corner math at ring size, fed to the
-    -- quad DrawTexture (raw screen space, absolute position and scroll added here)
-    local radian = math.rad(180 + angle)
-    local cos, sin = math.cos(radian), math.sin(radian)
-    local wCos, wSin = cos * w, sin * w
-    local hCos, hSin = cos * h, sin * h
-    ui:drawTextureAllPoint(tex,
-        centerX + wCos - hSin, centerY + hCos + wSin,
-        centerX - wCos - hSin, centerY + hCos - wSin,
-        centerX - wCos + hSin, centerY - hCos - wSin,
-        centerX + wCos + hSin, centerY - hCos + wSin,
-        1, 1, 1, 1)
+    self.padSubIcon = self.padSubIcon + w + subPadding
 end
 
 ---@param ring Texture[]
@@ -458,14 +429,14 @@ function CellRender:renderRing(ring, fraction)
 
     local angle = 0
     while fraction >= 0.25 do
-        drawTextureAngle(self.pane, ring[#ringGood], centerX, centerY, angle)
+        texture.drawAngle(self.pane, ring[#ringGood], centerX, centerY, angle, ringDiameter, ringDiameter)
         fraction = fraction - 0.25
         angle = angle - 90
     end
 
     local step = math.floor(fraction * 4 * #ringGood + 0.499)
     if step > 0 then
-        drawTextureAngle(self.pane, ring[step], centerX, centerY, angle)
+        texture.drawAngle(self.pane, ring[step], centerX, centerY, angle, ringDiameter, ringDiameter)
     end
     return true
 end
@@ -479,7 +450,7 @@ function CellRender:renderRingUses(ring, current, max)
         local centerY = self.y + cellSize - subAlign
         local step = 360 / max
         for i = 0, current - 1 do
-            drawTextureAngle(self.pane, ringSeparator, centerX, centerY, -i * step)
+            texture.drawAngle(self.pane, ringSeparator, centerX, centerY, -i * step, ringDiameter, ringDiameter)
         end
     end
 end

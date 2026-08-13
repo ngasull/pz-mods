@@ -2,10 +2,11 @@ require("KnownAndCollected")
 local kAC = _G.KnownAndCollected
 if kAC._IconsInventory_clean then kAC._IconsInventory_clean() end
 
+local texture = require("IconsInventory/util/texture")
 local Cell = require("IconsInventory/Cell")
-local Cell_renderDetails = Cell.renderDetails
+local Cell_render = Cell.render
 kAC._IconsInventory_clean = function()
-    Cell.renderDetails = Cell_renderDetails
+    Cell.render = Cell_render
 end
 
 local function KAC_getPrintMediaTitle(item)
@@ -20,9 +21,8 @@ local function KAC_getPrintMediaTitle(item)
     return nil
 end
 
-function Cell:renderDetails()
-    local res = Cell_renderDetails(self)
-
+---@param self IconsInventory_Cell
+local function render(self)
     local player = self.player
     kAC:init(player)
     if kAC.allowRender then
@@ -142,48 +142,51 @@ function Cell:renderDetails()
         end
 
         if unCollected or unKnown or unKnownUnfinished or unPlayed or unKnownUnavailable or unKnownMap or unCollectedStack or unKnownMapStack or isMap or unKnownFlier or unKnownEntertainment then
-            local tS = 11                 -- kac icons size
-            local texDYE = Cell.size - tS -- end
-            local texDYM = texDYE         -- Cell.size / 2 - tSH + 1 -- middle
-            local texOffsetY = self.y
+            local scaling = 0.5 + Cell.scaling * 0.5  -- Looks really ugly when too upscaled
+            local tS = math.floor(0.5 + 11 * scaling) -- kac icons size
 
             if unCollected then
                 if not (isMap and isStack) or self:isCollapsed() then
-                    local centerX = self.x + Cell.size - tS / 2
-                    local centerY = texOffsetY + texDYM + tS / 2
-                    ui:DrawTextureAngle(kAC.textures.collected, centerX + ui:getXScroll(), centerY + ui:getYScroll(), -90)
+                    local w = kAC.textures.collected:getWidth() * scaling
+                    local centerX = self.x + Cell.size + 2 - w / 2
+                    local centerY = self.y + Cell.size + 2 - w / 2
+                    texture.drawAngle(ui, kAC.textures.collected, centerX, centerY, -90)
                 end
             elseif unCollectedStack then
                 if self:isCollapsed() then
-                    local centerX = self.x + Cell.size - tS / 2
-                    local centerY = texOffsetY + texDYM + tS / 2
-                    ui:DrawTextureAngle(kAC.textures.collectedFolded, centerX + ui:getXScroll(),
-                        centerY + ui:getYScroll(), -90)
-                    self.padSubIcon = self.padSubIcon + 4 -- Hint into nudging stack size number
+                    local w = kAC.textures.collectedFolded:getWidth() * scaling
+                    local centerX = self.x + Cell.size + 2 - w / 2
+                    local centerY = self.y + Cell.size + 2 - w / 2
+                    texture.drawAngle(ui, kAC.textures.collectedFolded, centerX, centerY, -90)
                 end
             end
 
             if not isStack then
                 if unKnown then
-                    self:renderSubIcon(kAC.textures.unknown)
+                    self:renderSubIcon(kAC.textures.unknown, tS, tS)
                 elseif unKnownUnfinished then
-                    self:renderSubIcon(kAC.textures.unKnownUnfinished)
+                    self:renderSubIcon(kAC.textures.unKnownUnfinished, tS, tS)
                 elseif unKnownUnavailable then
-                    self:renderSubIcon(kAC.textures.unavailable)
+                    self:renderSubIcon(kAC.textures.unavailable, tS, tS)
                 elseif unPlayed then
-                    self:renderSubIcon(kAC.textures.media)
+                    self:renderSubIcon(kAC.textures.media, tS, tS)
                 elseif unKnownMap then
-                    self:renderSubIcon(kAC.textures.unKnownMap)
+                    self:renderSubIcon(kAC.textures.unKnownMap, tS, tS)
                 elseif unKnownMapStack then
-                    self:renderSubIcon(kAC.textures.unKnownMapFolded)
+                    self:renderSubIcon(kAC.textures.unKnownMapFolded, tS, tS)
                 elseif unKnownFlier then
-                    self:renderSubIcon(kAC.textures.unKnownFlier)
+                    self:renderSubIcon(kAC.textures.unKnownFlier, tS, tS)
                 elseif unKnownEntertainment then
-                    self:renderSubIcon(kAC.textures.unKnownEntertainment)
+                    self:renderSubIcon(kAC.textures.unKnownEntertainment, tS, tS)
                 end
             end
         end
     end
+end
 
+function Cell:render()
+    local res = Cell_render(self)
+    local ok, err = pcall(render, self)
+    if not ok then print("Error in IconsInventory_KnownAndCollected: ", err) end
     return res
 end
