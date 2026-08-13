@@ -135,26 +135,22 @@ function Cell:isCleanUIHighlighted()
     return self.stack.matchesSearch
 end
 
-local function refreshResolution()
-    -- NB: Makes 2K render as 4K because PZ decides 2K text is at 4K size
-    Cell.scaling = math.max(1, math.min(2, math.floor(0.7 + getCore():getScreenHeight() / 1080)))
+local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
 
-    local forcedPx = mod.option.getIconSizePx()
-    if forcedPx then
-        Cell.scaling = forcedPx / 32
-    end
+function Cell.refreshResolution()
+    local SIZE = 32 -- Native icon size
+    local userSize = mod.option.iconSize:getValue()
+    local font = iconFonts[userSize] ---@cast font -nil
 
-    Cell.iconSize = math.floor(32 * Cell.scaling + 0.5)
-    Cell.padding = math.floor(4 * Cell.scaling + 0.5)
+    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
+    local smallScaling = math.max(1, math.floor(0.5 + (smallHeightReal * 3.5) / SIZE))
+
+    Cell.font = font
+    Cell.scaling = smallScaling + 0.5 * (userSize - 1)
+    Cell.iconSize = math.floor(0.5 + 32 * Cell.scaling)
+    Cell.padding = math.floor(0.5 + 4 * Cell.scaling)
     Cell.size = Cell.iconSize + 2 * Cell.padding
 end
-
-refreshResolution()
--- ! -- Not reliably called
--- Events.OnResolutionChange.Add(refreshResolution)
--- Saved ModOptions are only read once the main menu builds, after mod files load
-Events.OnMainMenuEnter.Add(refreshResolution)
-mod.addApply(refreshResolution)
 
 ---@cast Cell IconsInventory_Cell
 return Cell
