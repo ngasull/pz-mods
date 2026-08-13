@@ -28,7 +28,7 @@ end
 
 local default = {
     collapseItemsUnder = 0.3,
-    alwaysCollapseOver = 3,
+    alwaysCollapseOver = 4,
     maxJoypadColumns = 10,
 }
 
@@ -38,20 +38,8 @@ mod.option.iconSize:addItem("Big")
 mod.option.iconSize:addItem("Huge")
 
 mod.options:addDescription(
-    "To go even smaller (or even bigger) go in UI/Interface menu and adjust game's main font size accordingly. Needs relaunching the game."
+    "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game."
 )
-
-mod.option.collapseItemsUnder = mod.options:addSlider(
-    "collapseItemsUnder", "An item is \"small\" under this weight (excluded)",
-    0, 1, 0.05, 0.3,
-    "Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
-mod.options:addDescription("Small items always stack. Default: " .. tostring(default.collapseItemsUnder))
-
-mod.option.alwaysCollapseOver = mod.options:addSlider(
-    "alwaysCollapseOver", "Always collapse stacks bigger than",
-    1, 20, 1, 3,
-    "1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
-mod.options:addDescription("1 to never collapse. Default: " .. tostring(default.alwaysCollapseOver))
 
 mod.option.hungerMode = mod.options:addComboBox("hungerMode", "Restored hunger display")
 mod.option.hungerMode:addItem("Remaining portion indicator", true)
@@ -61,17 +49,33 @@ mod.option.hungerMode_numbers = 2
 
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
-    "Hide equipped items (not recommended without equipment mod)",
+    "Hide equipped items (needs equipment mod)",
     false
+)
+
+mod.options:addTitle("Smart Stacking")
+
+mod.options:addDescription("Items stack depending on their weight. Small items always stack.")
+
+mod.option.collapseItemsUnder = mod.options:addSlider(
+    "collapseItemsUnder",
+    "\"Small\" means under this weight (excluded). Default: " ..
+    tostring(default.collapseItemsUnder),
+    0, 1, 0.05, default.collapseItemsUnder
+)
+
+mod.option.alwaysCollapseOver = mod.options:addSlider(
+    "alwaysCollapseOver",
+    "Always collapse from this number. 1: never collapse. Default: " .. tostring(default.alwaysCollapseOver),
+    1, 20, 1, default.alwaysCollapseOver
 )
 
 mod.options:addTitle("Gamepad")
 
 mod.option.maxJoypadColumns = mod.options:addSlider(
-    "maxJoypadColumns", "Maximum columns",
-    4, 20, 1, 10,
-    "Default: " .. tostring(default.maxJoypadColumns))
-mod.options:addDescription("Default: " .. tostring(default.maxJoypadColumns))
+    "maxJoypadColumns", "Maximum columns. Default: " .. tostring(default.maxJoypadColumns),
+    4, 20, 1, default.maxJoypadColumns
+)
 
 -- ! -- Add mod last or don't load other mods in development
 mod.reload = function()
