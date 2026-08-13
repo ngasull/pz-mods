@@ -20,6 +20,16 @@ local function initPage(self)
             -- Yep :D this allows reacting to onInventoryContainerSizeChanged
             self.containerButtonPanel.setX = setXZero
             self.containerButtonPanel:setX(0)
+            self.onMouseWheel = function(...)
+                local prev_getWidth = self.getWidth
+                self.getWidth = function()
+                    self.getWidth = prev_getWidth -- getWidth is used elsewhere right after
+                    return self.buttonSize + 1
+                end
+                local ok, res = pcall(ISInventoryPage.onMouseWheel, ...)
+                self.getWidth = prev_getWidth
+                return ok and res
+            end
         end
     else
         if self.containerButtonPanel.anchorLeft then
@@ -28,6 +38,7 @@ local function initPage(self)
             self.containerButtonPanel:setAnchorRight(true)
             self.containerButtonPanel.setX = ISUIElement.setX
             self.containerButtonPanel:setX(self:getWidth() - self.containerButtonPanel:getWidth())
+            self.onMouseWheel = ISInventoryPage.onMouseWheel
         end
     end
 end
