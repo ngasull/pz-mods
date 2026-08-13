@@ -1,46 +1,48 @@
-let scaling = 2
-let steps = 12
-let radius = 5 * scaling
-let thickness = 2 * scaling
-let canvas = document.createElement("canvas")
-canvas.width = 2 * radius
-canvas.height = 2 * radius
-let ctx = canvas.getContext("2d")
-let a
+(async () => {
+    let scaling = 3
+    let steps = 12
+    let radius = 5 * scaling
+    let thickness = 2 * scaling
+    let canvas = document.createElement("canvas")
+    canvas.width = 2 * radius
+    canvas.height = 2 * radius
+    let ctx = canvas.getContext("2d")
+    let a
 
-let drawSlice = (i, name, color) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = thickness
+    let drawSlice = (i, name, color) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = thickness
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.arc(radius, radius, radius - thickness / 2 - 0.5, -Math.PI / 2 - (i / steps) * Math.PI / 2, -Math.PI / 2);
+        ctx.stroke();
+        let a = document.createElement("a")
+        a.href = canvas.toDataURL("image/png")
+        a.download = `ring-${name}-${i}.png`
+        a.dispatchEvent(new MouseEvent("click"))
+    }
+
+    for (let i = 0; i < steps; i++) {
+        drawSlice(i + 1, "good", '#00ff00cc')
+        await new Promise(resolve => setTimeout(resolve, 200))
+    }
+    for (let j = 0; j < steps; j++) {
+        drawSlice(j + 1, "bad", '#ff0000cc')
+        await new Promise(resolve => setTimeout(resolve, 200))
+    }
+
+    ctx.strokeStyle = '#000000dd';
+    ctx.lineWidth = 1
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
-    ctx.arc(radius, radius, radius - thickness / 2 - 0.5, -Math.PI / 2 - (i / steps) * Math.PI / 2, -Math.PI / 2);
+    ctx.moveTo(radius, 0);
+    ctx.lineTo(radius, thickness + 1);
     ctx.stroke();
-    let a = document.createElement("a")
+    a = document.createElement("a")
     a.href = canvas.toDataURL("image/png")
-    a.download = `ring-${scaling}-${name}-${i}.png`
+    a.download = `ring-separator.png`
     a.dispatchEvent(new MouseEvent("click"))
-}
 
-for (let i = 0; i < steps; i++) {
-    setTimeout(() => drawSlice(i + 1, "good", '#00ff00cc'), i * 200)
-}
-for (let j = 0; j < steps; j++) {
-    setTimeout(() => drawSlice(j + 1, "bad", '#ff0000cc'), (steps + j) * 200)
-}
-
-ctx.strokeStyle = '#000000dd';
-ctx.lineWidth = 1
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.beginPath();
-ctx.moveTo(radius, 0);
-ctx.lineTo(radius, thickness + 1);
-ctx.stroke();
-a = document.createElement("a")
-a.href = canvas.toDataURL("image/png")
-a.download = `ring-${scaling}-separator.png`
-a.dispatchEvent(new MouseEvent("click"))
-
-if (scaling === 2) {
     ctx.strokeStyle = '#000000dd';
     ctx.lineWidth = thickness
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -68,4 +70,4 @@ if (scaling === 2) {
     a.href = canvas.toDataURL("image/png")
     a.download = `soft-bg.png`
     a.dispatchEvent(new MouseEvent("click"))
-}
+})();

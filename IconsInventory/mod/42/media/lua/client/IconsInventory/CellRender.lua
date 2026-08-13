@@ -14,10 +14,14 @@ local subAlign ---@type number
 local subPadding ---@type number
 local cellSize ---@type  integer
 
+local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
+local ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-separator.png")
 local ringGood = {} ---@type Texture[]
 local ringBad = {} ---@type Texture[]
-local ringSeparator ---@type Texture
-local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
+for i = 1, 16 do
+    ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-good-" .. tostring(i) .. ".png")
+    ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-bad-" .. tostring(i) .. ".png")
+end
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
@@ -45,13 +49,6 @@ local function refreshDimensions(Cell)
     -- Offset to which sub-infos center should be aligned (calibrated on the biggest = ring)
     subAlign = subPadding + ringRadius
 
-    -- Ring textures only exist at 1x/2x; drawTextureAngle rescales them to ringDiameter
-    local scalingStr = tostring(scaling >= 1.5 and 2 or 1)
-    for i = 1, 16 do
-        ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-good-" .. tostring(i) .. ".png")
-        ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-bad-" .. tostring(i) .. ".png")
-    end
-    ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-" .. scalingStr .. "-separator.png")
 end
 
 -- Added by Icons Inventory
