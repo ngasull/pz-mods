@@ -28,7 +28,7 @@ end
 
 local default = {
     collapseItemsUnder = 0.3,
-    alwaysCollapseOver = 4,
+    alwaysCollapseOver = 3,
     maxJoypadColumns = 10,
 }
 
@@ -66,8 +66,8 @@ mod.option.collapseItemsUnder = mod.options:addSlider(
 
 mod.option.alwaysCollapseOver = mod.options:addSlider(
     "alwaysCollapseOver",
-    "Always collapse from this number. 1: never collapse. Default: " .. tostring(default.alwaysCollapseOver),
-    1, 20, 1, default.alwaysCollapseOver
+    "Always stack above number (excluded). 0: never collapse. Default: " .. tostring(default.alwaysCollapseOver),
+    0, 20, 1, default.alwaysCollapseOver
 )
 
 mod.options:addTitle("Gamepad")

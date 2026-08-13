@@ -57,8 +57,8 @@ end
 
 function Cell:isCollapsable()
     local stackSize = #self.stack.items - 1
-    return not self.stack.equipped and not self.stack.inHotbar and mod.option.alwaysCollapseOver:getValue() > 1 and (
-        stackSize >= mod.option.alwaysCollapseOver:getValue()
+    return not self.stack.equipped and not self.stack.inHotbar and mod.option.alwaysCollapseOver:getValue() > 0 and (
+        stackSize > mod.option.alwaysCollapseOver:getValue()
         or stackSize > 1 and self.stack.weight / stackSize < mod.option.collapseItemsUnder:getValue()
     )
 end
