@@ -20,6 +20,23 @@ local Cell = {}
 for k, v in pairs(CellRender) do Cell[k] = v end
 Cell.__index = Cell
 
+local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
+
+function Cell._init()
+    local SIZE = 32 -- Native icon size
+    local userSize = mod.option.iconSize:getValue()
+    local font = iconFonts[userSize] ---@cast font -nil
+
+    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
+    local smallScaling = math.max(1, math.floor(0.5 + (smallHeightReal * 3.5) / SIZE))
+
+    Cell.font = font
+    Cell.scaling = smallScaling + 0.5 * (userSize - 1)
+    Cell.iconSize = math.floor(0.5 + 32 * Cell.scaling)
+    Cell.padding = math.floor(0.5 + 4 * Cell.scaling)
+    Cell.size = Cell.iconSize + 2 * Cell.padding
+end
+
 ---@param item InventoryItem
 ---@param ... any
 function Cell.new(item, ...)
@@ -133,23 +150,6 @@ end
 
 function Cell:isCleanUIHighlighted()
     return self.stack.matchesSearch
-end
-
-local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
-
-function Cell._init()
-    local SIZE = 32 -- Native icon size
-    local userSize = mod.option.iconSize:getValue()
-    local font = iconFonts[userSize] ---@cast font -nil
-
-    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
-    local smallScaling = math.max(1, math.floor(0.5 + (smallHeightReal * 3.5) / SIZE))
-
-    Cell.font = font
-    Cell.scaling = smallScaling + 0.5 * (userSize - 1)
-    Cell.iconSize = math.floor(0.5 + 32 * Cell.scaling)
-    Cell.padding = math.floor(0.5 + 4 * Cell.scaling)
-    Cell.size = Cell.iconSize + 2 * Cell.padding
 end
 
 ---@cast Cell IconsInventory_Cell
