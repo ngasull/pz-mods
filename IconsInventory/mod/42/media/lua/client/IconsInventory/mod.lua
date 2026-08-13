@@ -33,9 +33,9 @@ local default = {
 }
 
 mod.option.iconSize = mod.options:addComboBox("iconSize", "Icon size")
-mod.option.iconSize:addItem("Small", true)
-mod.option.iconSize:addItem("Medium")
-mod.option.iconSize:addItem("Large")
+mod.option.iconSize:addItem("Normal", true)
+mod.option.iconSize:addItem("Big")
+mod.option.iconSize:addItem("Huge")
 
 mod.options:addDescription(
     "To go even smaller (or even bigger) go in UI/Interface menu and adjust game's main font size accordingly. Needs relaunching the game."
