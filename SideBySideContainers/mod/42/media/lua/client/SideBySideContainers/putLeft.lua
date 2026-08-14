@@ -11,9 +11,8 @@ local function setXZero(self)
 end
 
 ---@param self ISInventoryPage
----@param reset? boolean
-local function initPage(self, reset)
-    if shallMoveLeft(self) and not reset then
+local function initPage(self)
+    if shallMoveLeft(self) then
         if self.containerButtonPanel.anchorRight then
             self.inventoryPane:setX(self.containerButtonPanel:getWidth())
             self.containerButtonPanel:setAnchorLeft(true)
@@ -51,7 +50,14 @@ local vanilla = {}
 
 function Override:prerender()
     -- More reliable to hook on prerender to react to structural changes like plugged controller
-    initPage(self)
+    if self.SBS_needsRefresh then
+        self:refreshBackpacks()
+        self.SBS_needsRefresh = false
+    end
+    if not self.SBS_isInit then
+        self:onInventoryContainerSizeChanged()
+        self.SBS_isInit = true
+    end
     vanilla.prerender(self)
 end
 
@@ -79,20 +85,21 @@ function Override:onInventoryContainerSizeChanged()
     local prev_setWidth = self.inventoryPane.setWidth
 
     if bigger then
-        -- getCore():setOptionInventoryContainerSize(getCore():getOptionInventoryContainerSize())
-        self.inventoryPane.setWidth = function(...)
+        self.inventoryPane.setWidth = function()
             local sizes = { 38, 56, 78 }
             self.buttonSize = sizes[getCore():getOptionInventoryContainerSize()]
             self.minimumWidth = 256 + self.buttonSize
             self.inventoryPane.setWidth = prev_setWidth
-            return prev_setWidth(...)
+            return prev_setWidth(self.inventoryPane, self.width - self.buttonSize)
         end
     end
 
     local ok, res = pcall(vanilla.onInventoryContainerSizeChanged, self)
     self.inventoryPane.setWidth = prev_setWidth
 
-    if ok then
+    if not ok then
+        error(res)
+    else
         if bigger then
             -- Make it crisp
             local containerIconSize = self.buttonSize - self.buttonSize % 16
@@ -103,9 +110,10 @@ function Override:onInventoryContainerSizeChanged()
                 button:forceImageSize(containerIconSize, containerIconSize)
             end
         end
-    else
-        error(res)
     end
+
+    initPage(self)
+    self.SBS_needsRefresh = true -- Refresh on next cycle to avoid buggy init
 end
 
 local function install()
@@ -130,8 +138,6 @@ M.options.apply = function()
         if pd then
             pd.playerInventory:onInventoryContainerSizeChanged()
             pd.lootInventory:onInventoryContainerSizeChanged()
-            initPage(pd.playerInventory, true)
-            initPage(pd.lootInventory, true)
         end
     end
 end
