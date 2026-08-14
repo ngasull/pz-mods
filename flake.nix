@@ -9,7 +9,7 @@
       devShells = builtins.mapAttrs (system: pkgs: {
         default = pkgs.mkShellNoCC {
           packages = with pkgs; [
-            emmylua-ls
+            lua-language-server
           ];
 
           PZ_UMBRELLA =

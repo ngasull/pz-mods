@@ -1,0 +1,21 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": [
+    "${env:PZ_UMBRELLA}",
+    "IconsInventory/mod/42/media/lua",
+    "IconsInventory_ItemRarityUI/mod/42/media/lua",
+    "IconsInventory_KnownAndCollected/mod/42/media/lua",
+    "IconsInventory_P4HasBeenRead/mod/42/media/lua",
+    "SideBySideContainers/mod/42/media/lua",
+    "StaticBags/mod/42/media/lua"
+  ],
+  "runtime.path": [
+    "shared/?.lua",
+    "client/?.lua",
+    "server/?.lua"
+  ],
+  "runtime.version": "Lua 5.1",
+  "hint.enable": false,
+  "diagnostics.globals": ["ItemRarityUI"],
+  "diagnostics.disable": ["unnecessary-if"]
+}

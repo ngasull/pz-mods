@@ -3,7 +3,6 @@ local texture = require("IconsInventory/util/texture")
 
 local font ---@type UIFont
 local fontHeight ---@type integer
-local fontHeightReal ---@type integer
 local scaling ---@type number
 local iconSize ---@type integer
 local padding ---@type integer
@@ -39,7 +38,6 @@ local function refreshDimensions(Cell)
 
     local tm = getTextManager()
     fontHeight = tm:MeasureStringY(Cell.font, "I")
-    fontHeightReal = getTextManager():MeasureStringYReal(Cell.font, "I")
 
     subPadding = padding / 2
     subIconSize = math.floor(8 * scaling + 0.5)

@@ -37,7 +37,6 @@ function Cell._init()
         userSize = userSize - 1
         font = iconFonts[userSize]
     end
-    ---@cast font -nil
     Cell.font = font
 end
 
