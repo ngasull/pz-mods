@@ -11,8 +11,9 @@ local function setXZero(self)
 end
 
 ---@param self ISInventoryPage
-local function initPage(self)
-    if shallMoveLeft(self) then
+---@param reset? boolean
+local function initPage(self, reset)
+    if shallMoveLeft(self) and not reset then
         if self.containerButtonPanel.anchorRight then
             self.inventoryPane:setX(self.containerButtonPanel:getWidth())
             self.containerButtonPanel:setAnchorLeft(true)
@@ -73,6 +74,40 @@ function Override:drawRectBorder(x, y, w, h, a, r, g, b)
     end
 end
 
+function Override:onInventoryContainerSizeChanged()
+    local bigger = M.option.biggerButtons:getValue()
+    local prev_setWidth = self.inventoryPane.setWidth
+
+    if bigger then
+        -- getCore():setOptionInventoryContainerSize(getCore():getOptionInventoryContainerSize())
+        self.inventoryPane.setWidth = function(...)
+            local sizes = { 38, 56, 78 }
+            self.buttonSize = sizes[getCore():getOptionInventoryContainerSize()]
+            self.minimumWidth = 256 + self.buttonSize
+            self.inventoryPane.setWidth = prev_setWidth
+            return prev_setWidth(...)
+        end
+    end
+
+    local ok, res = pcall(vanilla.onInventoryContainerSizeChanged, self)
+    self.inventoryPane.setWidth = prev_setWidth
+
+    if ok then
+        if bigger then
+            -- Make it crisp
+            local containerIconSize = self.buttonSize - self.buttonSize % 16
+            for _, button in ipairs(self.buttonPool) do
+                button:forceImageSize(containerIconSize, containerIconSize)
+            end
+            for _, button in ipairs(self.backpacks) do
+                button:forceImageSize(containerIconSize, containerIconSize)
+            end
+        end
+    else
+        error(res)
+    end
+end
+
 local function install()
     for k, v in pairs(Override) do
         vanilla[k] = ISInventoryPage[k]
@@ -88,3 +123,15 @@ end
 
 if M.clean then M.clean() end
 install()
+
+M.options.apply = function()
+    for i = 0, getNumActivePlayers() - 1 do
+        local pd = getPlayerData(i)
+        if pd then
+            pd.playerInventory:onInventoryContainerSizeChanged()
+            pd.lootInventory:onInventoryContainerSizeChanged()
+            initPage(pd.playerInventory, true)
+            initPage(pd.lootInventory, true)
+        end
+    end
+end
