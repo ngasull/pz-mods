@@ -28,7 +28,7 @@ function ShiftSelect:setTo(last)
     local isSelecting
     local yOffset = 0
     for _, group in ipairs(self.pane.grid.cells) do
-        for i, cell in ipairs(group) do
+        for _, cell in ipairs(group) do
             if cell == self.from then isSelecting = not isSelecting end
             if cell == self.to then isSelecting = not isSelecting end
             if isSelecting == false then break end

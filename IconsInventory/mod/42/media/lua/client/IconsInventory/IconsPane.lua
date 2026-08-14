@@ -30,6 +30,9 @@ local function getTheOtherPage(page)
     return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
 end
 
+---@alias IconsInventory_IconsPane_CellDown { cell: IconsInventory_Cell, vx: number, vy: number  }
+---@alias IconsInventory_IconsPane_MouseDown { x: number, y: number, ctrl: boolean, shift: boolean, focused?: IconsInventory_IconsPane_CellDown }
+
 ---@class IconsInventory_IconsPane: ISPanel
 ---@field parent IconsInventory_ISInventoryPageOverrideIconsInventory_ISInventoryPageOverride
 ---@field native IconsInventory_ISInventoryPaneOverride
@@ -42,7 +45,7 @@ end
 ---@field yPadding integer
 ---@field isMouseAllowed boolean
 ---@field beingSelected table<IconsInventory_Cell, boolean>
----@field mouseDown? { x: number, y: number, cell: IconsInventory_Cell, vx: number, vy: number, ctrl: boolean }
+---@field mouseDown? IconsInventory_IconsPane_MouseDown
 ---@field band? IconsInventory_Band
 ---@field shiftSelect? IconsInventory_ShiftSelect
 ---@field _mouseOut? boolean
@@ -186,11 +189,16 @@ function IconsPane:setFocusedCell(focusedCell)
 end
 
 function IconsPane:isDragging()
+    local x, y = self:getMouseX(), self:getMouseY()
+    return self.mouseDown and math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6
+end
+
+function IconsPane:isDraggingItems()
     return self.mouseDown and self.native.dragging ~= nil and self.native.dragStarted
 end
 
 function IconsPane:renderBase()
-    local isDragging = self:isDragging()
+    local isDragging = self:isDraggingItems()
     local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
@@ -218,7 +226,7 @@ function IconsPane:renderBase()
 end
 
 function IconsPane:renderDragged()
-    local isDragging = self:isDragging()
+    local isDragging = self:isDraggingItems()
     local draggedCells = {}
 
     for _, group in ipairs(self.grid.cells) do
@@ -385,31 +393,114 @@ function IconsPane:render()
     self.native:updateWorldObjectHighlight()
 end
 
-function IconsPane:onMouseMove(dx, dy)
+function IconsPane:onMouseDown(x, y)
+    if not self.isMouseAllowed then return end
+    self.mouseDown = {
+        x = x,
+        y = y,
+        ctrl = isCtrlKeyDown(),
+        shift = isShiftKeyDown(),
+        focused = self.focusedCell and {
+            cell = self.focusedCell,
+            vx = self.native:getMouseX(),
+            vy = self.native:getMouseY(),
+        },
+    }
+
+    -- Init selection painting
+    if self.focusedCell and self.mouseDown.ctrl then
+        self.focusedCell:setSelected(not self.focusedCell:isSelected())
+    end
+end
+
+function IconsPane:onMouseUp(x, y)
+    if not self.isMouseAllowed then return end
+
+    local wasDragging = self:isDraggingItems()
+
+    if self.mouseDown and not self:isDragging() then
+        self:handleClick(self.mouseDown)
+    end
+
+    if self.shiftSelect then self.shiftSelect:apply() end
+    if self.band then self.band:apply() end
+
+    -- Handle drop from other pane
+    self.native.mouseOverOption = 0
+    self.native:onMouseUp(x, y)
+
+    if self.mouseDown
+        and not self.mouseDown.ctrl
+        and not self.mouseDown.shift
+        and not wasDragging -- Do not clear aborted drags
+    then
+        table.wipe(self.native.selected)
+    end
+
+    self.mouseDown = nil
+end
+
+---@param mouseDown IconsInventory_IconsPane_MouseDown
+function IconsPane:handleClick(mouseDown)
+    if mouseDown.focused then
+        self.native.dragging = nil
+
+        if isShiftKeyDown() then
+            self:handleQuickSend(mouseDown.focused.cell)
+        elseif not isCtrlKeyDown()
+            and mouseDown.focused.cell:isCategory() and not self:isDraggingItems()
+        then
+            self:toggleExpanded(self.focusedCell)
+        end
+    elseif not isCtrlKeyDown() then
+        table.wipe(self.native.selected)
+    end
+end
+
+---@param cell IconsInventory_Cell
+function IconsPane:handleQuickSend(cell)
+    local target = self.parent.onCharacter and getPlayerLoot(self.native.player)
+        or getPlayerInventory(self.native.player)
+    ---@cast target - nil
+    local itemsSet = {}
+
+    if cell:isCategory() then
+        for i = 2, #cell.stack.items do
+            itemsSet[cell.stack.items[i]] = true
+        end
+    else
+        itemsSet[cell.item] = true
+    end
+
+    -- Shift-Click on selection includes all of it (exclude it otherwise)
+    if cell:isSelected() then
+        for _, selected in pairs(self.native.selected) do
+            if instanceof(selected, "InventoryItem") then
+                itemsSet[selected] = true
+            else
+                for i = 2, #selected.items do
+                    itemsSet[selected.items[i]] = true
+                end
+            end
+        end
+    end
+
+    local items = {}
+    for item in pairs(itemsSet) do
+        table.insert(items, item)
+    end
+
+    self.native:transferItemsByWeight(items, target.inventory)
+end
+
+function IconsPane:onMouseMove()
     self._mouseOut = false
     self.native.mouseOverOption = 0
 
     if self.isMouseAllowed then
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
-
-        if self.shiftSelect then
-            if self.focusedCell then
-                self.shiftSelect:setTo(self.focusedCell)
-            end
-        elseif self.mouseDown and not self:isDragging() then
-            if self.mouseDown.ctrl then
-                if self.focusedCell and self.focusedCell:isSelected() ~= self.mouseDown.cell:isSelected() then
-                    self.focusedCell:setSelected(self.mouseDown.cell:isSelected())
-                end
-            elseif math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 then
-                self.native.mouseOverOption = self.mouseDown.cell.index
-                self.native:onMouseDown(self.mouseDown.vx, self.mouseDown.vy)
-                self.native.dragStarted = true
-            end
-        end
-
-        if self.band then self.band:update() end
+        if self:isDragging() then self:handleDrag(self.mouseDown) end
     end
 end
 
@@ -425,107 +516,34 @@ function IconsPane:onMouseMoveOutside(dx, dy)
     end
 end
 
-function IconsPane:onMouseDown(x, y)
-    if not self.isMouseAllowed then return end
-
-    if self:handleShiftClick(x, y) then
-        -- Done
-    elseif self.focusedCell then
-        self.native.dragging = nil
-
-        if isShiftKeyDown() then
-            if not isCtrlKeyDown() then
-                table.wipe(self.native.selected)
-            end
-            self.shiftSelect = ShiftSelect.new(self, self.focusedCell)
-        else
-            local vx, vy = self.native:getMouseX(), self.native:getMouseY()
-            self.mouseDown = { x = x, y = y, cell = self.focusedCell, vx = vx, vy = vy, ctrl = isCtrlKeyDown() }
-
-            -- Marks current cell as native shift-click start
-            self.native.firstSelect = self.focusedCell.index
-
-            if self.mouseDown.ctrl then
-                self.focusedCell:setSelected(not self.focusedCell:isSelected())
-            end
-        end
-    else
-        if not isCtrlKeyDown() then
-            table.wipe(self.native.selected)
-        end
-        if not isShiftKeyDown() then
-            self.band = Band.new(self)
-        end
-    end
-end
-
----@param x number
----@param y number
-function IconsPane:handleShiftClick(x, y)
-    if false and isShiftKeyDown() and not isCtrlKeyDown() and self.focusedCell then
-        local target = self.parent.onCharacter and getPlayerLoot(self.native.player)
-            or getPlayerInventory(self.native.player)
-        ---@cast target - nil
-        local itemsSet = {}
-
-        if self.focusedCell:isCategory() then
-            for i = 2, #self.focusedCell.stack.items do
-                itemsSet[self.focusedCell.stack.items[i]] = true
-            end
-        else
-            itemsSet[self.focusedCell.item] = true
-        end
-
-        -- Shift-Click on selection includes all of it (exclude it otherwise)
-        if self.focusedCell:isSelected() then
-            for _, selected in pairs(self.native.selected) do
-                if instanceof(selected, "InventoryItem") then
-                    itemsSet[selected] = true
-                else
-                    for i = 2, #selected.items do
-                        itemsSet[selected.items[i]] = true
-                    end
+---@param mouseDown IconsInventory_IconsPane_MouseDown
+function IconsPane:handleDrag(mouseDown)
+    if mouseDown.focused and not self:isDraggingItems() then
+        if mouseDown.shift then
+            if not self.shiftSelect then
+                if not mouseDown.ctrl then
+                    table.wipe(self.native.selected)
                 end
+                self.shiftSelect = ShiftSelect.new(self, mouseDown.focused.cell)
+            elseif self.focusedCell then
+                self.shiftSelect:setTo(self.focusedCell)
             end
+        elseif mouseDown.ctrl then
+            if self.focusedCell and self.focusedCell:isSelected() ~= mouseDown.focused.cell:isSelected() then
+                self.focusedCell:setSelected(mouseDown.focused.cell:isSelected())
+            end
+        else
+            self.native.mouseOverOption = mouseDown.focused.cell.index
+            self.native:onMouseDown(mouseDown.focused.vx, mouseDown.focused.vy)
+            self.native.dragStarted = true
         end
-
-        local items = {}
-        for item in pairs(itemsSet) do
-            table.insert(items, item)
-        end
-
-        self.native:transferItemsByWeight(items, target.inventory)
-        return true
-    end
-end
-
-function IconsPane:onMouseUp(x, y)
-    if not self.isMouseAllowed then return end
-
-    local wasDragging = self:isDragging()
-
-    if self.focusedCell and self.focusedCell:isCategory() and self.mouseDown
-        and self.mouseDown.cell.item == self.focusedCell.item and not self:isDragging() and not isCtrlKeyDown()
-        and not isShiftKeyDown() then
-        self:toggleExpanded(self.focusedCell)
-    elseif self.shiftSelect then
-        self.shiftSelect:apply()
-    elseif self.band then
-        self.band:apply()
-    else
-        -- Handle drag from other pane
-        self.native.mouseOverOption = 0
-        self.native:onMouseUp(self:getMouseX(), self:getMouseY())
     end
 
-    if self.mouseDown       -- Only registered mousedowns (shift-click isn't registered)
-        and not self.mouseDown.ctrl
-        and not wasDragging -- Do not clear aborted drags
-    then
-        table.wipe(self.native.selected)
+    if self.band then
+        self.band:update()
+    elseif not mouseDown.focused and not mouseDown.shift then
+        self.band = Band.new(self, mouseDown.x, mouseDown.y)
     end
-
-    self.mouseDown = nil
 end
 
 function IconsPane:onMouseUpOutside(x, y)
