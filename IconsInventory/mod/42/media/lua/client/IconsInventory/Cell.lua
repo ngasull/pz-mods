@@ -23,20 +23,22 @@ Cell.__index = Cell
 local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
 
 function Cell._init()
-    local SIZE = 32 -- Native icon size
     local userSize = mod.option.iconSize:getValue()
-    local font = iconFonts[userSize] ---@cast font -nil
-
-    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
-    local smallScaling = math.max(1, math.floor(0.5 + (smallHeightReal * 3.5) / SIZE))
-
-    Cell.font = font
-    Cell.scaling = smallScaling + 0.5 * (userSize - 1)
-    Cell.iconSize = math.floor(32 * Cell.scaling)
+    local font = iconFonts[userSize]
+    Cell.scaling = mod.getSmallScaling() + 0.5 * (userSize - 1)
+    Cell.iconSize = math.floor(mod.NATIVE_SIZE * Cell.scaling)
     Cell.padding = math.floor(4 * Cell.scaling)
     Cell.size = Cell.iconSize + 2 * Cell.padding
     -- Offset to which sub-infos center should be aligned
     Cell.subAlign = math.floor(Cell.padding / 2 + 6 * Cell.scaling)
+
+    -- Without touching scaling, reduce font if it seems too big
+    while userSize > 1 and getTextManager():MeasureStringYReal(font, "I") > Cell.iconSize / 3 do
+        userSize = userSize - 1
+        font = iconFonts[userSize]
+    end
+    ---@cast font -nil
+    Cell.font = font
 end
 
 ---@param item InventoryItem
