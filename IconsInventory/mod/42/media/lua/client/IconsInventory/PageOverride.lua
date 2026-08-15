@@ -110,6 +110,20 @@ function Override:prerender()
     vanilla.prerender(self)
 end
 
+-- Vanilla collapses unpinned windows on any outside click; drags were exempt via ISMouseDrag.
+-- Icons interactions are clicks, so exempt the sibling window too. (thanks @armaku)
+function Override:onMouseDownOutside(...)
+    local other = getTheOtherPage(self)
+    if other and other:isReallyVisible() and other:isMouseOver() then return end
+    return vanilla.onMouseDownOutside(self, ...)
+end
+
+function Override:onRightMouseDownOutside(...)
+    local other = getTheOtherPage(self)
+    if other and other:isReallyVisible() and other:isMouseOver() then return end
+    return vanilla.onRightMouseDownOutside(self, ...)
+end
+
 ---@param self IconsInventory_ISInventoryPageOverride
 local function switchToList(self)
     if self._IconsInventory:isVisible() then

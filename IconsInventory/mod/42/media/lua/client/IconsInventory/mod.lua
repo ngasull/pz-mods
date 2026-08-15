@@ -65,15 +65,25 @@ mod.options:addDescription(
 
 mod.option.enableSmartScroll = mod.options:addTickBox(
     "enableSmartScroll",
-    "Enable smart container scrolling",
-    true
+    "Smart container scrolling",
+    true,
+    "Scrolling from Icons Inventory cycles containers"
 )
 
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
-    "Hide equipped items (needs equipment mod)",
-    false
+    "Hide equipped items",
+    false,
+    "Warning: only enable if you really need this"
 )
+
+mod.option.clickSend = mod.options:addComboBox("clickSend", "Click to quick-send")
+mod.option.clickSend:addItem("Off")
+mod.option.clickSend_off = 1
+mod.option.clickSend:addItem("Safe - Send to loot container only if its window is open", true)
+mod.option.clickSend_safe = 2
+mod.option.clickSend:addItem("Send - Like Shift+Click, without shift. Except for stacks")
+mod.option.clickSend_send = 3
 
 mod.option.hungerMode = mod.options:addComboBox("hungerMode", "Restored hunger display")
 mod.option.hungerMode:addItem("Remaining portion indicator", true)

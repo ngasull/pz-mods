@@ -447,10 +447,22 @@ function IconsPane:handleClick(mouseDown)
 
         if isShiftKeyDown() then
             self:handleQuickSend(mouseDown.focused.cell)
-        elseif not isCtrlKeyDown()
-            and mouseDown.focused.cell:isCategory() and not self:isDraggingItems()
-        then
-            self:toggleExpanded(self.focusedCell)
+        elseif not isCtrlKeyDown() then
+            local clickSend = mod.option.clickSend:getValue()
+            local other = getTheOtherPage(self.parent)
+            if mouseDown.focused.cell:isCategory()
+                and (clickSend == mod.option.clickSend_off or not mouseDown.focused.cell:isSelected())
+            then
+                self:toggleExpanded(self.focusedCell)
+            elseif
+                clickSend == mod.option.clickSend_send
+                or (clickSend == mod.option.clickSend_safe and not (
+                    self.parent.onCharacter and other.isCollapsed
+                ))
+            then
+                self:handleQuickSend(mouseDown.focused.cell)
+                other.collapseCounter = 0
+            end
         end
     elseif not isCtrlKeyDown() then
         table.wipe(self.native.selected)
