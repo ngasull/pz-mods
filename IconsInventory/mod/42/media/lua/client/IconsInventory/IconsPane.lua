@@ -43,6 +43,7 @@ end
 ---@field mouseDown? IconsInventory_IconsPane_MouseDown
 ---@field dragSelectionBox? IconsInventory_DragSelectionBox
 ---@field multiSelect? IconsInventory_MultiSelect
+---@field overscrollTime integer
 ---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
@@ -69,6 +70,7 @@ function IconsPane.new(emptyPage)
     self.pool = CellPool:new()
     self.isMouseAllowed = getNumActivePlayers() == 1 or getSpecificPlayer(emptyPage.player):getJoypadBind() < 0
     self.beingSelected = {}
+    self.overscrollTime = 0
 
     return self
 end
@@ -602,8 +604,32 @@ function IconsPane:onMouseWheel(del)
     if self.parent.isCollapsed then return false end
     if self.parent:isCycleContainerKeyDown() then return false end
 
-    if not self.smoothScrollTargetY then self.smoothScrollY = self:getYScroll() end
-    self.smoothScrollTargetY = self:getYScroll() - (del * Cell.size)
+    local yScroll = self:getYScroll()
+    local yScrollLimit = -math.max(0, self:getScrollHeight() - self:getScrollAreaHeight())
+    local yScrollTarget = math.max(yScrollLimit, math.min(0, yScroll - (del * Cell.size)))
+
+    if yScrollTarget ~= yScroll then
+        if not self.smoothScrollTargetY then self.smoothScrollY = yScroll end
+        self.smoothScrollTargetY = yScroll - (del * Cell.size)
+
+        -- Just reached top or bottom
+        if yScrollTarget == 0 or yScrollTarget == yScrollLimit then
+            self.overscrollTime = getTimeInMillis()
+        end
+    elseif mod.option.enableSmartScroll:getValue()
+        and (del < 0 and yScroll == 0 or del > 0 and yScrollLimit == yScroll)
+    then -- Top or bottom overscroll
+        local time = getTimeInMillis()
+        if time - self.overscrollTime > 300 then
+            local prev_isCycleContainerKeyDown = self.parent.isCycleContainerKeyDown
+            self.parent.isCycleContainerKeyDown = True
+            pcall(self.parent.onMouseWheel, self.parent, del)
+            self.parent.isCycleContainerKeyDown = prev_isCycleContainerKeyDown
+        else
+            self.overscrollTime = time -- Refresh it - wheel has to stop for a while
+        end
+    end
+
     return true
 end
 

@@ -63,17 +63,23 @@ mod.options:addDescription(
     "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game."
 )
 
-mod.option.hungerMode = mod.options:addComboBox("hungerMode", "Restored hunger display")
-mod.option.hungerMode:addItem("Remaining portion indicator", true)
-mod.option.hungerMode_portion = 1
-mod.option.hungerMode:addItem("Restored hunger value")
-mod.option.hungerMode_numbers = 2
+mod.option.enableSmartScroll = mod.options:addTickBox(
+    "enableSmartScroll",
+    "Enable smart container scrolling",
+    true
+)
 
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
     "Hide equipped items (needs equipment mod)",
     false
 )
+
+mod.option.hungerMode = mod.options:addComboBox("hungerMode", "Restored hunger display")
+mod.option.hungerMode:addItem("Remaining portion indicator", true)
+mod.option.hungerMode_portion = 1
+mod.option.hungerMode:addItem("Restored hunger value")
+mod.option.hungerMode_numbers = 2
 
 mod.options:addTitle("Smart Stacking")
 
