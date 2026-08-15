@@ -1,26 +1,26 @@
 local Cell = require("IconsInventory/Cell")
 
----@class IconsInventory_Band
+---@class IconsInventory_DragSelectionBox
 ---@field pane IconsInventory_IconsPane
 ---@field x0 number
 ---@field y0 number
 ---@field x1 number
 ---@field y1 number
-local Band = {}
-Band.__index = Band
+local DragSelectionBox = {}
+DragSelectionBox.__index = DragSelectionBox
 
 ---@param pane IconsInventory_IconsPane
 ---@param x number
 ---@param y number
-function Band.new(pane, x, y)
-    local self = setmetatable({}, Band)
+function DragSelectionBox.new(pane, x, y)
+    local self = setmetatable({}, DragSelectionBox)
     self.pane = pane
     self.x0, self.y0 = x, y
     self.x1, self.y1 = x, y
     return self
 end
 
-function Band:update()
+function DragSelectionBox:update()
     local mx, my = self.pane:getMouseX(), self.pane:getMouseY()
     self.x1 = math.max(0, math.min(self.pane:getWidth(), mx))
     self.y1 = math.max(0, math.min(self.pane:getHeight(), my))
@@ -54,19 +54,19 @@ function Band:update()
     end
 end
 
-function Band:apply()
-    self.pane.band = nil
+function DragSelectionBox:apply()
+    self.pane.dragSelectionBox = nil
     for cell in pairs(self.pane.beingSelected) do
         cell:setSelected(true)
     end
     table.wipe(self.pane.beingSelected)
 end
 
-function Band:render()
+function DragSelectionBox:render()
     local x, y = math.min(self.x0, self.x1), math.min(self.y0, self.y1)
     local w, h = math.abs(self.x1 - self.x0), math.abs(self.y1 - self.y0)
     self.pane:drawRect(x, y, w, h, 0.1, 1, 1, 1)
     self.pane:drawRectBorder(x, y, w, h, 0.4, 1, 1, 1)
 end
 
-return Band
+return DragSelectionBox

@@ -1,15 +1,12 @@
 local mod = require("IconsInventory/mod")
-local Band = require("IconsInventory/Band")
 local Cell = require("IconsInventory/Cell")
 local CellPool = require("IconsInventory/CellPool")
+local DragSelectionBox = require("IconsInventory/DragSelectionBox")
 local GridLayout = require("IconsInventory/GridLayout")
-local ShiftSelect = require("IconsInventory/ShiftSelect")
+local MultiSelect = require("IconsInventory/MultiSelect")
 
 local function True()
     return true
-end
-local function False()
-    return false
 end
 
 -- Directly from ISInventoryPane
@@ -46,8 +43,8 @@ end
 ---@field isMouseAllowed boolean
 ---@field beingSelected table<IconsInventory_Cell, boolean>
 ---@field mouseDown? IconsInventory_IconsPane_MouseDown
----@field band? IconsInventory_Band
----@field shiftSelect? IconsInventory_ShiftSelect
+---@field dragSelectionBox? IconsInventory_DragSelectionBox
+---@field multiSelect? IconsInventory_MultiSelect
 ---@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
@@ -382,7 +379,7 @@ function IconsPane:prerender()
     -- Height -1 to avoid removing controlsUI line
     self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self:getHeight() - 1)
     self:renderBase()
-    if self.band then self.band:render() end
+    if self.dragSelectionBox then self.dragSelectionBox:render() end
     self:clearStencilRect()
 
     self:updateSmoothScrolling()
@@ -422,8 +419,8 @@ function IconsPane:onMouseUp(x, y)
         self:handleClick(self.mouseDown)
     end
 
-    if self.shiftSelect then self.shiftSelect:apply() end
-    if self.band then self.band:apply() end
+    if self.multiSelect then self.multiSelect:apply() end
+    if self.dragSelectionBox then self.dragSelectionBox:apply() end
 
     -- Handle drop from other pane
     self.native.mouseOverOption = 0
@@ -511,7 +508,7 @@ function IconsPane:onMouseMoveOutside(dx, dy)
         if not self.native.doController then
             self:setFocusedCell(nil)
         end
-        if self.band then self.band:update() end
+        if self.dragSelectionBox then self.dragSelectionBox:update() end
         self.native:onMouseMoveOutside(dx, dy)
     end
 end
@@ -520,13 +517,13 @@ end
 function IconsPane:handleDrag(mouseDown)
     if mouseDown.focused and not self:isDraggingItems() then
         if mouseDown.shift then
-            if not self.shiftSelect then
+            if not self.multiSelect then
                 if not mouseDown.ctrl then
                     table.wipe(self.native.selected)
                 end
-                self.shiftSelect = ShiftSelect.new(self, mouseDown.focused.cell)
+                self.multiSelect = MultiSelect.new(self, mouseDown.focused.cell)
             elseif self.focusedCell then
-                self.shiftSelect:setTo(self.focusedCell)
+                self.multiSelect:setTo(self.focusedCell)
             end
         elseif mouseDown.ctrl then
             if self.focusedCell and self.focusedCell:isSelected() ~= mouseDown.focused.cell:isSelected() then
@@ -539,19 +536,19 @@ function IconsPane:handleDrag(mouseDown)
         end
     end
 
-    if self.band then
-        self.band:update()
+    if self.dragSelectionBox then
+        self.dragSelectionBox:update()
     elseif not mouseDown.focused and not mouseDown.shift then
-        self.band = Band.new(self, mouseDown.x, mouseDown.y)
+        self.dragSelectionBox = DragSelectionBox.new(self, mouseDown.x, mouseDown.y)
     end
 end
 
 function IconsPane:onMouseUpOutside(x, y)
     self.mouseDown = nil
-    if self.shiftSelect then
-        self.shiftSelect:apply()
-    elseif self.band then
-        self.band:apply()
+    if self.multiSelect then
+        self.multiSelect:apply()
+    elseif self.dragSelectionBox then
+        self.dragSelectionBox:apply()
     else
         return self.native:onMouseUpOutside(x, y)
     end

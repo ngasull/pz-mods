@@ -1,16 +1,16 @@
 local Cell = require("IconsInventory/Cell")
 
----@class IconsInventory_ShiftSelect
+---@class IconsInventory_MultiSelect
 ---@field pane IconsInventory_IconsPane
 ---@field from IconsInventory_Cell
 ---@field to IconsInventory_Cell
-local ShiftSelect = {}
-ShiftSelect.__index = ShiftSelect
+local MultiSelect = {}
+MultiSelect.__index = MultiSelect
 
 ---@param pane IconsInventory_IconsPane
 ---@param start IconsInventory_Cell
-function ShiftSelect.new(pane, start)
-    local self = setmetatable({}, ShiftSelect)
+function MultiSelect.new(pane, start)
+    local self = setmetatable({}, MultiSelect)
     self.pane = pane
     self.from = start
     self.to = start
@@ -18,7 +18,7 @@ function ShiftSelect.new(pane, start)
 end
 
 ---@param last IconsInventory_Cell
-function ShiftSelect:setTo(last)
+function MultiSelect:setTo(last)
     self.to = last
 
     table.wipe(self.pane.beingSelected)
@@ -49,12 +49,12 @@ function ShiftSelect:setTo(last)
     end
 end
 
-function ShiftSelect:apply()
-    self.pane.shiftSelect = nil
+function MultiSelect:apply()
+    self.pane.multiSelect = nil
     for cell in pairs(self.pane.beingSelected) do
         cell:setSelected(true)
     end
     table.wipe(self.pane.beingSelected)
 end
 
-return ShiftSelect
+return MultiSelect
