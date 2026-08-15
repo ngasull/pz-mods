@@ -57,6 +57,13 @@ function Override:isMouseOver()
     end
 end
 
+-- 1 Gesture right click for vanilla inventory
+function Override:onRightMouseDown(...)
+    return self:onRightMouseUp(...)
+end
+
+Override.onRightMouseUp = UIElement.onRightMouseUp
+
 -- Install --
 local Prev = require("IconsInventory/PaneOverride")
 if Prev then Prev._clean() end

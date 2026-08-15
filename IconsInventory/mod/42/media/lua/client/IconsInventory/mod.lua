@@ -116,6 +116,7 @@ mod.reload = function()
         "IconsPane",
         "PaneOverride",
         "PageOverride",
+        "ContextMenuOverride",
     }
     for _, m in ipairs(modules) do
         local PrevMod = require("IconsInventory/" .. m)

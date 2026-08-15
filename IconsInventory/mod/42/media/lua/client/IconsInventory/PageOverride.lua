@@ -145,8 +145,8 @@ local function switchToIcons(self)
     end
 end
 
-function Override:onRightMouseUp(x, y)
-    if vanilla.onRightMouseUp then vanilla.onRightMouseUp(self, x, y) end
+function Override:onRightMouseDown(x, y)
+    if vanilla.onRightMouseDown then vanilla.onRightMouseDown(self, x, y) end
 
     local context = ISContextMenu.get(self.inventoryPane.player,
         self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll())

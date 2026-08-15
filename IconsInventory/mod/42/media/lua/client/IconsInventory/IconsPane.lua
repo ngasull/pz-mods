@@ -557,7 +557,7 @@ function IconsPane:onMouseUpOutside(x, y)
     end
 end
 
-function IconsPane:onRightMouseUp(x, y)
+function IconsPane:onRightMouseDown(x, y)
     local handled = true
 
     if self.focusedCell then
