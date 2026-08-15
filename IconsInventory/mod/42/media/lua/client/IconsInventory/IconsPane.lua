@@ -419,9 +419,6 @@ function IconsPane:onMouseUp(x, y)
         self:handleClick(self.mouseDown)
     end
 
-    if self.multiSelect then self.multiSelect:apply() end
-    if self.dragSelectionBox then self.dragSelectionBox:apply() end
-
     -- Handle drop from other pane
     self.native.mouseOverOption = 0
     self.native:onMouseUp(x, y)
@@ -433,6 +430,9 @@ function IconsPane:onMouseUp(x, y)
     then
         table.wipe(self.native.selected)
     end
+
+    if self.multiSelect then self.multiSelect:apply() end
+    if self.dragSelectionBox then self.dragSelectionBox:apply() end
 
     self.mouseDown = nil
 end
