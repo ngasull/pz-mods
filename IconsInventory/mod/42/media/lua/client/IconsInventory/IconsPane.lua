@@ -417,9 +417,10 @@ function IconsPane:onMouseUp(x, y)
     if not self.isMouseAllowed then return end
 
     local wasDragging = self:isDraggingItems()
+    local handledClick = false
 
     if self.mouseDown and not self:isDragging() then
-        self:handleClick(self.mouseDown)
+        handledClick = self:handleClick(self.mouseDown)
     end
 
     -- Handle drop from other pane
@@ -429,6 +430,7 @@ function IconsPane:onMouseUp(x, y)
     if self.mouseDown
         and not self.mouseDown.ctrl
         and not self.mouseDown.shift
+        and not handledClick
         and not wasDragging -- Do not clear aborted drags
     then
         table.wipe(self.native.selected)
@@ -447,6 +449,7 @@ function IconsPane:handleClick(mouseDown)
 
         if isShiftKeyDown() then
             self:handleQuickSend(mouseDown.focused.cell)
+            return true
         elseif not isCtrlKeyDown() then
             local clickSend = mod.option.clickSend:getValue()
             local other = getTheOtherPage(self.parent)
@@ -454,6 +457,7 @@ function IconsPane:handleClick(mouseDown)
                 and (clickSend == mod.option.clickSend_off or not mouseDown.focused.cell:isSelected())
             then
                 self:toggleExpanded(self.focusedCell)
+                return true
             elseif
                 clickSend == mod.option.clickSend_send
                 or (clickSend == mod.option.clickSend_safe and not (
@@ -462,6 +466,7 @@ function IconsPane:handleClick(mouseDown)
             then
                 self:handleQuickSend(mouseDown.focused.cell)
                 other.collapseCounter = 0
+                return true
             end
         end
     elseif not isCtrlKeyDown() then
