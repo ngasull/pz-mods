@@ -65,17 +65,17 @@ end
 Override.onRightMouseUp = UIElement.onRightMouseUp
 
 -- Install --
+Override._vanilla = vanilla
 local Prev = require("IconsInventory/PaneOverride")
-if Prev then Prev._clean() end
-for k, v in pairs(Override) do
-    vanilla[k] = ISInventoryPane[k]
-    ISInventoryPane[k] = v
+for k in pairs(Override) do
+    if not Prev then
+        vanilla[k] = ISInventoryPane[k]
+        ISInventoryPane[k] =
+            isDebugEnabled() and function(...) return Override[k](...) end
+            or Override[k]
+    else
+        vanilla[k] = Prev._vanilla[k]
+    end
 end
 
-return {
-    _clean = function()
-        for k, v in pairs(vanilla) do
-            ISInventoryPane[k] = v
-        end
-    end
-}
+return Override

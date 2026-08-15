@@ -1,7 +1,6 @@
 local Cell = require("IconsInventory/Cell")
 
 ---@class IconsInventory_GridLayout<T>
----@field groupSpace number
 ---@field cells T[][]
 ---@field gridWidth integer
 ---@field x number
@@ -12,8 +11,11 @@ local Cell = require("IconsInventory/Cell")
 local GridLayout = {}
 GridLayout.__index = GridLayout
 
----@param groupSpace number
-function GridLayout.new(groupSpace)
+function GridLayout._init()
+    GridLayout.groupSpace = 2 * Cell.padding
+end
+
+function GridLayout.new()
     ---@type IconsInventory_GridLayout
     local self = setmetatable({}, GridLayout)
     self.x = 0
@@ -21,7 +23,6 @@ function GridLayout.new(groupSpace)
     self.width = 0
     self.height = 0
     self.gridWidth = 1
-    self.groupSpace = groupSpace
     self.cells = {}
     return self
 end
@@ -45,7 +46,7 @@ function GridLayout:hitTest(mx, my)
                         return
                     end
                 end
-                my = my - groupRowCount * Cell.size - self.groupSpace
+                my = my - groupRowCount * Cell.size - GridLayout.groupSpace
             end
         end
     end
@@ -60,7 +61,7 @@ function GridLayout:set(cells, gridWidth)
     self.gridWidth = math.max(1, gridWidth)
     self.width = self.gridWidth * Cell.size
 
-    self.height = (#self.cells - 1) * self.groupSpace
+    self.height = (#self.cells - 1) * GridLayout.groupSpace
     for _, group in ipairs(self.cells) do
         self.height = self.height + self:calcGroupHeight(#group)
     end

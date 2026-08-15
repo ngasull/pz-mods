@@ -1,6 +1,6 @@
 local mod = require("IconsInventory/mod")
 
-if mod.isDebugEnabled then
+if isDebugEnabled() then
     local debugOption = mod.options:addTickBox("debug", "Debug", false)
 
     local w = 450

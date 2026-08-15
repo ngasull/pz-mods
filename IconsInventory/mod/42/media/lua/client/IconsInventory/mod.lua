@@ -6,6 +6,8 @@ local isInit = false
 mod.init = function()
     if not isInit then
         require("IconsInventory/Cell")._init()
+        require("IconsInventory/GridLayout")._init()
+        require("IconsInventory/IconsPane")._init()
         isInit = true
     end
 end
@@ -97,11 +99,7 @@ mod.option.maxJoypadColumns = mod.options:addSlider(
     4, 20, 1, default.maxJoypadColumns
 )
 
--- ! -- Add mod last or don't load other mods in development
-mod.reload = function()
-    isInit = false
-    table.wipe(applies)
-
+if isDebugEnabled() then
     local modules = {
         "integration/BetterContainers",
         "util/texture",
@@ -118,19 +116,24 @@ mod.reload = function()
         "PageOverride",
         "ContextMenuOverride",
     }
-    for _, m in ipairs(modules) do
-        local PrevMod = require("IconsInventory/" .. m)
-        local NewMod = reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/" .. m .. ".lua")
-        if PrevMod and NewMod then
-            for k, v in pairs(NewMod) do
-                PrevMod[k] = v
+
+    -- ! -- Add mod last or don't load other mods in development
+    mod.reload = function()
+        isInit = false
+        table.wipe(applies)
+
+        for _, m in ipairs(modules) do
+            local PrevMod = require("IconsInventory/" .. m)
+            local NewMod = reloadLuaFile("IconsInventory/42/media/lua/client/IconsInventory/" .. m .. ".lua")
+            if PrevMod and NewMod then
+                for k, v in pairs(NewMod) do
+                    PrevMod[k] = v
+                end
             end
         end
+
+        mod.init()
     end
-
-    mod.init()
 end
-
-mod.isDebugEnabled = isDebugEnabled()
 
 return mod

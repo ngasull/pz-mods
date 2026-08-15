@@ -164,7 +164,7 @@ function Override:onRightMouseDown(x, y)
     end
 end
 
-function Override:onJoypadDirRight(...)
+function Override:onJoypadDirRight()
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -191,7 +191,7 @@ function Override:onJoypadDirRight(...)
     end
 end
 
-function Override:onJoypadDirLeft(...)
+function Override:onJoypadDirLeft()
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -218,7 +218,7 @@ function Override:onJoypadDirLeft(...)
     end
 end
 
-function Override:onJoypadDirDown(...)
+function Override:onJoypadDirDown()
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -249,7 +249,7 @@ function Override:onJoypadDirDown(...)
     end
 end
 
-function Override:onJoypadDirUp(...)
+function Override:onJoypadDirUp()
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -319,19 +319,6 @@ function Override:onJoypadDown(button)
     end
 end
 
--- Install --
-local isReload
-local Prev = require("IconsInventory/PageOverride")
-if Prev then
-    Prev._clean()
-    isReload = true
-end
-
-for k, v in pairs(Override) do
-    vanilla[k] = ISInventoryPage[k]
-    ISInventoryPage[k] = v
-end
-
 ---@param page IconsInventory_ISInventoryPageOverride
 local function applyPage(page)
     if page._IconsInventory then -- More resilient to what other mods might do
@@ -340,9 +327,9 @@ local function applyPage(page)
         initPage(page)
         page.inventoryPane:refreshContainer()
 
-        if not isReload then
-            page._IconsInventory_bcSyncOk = nil
-        end
+        -- if not isReload then
+        page._IconsInventory_bcSyncOk = nil
+        -- end
     else
         initPage(page)
         page:removeChild(page.inventoryPane)
@@ -350,7 +337,7 @@ local function applyPage(page)
     end
 end
 
-local apply = function()
+mod.addApply(function()
     for i = 0, getNumActivePlayers() - 1 do
         local pd = getPlayerData(i)
         if pd then
@@ -358,18 +345,20 @@ local apply = function()
             applyPage(pd.lootInventory)
         end
     end
-end
+end)
 
-mod.addApply(apply)
-if isReload then
-    apply()
-    isReload = false
-end
-
-return {
-    _clean = function()
-        for k, v in pairs(vanilla) do
-            ISInventoryPage[k] = v
-        end
+-- Install --
+Override._vanilla = vanilla
+local Prev = require("IconsInventory/PageOverride")
+for k in pairs(Override) do
+    if not Prev then
+        vanilla[k] = ISInventoryPage[k]
+        ISInventoryPage[k] =
+            isDebugEnabled() and function(...) return Override[k](...) end
+            or Override[k]
+    else
+        vanilla[k] = Prev._vanilla[k]
     end
-}
+end
+
+return Override

@@ -1,4 +1,5 @@
 local Cell = require("IconsInventory/Cell")
+local GridLayout = require("IconsInventory/GridLayout")
 
 ---@class IconsInventory_DragSelectionBox
 ---@field pane IconsInventory_IconsPane
@@ -43,7 +44,7 @@ function DragSelectionBox:update()
                 end
             end
         end
-        yOffset = yOffset + math.ceil(#group / self.pane.grid.gridWidth) * Cell.size + self.pane.grid.groupSpace
+        yOffset = yOffset + math.ceil(#group / self.pane.grid.gridWidth) * Cell.size + GridLayout.groupSpace
     end
 
     local scroll = self.pane:getYScroll()

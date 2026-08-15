@@ -38,8 +38,6 @@ end
 ---@field prevContainer? ItemContainer
 ---@field expanded table<string, boolean>
 ---@field pool IconsInventory_CellPool
----@field minXPadding integer
----@field yPadding integer
 ---@field isMouseAllowed boolean
 ---@field beingSelected table<IconsInventory_Cell, boolean>
 ---@field mouseDown? IconsInventory_IconsPane_MouseDown
@@ -52,6 +50,11 @@ end
 local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
 
+function IconsPane._init()
+    IconsPane.minXPadding = 2 * Cell.padding
+    IconsPane.yPadding = Cell.padding
+end
+
 ---@param emptyPage IconsInventory_ISInventoryPageOverride
 function IconsPane.new(emptyPage)
     local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane)
@@ -61,11 +64,9 @@ function IconsPane.new(emptyPage)
     self.anchorRight = true
     self.anchorTop = true
 
-    self.grid = GridLayout.new(2 * Cell.padding)
+    self.grid = GridLayout.new()
     self.expanded = {}
     self.pool = CellPool:new()
-    self.minXPadding = 2 * Cell.padding
-    self.yPadding = Cell.padding
     self.isMouseAllowed = getNumActivePlayers() == 1 or getSpecificPlayer(emptyPage.player):getJoypadBind() < 0
     self.beingSelected = {}
 
@@ -145,7 +146,7 @@ function IconsPane:refresh()
         table.insert(groups, equippedCells)
     end
 
-    local maxWidth = self.width - 2 * self.minXPadding
+    local maxWidth = self.width - 2 * IconsPane.minXPadding
     local gridWidth = math.floor(maxWidth / Cell.size)
     if getSpecificPlayer(self.native.player):getJoypadBind() ~= -1 then
         gridWidth = math.min(mod.option.maxJoypadColumns:getValue(), gridWidth) ---@cast gridWidth integer
@@ -154,7 +155,7 @@ function IconsPane:refresh()
     self.grid:set(groups, gridWidth)
     -- Make sure it's an integer to avoid half-pixel renders
     self.grid.x = math.floor(0.49 + (self:getWidth() - self.grid.width) / 2)
-    self.grid.y = self.yPadding
+    self.grid.y = IconsPane.yPadding
 
     -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
@@ -174,7 +175,7 @@ function IconsPane:refresh()
         self:setFocusedCell(self.grid:getCellAt(1, 1))
     end
 
-    self:setScrollHeight(self.grid.y + self.grid.height + self.yPadding)
+    self:setScrollHeight(self.grid.y + self.grid.height + IconsPane.yPadding)
     self.vscroll:setHeight(self:getHeight())
     self:updateScrollbars()
 end
@@ -199,11 +200,11 @@ function IconsPane:renderBase()
     local yOffset = self.grid.y
 
     for g, group in ipairs(self.grid.cells) do
-        local groupHeight = self.yPadding * 2 + Cell.size * math.ceil(#group / self.grid.gridWidth)
+        local groupHeight = IconsPane.yPadding * 2 + Cell.size * math.ceil(#group / self.grid.gridWidth)
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
-            self:drawRect(0, self.grid.y - self.yPadding, self:getWidth(), groupHeight - 1, 0.5, 0, 0, 0)
+            self:drawRect(0, self.grid.y - IconsPane.yPadding, self:getWidth(), groupHeight - 1, 0.5, 0, 0, 0)
         end
 
         for i, cell in ipairs(group) do
@@ -217,7 +218,7 @@ function IconsPane:renderBase()
         yOffset = yOffset + groupHeight
 
         if #group > 0 and g < #self.grid.cells and #self.grid.cells[g + 1] > 0 then
-            self:drawRect(0, yOffset - self.yPadding, self.width, 1, 0.2, 1, 1, 1)
+            self:drawRect(0, yOffset - IconsPane.yPadding, self.width, 1, 0.2, 1, 1, 1)
         end
     end
 end

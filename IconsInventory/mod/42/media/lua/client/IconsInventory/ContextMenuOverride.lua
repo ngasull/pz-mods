@@ -28,17 +28,17 @@ function Override:onRightMouseUpOutside(...)
 end
 
 -- Install --
+Override._vanilla = vanilla
 local Prev = require("IconsInventory/ContextMenuOverride")
-if Prev then Prev._clean() end
-for k, v in pairs(Override) do
-    vanilla[k] = ISContextMenu[k]
-    ISContextMenu[k] = v
+for k in pairs(Override) do
+    if not Prev then
+        vanilla[k] = ISContextMenu[k]
+        ISContextMenu[k] =
+            isDebugEnabled() and function(...) return Override[k](...) end
+            or Override[k]
+    else
+        vanilla[k] = Prev._vanilla[k]
+    end
 end
 
-return {
-    _clean = function()
-        for k, v in pairs(vanilla) do
-            ISContextMenu[k] = v
-        end
-    end
-}
+return Override

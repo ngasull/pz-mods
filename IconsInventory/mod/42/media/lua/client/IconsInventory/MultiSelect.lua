@@ -1,4 +1,5 @@
 local Cell = require("IconsInventory/Cell")
+local GridLayout = require("IconsInventory/GridLayout")
 
 ---@class IconsInventory_MultiSelect
 ---@field pane IconsInventory_IconsPane
@@ -37,7 +38,7 @@ function MultiSelect:setTo(last)
             end
         end
         if isSelecting == false then break end
-        yOffset = yOffset + math.ceil(#group / self.pane.grid.gridWidth) * Cell.size + self.pane.grid.groupSpace
+        yOffset = yOffset + math.ceil(#group / self.pane.grid.gridWidth) * Cell.size + GridLayout.groupSpace
     end
 
     local my = self.pane:getMouseY()
