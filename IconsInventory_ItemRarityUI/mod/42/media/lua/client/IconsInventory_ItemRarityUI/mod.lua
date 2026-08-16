@@ -15,10 +15,10 @@ table.insert(IconsPane.sortOptions, {
     text = ItemRarityUI.getText("Rarity"),
 })
 
----@class IconsInventory_ItemRarityUI_Cell: IconsInventory_Cell
+---@class IconsInventory_Cell
 local vanilla = {}
 
----@class IconsInventory_ItemRarityUI_CellOverride: IconsInventory_ItemRarityUI_Cell
+---@class IconsInventory_Cell
 local Override = {}
 
 function Override:renderBackground()

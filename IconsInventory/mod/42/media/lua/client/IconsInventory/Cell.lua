@@ -2,14 +2,12 @@ local mod = require("IconsInventory/mod")
 local Action = require("IconsInventory/Action")
 local CellRender = require("IconsInventory/CellRender")
 
----@class IconsInventory_Cell: IconsInventory_CellBase, IconsInventory_CellRender
-
----@class IconsInventory_CellBase
+---@class IconsInventory_Cell
 ---@field pane IconsInventory_IconsPane
 ---@field item InventoryItem
 ---@field index integer
 ---@field stack ContextMenuItemStack
----@field category IconsInventory_CellBase
+---@field category IconsInventory_Cell
 ---@field player IsoPlayer
 --- Current render loop's state:
 ---@field x number
@@ -53,7 +51,7 @@ end
 ---@param pane IconsInventory_IconsPane
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
----@param category? IconsInventory_CellBase
+---@param category? IconsInventory_Cell
 function Cell:init(pane, index, stack, category)
     self.pane = pane
     self.index = index

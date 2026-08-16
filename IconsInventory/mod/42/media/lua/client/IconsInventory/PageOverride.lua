@@ -4,12 +4,12 @@ local IconsPane = require("IconsInventory/IconsPane")
 local BetterContainers = require("IconsInventory/integration/BetterContainers")
 
 ---@param self ISInventoryPage
----@return IconsInventory_ISInventoryPageOverride
+---@return ISInventoryPage
 local function getTheOtherPage(self)
     return self.onCharacter and getPlayerLoot(self.player) or getPlayerInventory(self.player)
 end
 
----@param self IconsInventory_ISInventoryPageOverride
+---@param self ISInventoryPage
 ---@param col? integer
 local function focusTheOtherPage(self, col)
     local otherPage = getTheOtherPage(self)
@@ -19,12 +19,12 @@ local function focusTheOtherPage(self, col)
     setJoypadFocus(self.player, otherPage)
 end
 
----@class IconsInventory_ISInventoryPage: ISInventoryPage
+---@class ISInventoryPage
 local vanilla = {}
 
----@class IconsInventory_ISInventoryPageOverride: IconsInventory_ISInventoryPage
+---@class ISInventoryPage
 ---@field parent ISInventoryPage
----@field inventoryPane IconsInventory_ISInventoryPaneOverride
+---@field player integer De facto player ID (not in Umbrella)
 ---@field _IconsInventory IconsInventory_IconsPane
 ---@field _IconsInventory_init? true
 ---@field _IconsInventory_pressedBumper integer?
@@ -33,7 +33,7 @@ local vanilla = {}
 ---@field _IconsInventory_bcSyncOk? true
 local Override = {}
 
----@param self IconsInventory_ISInventoryPageOverride
+---@param self ISInventoryPage
 local function initPage(self)
     local prevPane = self._IconsInventory
     self._IconsInventory = IconsPane.new(self)
@@ -124,7 +124,7 @@ function Override:onRightMouseDownOutside(...)
     return vanilla.onRightMouseDownOutside(self, ...)
 end
 
----@param self IconsInventory_ISInventoryPageOverride
+---@param self ISInventoryPage
 local function switchToList(self)
     if self._IconsInventory:isVisible() then
         self:removeChild(self._IconsInventory)
@@ -143,7 +143,7 @@ local function switchToList(self)
     end
 end
 
----@param self IconsInventory_ISInventoryPageOverride
+---@param self ISInventoryPage
 local function switchToIcons(self)
     if not self._IconsInventory:isVisible() then
         self:removeChild(self.inventoryPane)
@@ -333,7 +333,7 @@ function Override:onJoypadDown(button)
     end
 end
 
----@param page IconsInventory_ISInventoryPageOverride
+---@param page ISInventoryPage
 local function applyPage(page)
     if page._IconsInventory then -- More resilient to what other mods might do
         page:removeChild(page._IconsInventory)

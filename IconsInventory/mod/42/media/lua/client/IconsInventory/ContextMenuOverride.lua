@@ -1,9 +1,9 @@
 local mod = require("IconsInventory/mod")
 
----@class IconsInventory_ISContextMenu: ISContextMenu
+---@class ISContextMenu
 local vanilla = {}
 
----@class IconsInventory_ISInventoryPaneOverride: IconsInventory_ISContextMenu
+---@class ISContextMenu
 local Override = {}
 
 local downX, downY = 0, 0

@@ -22,7 +22,7 @@ local function isSelectAllPossible(page)
 end
 
 ---@param page ISInventoryPage
----@return IconsInventory_ISInventoryPageOverride
+---@return ISInventoryPage
 local function getTheOtherPage(page)
     return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
 end
@@ -31,8 +31,8 @@ end
 ---@alias IconsInventory_IconsPane_MouseDown { x: number, y: number, ctrl: boolean, shift: boolean, focused?: IconsInventory_IconsPane_CellDown }
 
 ---@class IconsInventory_IconsPane: ISPanel
----@field parent IconsInventory_ISInventoryPageOverrideIconsInventory_ISInventoryPageOverride
----@field native IconsInventory_ISInventoryPaneOverride
+---@field parent ISInventoryPage
+---@field native ISInventoryPane
 ---@field grid IconsInventory_GridLayout<IconsInventory_Cell>
 ---@field focusedCell? IconsInventory_Cell
 ---@field prevContainer? ItemContainer
@@ -55,9 +55,10 @@ function IconsPane._init()
     IconsPane.yPadding = Cell.padding
 end
 
----@param emptyPage IconsInventory_ISInventoryPageOverride
+---@param emptyPage ISInventoryPage
 function IconsPane.new(emptyPage)
-    local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane)
+    local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane) ---@cast self -ISPanel
+
     self.parent = emptyPage
     self.anchorBottom = true
     self.anchorLeft = true
@@ -243,7 +244,7 @@ end
 
 function IconsPane:renderDragged()
     local isDragging = self:isDraggingItems()
-    local draggedCells = {}
+    local draggedCells = {} ---@type IconsInventory_Cell[]
 
     for _, group in ipairs(self.grid.cells) do
         for _, cell in ipairs(group) do

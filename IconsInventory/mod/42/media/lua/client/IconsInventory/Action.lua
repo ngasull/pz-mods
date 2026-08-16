@@ -32,10 +32,10 @@ local function cancelAction(action)
     end
 end
 
----@class IconsInventory_ISTimedActionQueue: ISTimedActionQueue
+---@class ISTimedActionQueue
 local QueueVanilla = {}
 
----@class IconsInventory_ISTimedActionQueueOverride: IconsInventory_ISTimedActionQueue
+---@class ISTimedActionQueue
 local QueueOverride = {}
 
 function QueueOverride.add(action)
@@ -65,10 +65,10 @@ function QueueOverride:cancelQueue()
     return QueueVanilla.cancelQueue(self)
 end
 
----@class IconsInventory_ISInventoryTransferAction: ISInventoryTransferAction
+---@class ISInventoryTransferAction
 local ActionVanilla = {}
 
----@class IconsInventory_ISInventoryTransferActionOverride: IconsInventory_ISInventoryTransferAction
+---@class ISInventoryTransferAction
 local ActionOverride = {}
 
 function ActionOverride:perform()

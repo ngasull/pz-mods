@@ -1,6 +1,6 @@
 local BetterContainers = {}
 
----@param page IconsInventory_ISInventoryPageOverride
+---@param page ISInventoryPage
 local function removeBetterSearch(page)
     if page._IconsInventory_bcSearchStrip and page._IconsInventory_bcSearchEntry then
         page._IconsInventory_bcSearchStrip:removeChild(page._IconsInventory_bcSearchEntry)
@@ -13,7 +13,7 @@ local function removeBetterSearch(page)
     end
 end
 
----@param page IconsInventory_ISInventoryPageOverride
+---@param page ISInventoryPage
 function BetterContainers.stealBetterSearch(page)
     local pane = page._IconsInventory
     local native = page.inventoryPane

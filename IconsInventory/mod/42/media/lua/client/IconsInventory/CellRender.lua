@@ -79,7 +79,7 @@ local function capture_drawProgressBar(self, x, y, w, h, f, fg)
     ringFromNative = fg.r > fg.g and ringBad or ringGood
 end
 
----@class IconsInventory_CellRender: IconsInventory_CellBase
+---@class IconsInventory_Cell
 local CellRender = {}
 
 CellRender.color = {

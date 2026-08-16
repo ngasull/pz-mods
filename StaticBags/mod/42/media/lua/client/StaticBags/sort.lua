@@ -21,9 +21,9 @@ local function sortScore(item, location)
     end
 end
 
----@class StaticBags_sort_ISInventoryPage_override: ISInventoryPage
+---@class ISInventoryPage
 local Override = {}
----@class StaticBags_sort_ISInventoryPage: ISInventoryPage
+---@class ISInventoryPage
 local vanilla = {}
 
 -- Fix vanilla onBackpackMouseUp to avoid double-triggering the event

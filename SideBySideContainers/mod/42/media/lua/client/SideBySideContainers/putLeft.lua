@@ -43,9 +43,9 @@ local function initPage(self)
     end
 end
 
----@class SideBySideContainers_ISInventoryPage_override: ISInventoryPage
+---@class ISInventoryPage
 local Override = {}
----@class SideBySideContainers_ISInventoryPage: ISInventoryPage
+---@class ISInventoryPage
 local vanilla = {}
 
 function Override:prerender()
