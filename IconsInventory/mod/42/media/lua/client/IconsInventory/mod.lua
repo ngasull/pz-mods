@@ -71,6 +71,13 @@ mod.option.enableSmartScroll = mod.options:addTickBox(
     "Scrolling from Icons Inventory cycles containers"
 )
 
+mod.option.enableFastRightClick = mod.options:addTickBox(
+    "enableFastRightClick",
+    "Enable fast right click",
+    false,
+    "Menu appears on mouse down, select entry on release. Disable if you make accidental clicks"
+)
+
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
     "Hide equipped items",

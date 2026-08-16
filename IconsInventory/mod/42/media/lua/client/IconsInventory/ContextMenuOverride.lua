@@ -14,7 +14,7 @@ function Override.get(...)
 end
 
 function Override:onRightMouseUp(...)
-    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
+    if mod.option.enableFastRightClick:getValue() and math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
         return self:onMouseUp(...)
     else
         return vanilla.onRightMouseUp(self, ...)
@@ -22,7 +22,7 @@ function Override:onRightMouseUp(...)
 end
 
 function Override:onRightMouseUpOutside(...)
-    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
+    if mod.option.enableFastRightClick:getValue() and math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
         return self:hideSelf()
     else
         return vanilla.onRightMouseUpOutside(self, ...)

@@ -575,6 +575,21 @@ function IconsPane:onMouseUpOutside(x, y)
 end
 
 function IconsPane:onRightMouseDown(x, y)
+    if mod.option.enableFastRightClick:getValue() then
+        return self:handleContextMenu(x, y, self.native.onRightMouseDown)
+    end
+end
+
+function IconsPane:onRightMouseUp(x, y)
+    if not mod.option.enableFastRightClick:getValue() then
+        return self:handleContextMenu(x, y, self.native.onRightMouseUp)
+    end
+end
+
+---@param x number
+---@param y number
+---@param nativeRightMouseCb fun()
+function IconsPane:handleContextMenu(x, y, nativeRightMouseCb)
     local handled = true
 
     if self.focusedCell then
@@ -583,7 +598,7 @@ function IconsPane:onRightMouseDown(x, y)
             local ctxX = self:getAbsoluteX() + x
             local ctxY = self:getAbsoluteY() + y + self:getYScroll()
             return ctxX, ctxY
-        end, self.native.onRightMouseUp, self.native, self.native:getMouseX(), self.native:getMouseY())
+        end, nativeRightMouseCb, self.native, self.native:getMouseX(), self.native:getMouseY())
     else
         local context = ISContextMenu.get(
             self.native.player, self:getAbsoluteX() + x, self:getAbsoluteY() + y + self:getYScroll()
