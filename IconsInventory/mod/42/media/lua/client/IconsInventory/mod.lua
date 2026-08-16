@@ -80,7 +80,7 @@ mod.option.enableSmartScroll = mod.options:addTickBox(
 
 mod.option.enableFastRightClick = mod.options:addTickBox(
     "enableFastRightClick",
-    "Enable fast right click",
+    "Right Click fast mode",
     false,
     "Menu appears on mouse down, select entry on release. Disable if you make accidental clicks"
 )
