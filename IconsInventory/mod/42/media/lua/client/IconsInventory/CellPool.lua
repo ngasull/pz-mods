@@ -24,7 +24,7 @@ end
 ---@param index integer "Option" index in vanilla
 ---@param stack ContextMenuItemStack
 ---@param category? IconsInventory_Cell
-function CellPool:get(item, pane, index, stack, category)
+function CellPool:cell(item, pane, index, stack, category)
     local key = category and item or stack
     local cell = self.store[key]
     if cell then
@@ -35,6 +35,10 @@ function CellPool:get(item, pane, index, stack, category)
     end
     self.nextStore[key] = cell
     return cell
+end
+
+function CellPool:get(itemOrStack)
+    return self.nextStore[itemOrStack]
 end
 
 return CellPool

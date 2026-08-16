@@ -111,7 +111,11 @@ function Cell:isSelected()
 end
 
 function Cell:isBeingSelected()
-    return not not self.pane.beingSelected[self]
+    local isTooEarlyToDisplay = mod.option.enableSmartDrag:getValue() and not isShiftKeyDown() and (
+        self.pane.multiSelect and self.pane:isMouseOver()
+        and getTimestampMs() - self.pane.multiSelect.startTime < 200
+    )
+    return self.pane.beingSelected[self] and not isTooEarlyToDisplay
 end
 
 ---@param isSelected boolean

@@ -64,6 +64,13 @@ mod.options:addDescription(
     "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game."
 )
 
+mod.option.enableSmartDrag = mod.options:addTickBox(
+    "enableSmartDrag",
+    "Smart dragging",
+    false,
+    "Select items without holding shift"
+)
+
 mod.option.enableSmartScroll = mod.options:addTickBox(
     "enableSmartScroll",
     "Smart container scrolling",

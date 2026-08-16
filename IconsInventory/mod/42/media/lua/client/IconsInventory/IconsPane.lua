@@ -44,7 +44,6 @@ end
 ---@field dragSelectionBox? IconsInventory_DragSelectionBox
 ---@field multiSelect? IconsInventory_MultiSelect
 ---@field overscrollTime integer
----@field _mouseOut? boolean
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
 ---@field _fakeY? number
@@ -105,7 +104,7 @@ function IconsPane:refresh()
             -- We work on a fully expanded backend
             self.native.collapsed[stack.name] = false
             table.insert(vanillaItems, stack)
-            local category = self.pool:get(stack.items[1], self, #vanillaItems, stack)
+            local category = self.pool:cell(stack.items[1], self, #vanillaItems, stack)
 
             if category:isCollapsed() or category:isCollapsable() then
                 table.insert(cells, category)
@@ -116,7 +115,7 @@ function IconsPane:refresh()
                 table.insert(vanillaItems, item)
 
                 if not category:isCollapsed() then
-                    local cell = self.pool:get(item, self, #vanillaItems, stack, category)
+                    local cell = self.pool:cell(item, self, #vanillaItems, stack, category)
 
                     -- stack.inHotbar may also be flagged as equipped by mods
                     if cell:isInHotbar() then
@@ -195,6 +194,23 @@ end
 
 function IconsPane:isDraggingItems()
     return self.mouseDown and self.native.dragging ~= nil and self.native.dragStarted
+end
+
+function IconsPane:isDraggingMultipleItems()
+    if not self:isDraggingItems() then return false end
+    local count = 0
+    for _, v in pairs(self.native.selected) do
+        local cell = self.pool:get(v)
+        if cell and (
+                cell:isCategory() and cell:isCollapsable() and not cell:isCollapsed()
+                or not cell:isCategory() and not cell.category:isCollapsed()
+            )
+        then
+            count = count + 1
+            if count > 1 then return true end
+        end
+    end
+    return false
 end
 
 function IconsPane:renderBase()
@@ -416,7 +432,7 @@ end
 function IconsPane:onMouseUp(x, y)
     if not self.isMouseAllowed then return end
 
-    local wasDragging = self:isDraggingItems()
+    local wasDraggingSelection = self:isDraggingMultipleItems()
     local handledClick = false
 
     if self.mouseDown and not self:isDragging() then
@@ -431,7 +447,7 @@ function IconsPane:onMouseUp(x, y)
         and not self.mouseDown.ctrl
         and not self.mouseDown.shift
         and not handledClick
-        and not wasDragging -- Do not clear aborted drags
+        and not wasDraggingSelection -- Do not clear aborted drags
     then
         table.wipe(self.native.selected)
     end
@@ -444,7 +460,7 @@ end
 
 ---@param mouseDown IconsInventory_IconsPane_MouseDown
 function IconsPane:handleClick(mouseDown)
-    if mouseDown.focused then
+    if mouseDown.focused and mouseDown.focused.cell == self.focusedCell then
         self.native.dragging = nil
 
         if isShiftKeyDown() then
@@ -511,7 +527,6 @@ function IconsPane:handleQuickSend(cell)
 end
 
 function IconsPane:onMouseMove()
-    self._mouseOut = false
     self.native.mouseOverOption = 0
 
     if self.isMouseAllowed then
@@ -522,13 +537,15 @@ function IconsPane:onMouseMove()
 end
 
 function IconsPane:onMouseMoveOutside(dx, dy)
-    self._mouseOut = true
-
     if self.isMouseAllowed then
         if not self.native.doController then
             self:setFocusedCell(nil)
         end
-        if self.dragSelectionBox then self.dragSelectionBox:update() end
+
+        if self:isDragging() and self.mouseDown then
+            self:handleDrag(self.mouseDown)
+        end
+
         self.native:onMouseMoveOutside(dx, dy)
     end
 end
@@ -536,23 +553,16 @@ end
 ---@param mouseDown IconsInventory_IconsPane_MouseDown
 function IconsPane:handleDrag(mouseDown)
     if mouseDown.focused and not self:isDraggingItems() then
-        if mouseDown.shift then
-            if not self.multiSelect then
-                if not mouseDown.ctrl then
-                    table.wipe(self.native.selected)
-                end
-                self.multiSelect = MultiSelect.new(self, mouseDown.focused.cell)
-            elseif self.focusedCell then
-                self.multiSelect:setTo(self.focusedCell)
-            end
+        if mouseDown.shift or (mod.option.enableSmartDrag:getValue() and self:isMouseOver()) then
+            MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
         elseif mouseDown.ctrl then
             if self.focusedCell and self.focusedCell:isSelected() ~= mouseDown.focused.cell:isSelected() then
                 self.focusedCell:setSelected(mouseDown.focused.cell:isSelected())
             end
         else
-            self.native.mouseOverOption = mouseDown.focused.cell.index
-            self.native:onMouseDown(mouseDown.focused.vx, mouseDown.focused.vy)
-            self.native.dragStarted = true
+            self:startDragItems(mouseDown.focused)
+            -- Cover smart dragging: drag out and then back
+            if self.multiSelect then self.multiSelect:reset() end
         end
     end
 
@@ -561,6 +571,13 @@ function IconsPane:handleDrag(mouseDown)
     elseif not mouseDown.focused and not mouseDown.shift then
         self.dragSelectionBox = DragSelectionBox.new(self, mouseDown.x, mouseDown.y)
     end
+end
+
+---@param focused IconsInventory_IconsPane_CellDown
+function IconsPane:startDragItems(focused)
+    self.native.mouseOverOption = focused.cell.index
+    self.native:onMouseDown(focused.vx, focused.vy)
+    self.native.dragStarted = true
 end
 
 function IconsPane:onMouseUpOutside(x, y)

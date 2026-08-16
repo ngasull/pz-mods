@@ -1,3 +1,4 @@
+local mod = require("IconsInventory/mod")
 local Cell = require("IconsInventory/Cell")
 local GridLayout = require("IconsInventory/GridLayout")
 
@@ -5,8 +6,23 @@ local GridLayout = require("IconsInventory/GridLayout")
 ---@field pane IconsInventory_IconsPane
 ---@field from IconsInventory_Cell
 ---@field to IconsInventory_Cell
+---@field startTime integer
 local MultiSelect = {}
 MultiSelect.__index = MultiSelect
+
+---@param pane IconsInventory_IconsPane
+---@param mouseDown IconsInventory_IconsPane_MouseDown
+---@param focused IconsInventory_IconsPane_CellDown
+function MultiSelect.handleDrag(pane, mouseDown, focused)
+    if not pane.multiSelect then
+        if not mouseDown.ctrl and not mod.option.enableSmartDrag:getValue() then
+            table.wipe(pane.native.selected)
+        end
+        pane.multiSelect = MultiSelect.new(pane, focused.cell)
+    elseif pane.focusedCell then
+        pane.multiSelect:setTo(pane.focusedCell)
+    end
+end
 
 ---@param pane IconsInventory_IconsPane
 ---@param start IconsInventory_Cell
@@ -15,6 +31,7 @@ function MultiSelect.new(pane, start)
     self.pane = pane
     self.from = start
     self.to = start
+    self.startTime = getTimestampMs()
     return self
 end
 
@@ -51,10 +68,14 @@ function MultiSelect:setTo(last)
 end
 
 function MultiSelect:apply()
-    self.pane.multiSelect = nil
     for cell in pairs(self.pane.beingSelected) do
         cell:setSelected(true)
     end
+    self:reset()
+end
+
+function MultiSelect:reset()
+    self.pane.multiSelect = nil
     table.wipe(self.pane.beingSelected)
 end
 

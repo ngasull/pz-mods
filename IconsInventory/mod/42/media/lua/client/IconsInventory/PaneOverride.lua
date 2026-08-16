@@ -22,7 +22,7 @@ end
 
 function Override:getMouseX()
     local pane = self.parent._IconsInventory
-    if pane and pane:isVisible() and not pane._mouseOut then
+    if pane and pane:isVisible() and pane:isMouseOver() then
         if pane._fakeX then
             return pane._fakeX
         elseif pane.focusedCell then
@@ -37,7 +37,7 @@ end
 
 function Override:getMouseY()
     local pane = self.parent._IconsInventory
-    if pane and pane:isVisible() and not pane._mouseOut then
+    if pane and pane:isVisible() and pane:isMouseOver() then
         if pane._fakeY then
             return pane._fakeY
         elseif pane.focusedCell then
@@ -53,7 +53,7 @@ end
 function Override:isMouseOver()
     local pane = self.parent._IconsInventory
     if pane and pane:isVisible() then
-        return not pane._mouseOut
+        return pane:isMouseOver()
     else
         return ISUIElement.isMouseOver(self)
     end
