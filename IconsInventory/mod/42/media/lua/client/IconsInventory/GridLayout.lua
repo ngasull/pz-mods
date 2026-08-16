@@ -1,12 +1,18 @@
 local Cell = require("IconsInventory/Cell")
 
+---@class IconsInventory_GridLayout_Located
+---@field layoutGroup integer
+---@field layoutGroupRow integer
+---@field layoutCol integer
+---@field layoutRow integer
+
+---@generic T: IconsInventory_GridLayout_Located
 ---@class IconsInventory_GridLayout<T>
 ---@field cells T[][]
 ---@field gridWidth integer
+---@field gridHeight integer
 ---@field x number
 ---@field y number
----@field width number
----@field height number
 ---@field _rows? T[][]
 local GridLayout = {}
 GridLayout.__index = GridLayout
@@ -20,8 +26,6 @@ function GridLayout.new()
     local self = setmetatable({}, GridLayout)
     self.x = 0
     self.y = 0
-    self.width = 0
-    self.height = 0
     self.gridWidth = 1
     self.cells = {}
     return self
@@ -59,11 +63,21 @@ function GridLayout:set(cells, gridWidth)
     self._rows = nil
 
     self.gridWidth = math.max(1, gridWidth)
-    self.width = self.gridWidth * Cell.size
+    self.gridHeight = 0
 
-    self.height = (#self.cells - 1) * GridLayout.groupSpace
-    for _, group in ipairs(self.cells) do
-        self.height = self.height + self:calcGroupHeight(#group)
+    for g, group in ipairs(self.cells) do
+        local lastRow = 0
+        for i, cell in ipairs(group) do
+            cell.layoutGroup = g
+            cell.layoutGroupRow = 1 + math.floor((i - 1) / self.gridWidth)
+            cell.layoutCol = 1 + ((i - 1) % self.gridWidth)
+
+            if cell.layoutGroupRow ~= lastRow then
+                self.gridHeight = self.gridHeight + 1
+                lastRow = cell.layoutGroupRow
+            end
+            cell.layoutRow = self.gridHeight
+        end
     end
 end
 
@@ -71,15 +85,13 @@ function GridLayout:getRows()
     if not self._rows then
         self._rows = {}
 
-        local rows = self._rows
+        local rows = self._rows ---@cast rows -nil
         local row ---@type T[]?
         for _, group in ipairs(self.cells) do
             for _, cell in ipairs(group) do
                 if not row then row = {} end
 
                 table.insert(row, cell)
-                local r = #rows + 1
-                local c = #row
 
                 if #row == self.gridWidth then
                     table.insert(rows, row)
@@ -96,11 +108,6 @@ function GridLayout:getRows()
     return self._rows
 end
 
----@param nRows integer
-function GridLayout:calcGroupHeight(nRows)
-    return Cell.size * math.ceil(nRows / self.gridWidth)
-end
-
 ---@param row integer
 ---@param col integer
 function GridLayout:getCellAt(row, col)
@@ -111,19 +118,6 @@ function GridLayout:getCellAt(row, col)
     if cols then
         if col < 0 then col = #cols + col + 1 end
         return cols[col]
-    end
-end
-
----@param cell? T
----@return_overload integer, integer
----@return_overload nil
-function GridLayout:locateCell(cell)
-    for r, cols in ipairs(self:getRows()) do
-        for c, rcell in ipairs(cols) do
-            if rcell == cell then
-                return r, c
-            end
-        end
     end
 end
 

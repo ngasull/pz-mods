@@ -186,11 +186,9 @@ function Override:onJoypadDirRight()
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
     else
-        local row, col = pane.grid:locateCell(pane.focusedCell)
-        if not row or not col then
-            -- Find first leftmost cell if any
-            row = 1
-            col = 1
+        local row, col = 1, 1 -- Find first leftmost cell if any
+        if pane.focusedCell then
+            row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
         end
 
         pane:setFocusedCell(pane.grid:getCellAt(row, col + 1))
@@ -213,11 +211,9 @@ function Override:onJoypadDirLeft()
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
     else
-        local row, col = pane.grid:locateCell(pane.focusedCell)
-        if not row or not col then
-            -- Find first rightmost cell if any
-            row = 1
-            col = -1
+        local row, col = 1, -1 -- Find first rightmost cell if any
+        if pane.focusedCell then
+            row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
         end
 
         pane:setFocusedCell(pane.grid:getCellAt(row, col - 1))
@@ -246,12 +242,10 @@ function Override:onJoypadDirDown()
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        local rows = pane.grid:getRows()
-        local row, col = pane.grid:locateCell(pane.focusedCell)
-
-        if row and col then
-            local nextRow = rows[row + 1]
-            pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, col)])
+        if pane.focusedCell then
+            local rows = pane.grid:getRows()
+            local nextRow = rows[pane.focusedCell.layoutRow + 1]
+            pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)])
         else
             -- Find first upmost cell if any
             pane:setFocusedCell(pane.grid:getCellAt(1, 1))
@@ -277,12 +271,10 @@ function Override:onJoypadDirUp()
     end
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        local rows = pane.grid:getRows()
-        local row, col = pane.grid:locateCell(pane.focusedCell)
-
-        if row and col then
-            local prevRow = rows[row - 1]
-            pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, col)])
+        if pane.focusedCell then
+            local rows = pane.grid:getRows()
+            local prevRow = rows[pane.focusedCell.layoutRow - 1]
+            pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)])
         else
             -- Get first downmost cell if any
             pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
@@ -305,20 +297,16 @@ function Override:onJoypadDown(button)
 
         self._IconsInventory_pressedBumper = button
     elseif button == Joypad.AButton and pane.focusedCell then
-        local row, col = pane.grid:locateCell(pane.focusedCell)
-
-        if row and col then
-            IconsPane.stubContextMenuXY(
-                function()
-                    local x = pane:getAbsoluteX() + pane.grid.x + (col - 1) * Cell.size
-                    local y = pane:getAbsoluteY() + pane.grid.y + row * Cell.size + pane.native:getYScroll()
-                    return x, y
-                end,
-                vanilla.onJoypadDown, self, button
-            )
-        else
-            return vanilla.onJoypadDown(self, button)
-        end
+        IconsPane.stubContextMenuXY(
+            function()
+                local x = pane:getAbsoluteX() + pane.grid.x
+                    + (pane.focusedCell.layoutCol - 1) * Cell.size
+                local y = pane:getAbsoluteY() + pane.grid.y + pane.native:getYScroll()
+                    + pane.focusedCell.layoutRow * Cell.size
+                return x, y
+            end,
+            vanilla.onJoypadDown, self, button
+        )
     elseif button == Joypad.BButton then
         local player = getSpecificPlayer(self.player)
         if isPlayerDoingActionThatCanBeCancelled(player) then

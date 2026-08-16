@@ -2,7 +2,7 @@ local mod = require("IconsInventory/mod")
 local Action = require("IconsInventory/Action")
 local CellRender = require("IconsInventory/CellRender")
 
----@class IconsInventory_Cell
+---@class IconsInventory_Cell: IconsInventory_GridLayout_Located
 ---@field pane IconsInventory_IconsPane
 ---@field item InventoryItem
 ---@field index integer
@@ -58,6 +58,10 @@ function Cell:init(pane, index, stack, category)
     self.stack = stack
     self.category = category or self
     self.player = getSpecificPlayer(pane.native.player)
+    self.layoutGroup = 0
+    self.layoutRow = 0
+    self.layoutCol = 0
+    self.layoutAbsRow = 0
 end
 
 function Cell:getStackSize()

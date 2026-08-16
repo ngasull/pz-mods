@@ -5,6 +5,8 @@ local DragSelectionBox = require("IconsInventory/DragSelectionBox")
 local GridLayout = require("IconsInventory/GridLayout")
 local MultiSelect = require("IconsInventory/MultiSelect")
 
+local SMARTDRAG_PULL_DURATION = 250
+
 local function True()
     return true
 end
@@ -44,6 +46,7 @@ end
 ---@field dragSelectionBox? IconsInventory_DragSelectionBox
 ---@field multiSelect? IconsInventory_MultiSelect
 ---@field overscrollTime integer
+---@field smartDragPullRemaining integer
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
 ---@field _fakeY? number
@@ -94,7 +97,10 @@ function IconsPane:refresh()
 
     -- Matters on joypad after refreshes
     local prevFocused = self.focusedCell
-    local prevRow, prevCol = self.grid:locateCell(prevFocused)
+    local prevRow, prevCol
+    if prevFocused then
+        prevRow, prevCol = prevFocused.layoutRow, prevFocused.layoutCol
+    end
 
     self.pool:prepare()
     local cells = {}
@@ -156,7 +162,7 @@ function IconsPane:refresh()
 
     self.grid:set(groups, gridWidth)
     -- Make sure it's an integer to avoid half-pixel renders
-    self.grid.x = math.floor(0.49 + (self:getWidth() - self.grid.width) / 2)
+    self.grid.x = math.floor(0.49 + (self:getWidth() - self.grid.gridWidth * Cell.size) / 2)
     self.grid.y = IconsPane.yPadding
 
     -- If focusedCell is has not been forwarded (by Cell.new)
@@ -177,7 +183,12 @@ function IconsPane:refresh()
         self:setFocusedCell(self.grid:getCellAt(1, 1))
     end
 
-    self:setScrollHeight(self.grid.y + self.grid.height + IconsPane.yPadding)
+    local scrollHeight = self.grid.y + IconsPane.yPadding - self.grid.groupSpace
+    for g in ipairs(self.grid.cells) do
+        scrollHeight = scrollHeight + self:groupHeight(g) + self.grid.groupSpace
+    end
+
+    self:setScrollHeight(scrollHeight)
     self.vscroll:setHeight(self:getHeight())
     self:updateScrollbars()
 end
@@ -226,11 +237,9 @@ function IconsPane:renderBase()
             self:drawRect(0, self.grid.y - IconsPane.yPadding, self:getWidth(), groupHeight - 1, 0.5, 0, 0, 0)
         end
 
-        for i, cell in ipairs(group) do
+        for _, cell in ipairs(group) do
             if not (cell:isSelected() and isDragging) then
-                local x = self.grid.x + ((i - 1) % self.grid.gridWidth) * Cell.size
-                local y = yOffset + math.floor((i - 1) / self.grid.gridWidth) * Cell.size
-                cell:renderAt(x, y)
+                cell:renderAt(self:layoutCell(cell))
             end
         end
 
@@ -261,12 +270,36 @@ function IconsPane:renderDragged()
     local dragStackPad = 10
     self:suspendStencil()
     for i, cell in ipairs(draggedCells) do
-        self.native:getAbsoluteX()
+        local remaining = 0
+        if self.smartDragPullRemaining then
+            remaining = math.max(0, (self.smartDragPullRemaining - getTimestampMs()) / SMARTDRAG_PULL_DURATION)
+            remaining = remaining * remaining * remaining -- Strong easing
+            if remaining == 0 then self.smartDragPullRemaining = nil end
+        end
+
+        local gridX, gridY = self:layoutCell(cell)
+        local targetX = centerX - (i - #draggedCells / 2) * dragStackPad
+        local targetY = centerY + (i - #draggedCells / 2) * dragStackPad
+
+        local progress = 1 - remaining
         cell:renderAt(
-            centerX - (i - #draggedCells / 2) * dragStackPad, centerY + (i - #draggedCells / 2) * dragStackPad
+            gridX * remaining + targetX * progress,
+            gridY * remaining + targetY * progress
         )
     end
     self:resumeStencil()
+end
+
+---@param cell IconsInventory_Cell
+function IconsPane:layoutCell(cell)
+    local x = self.grid.x + (cell.layoutCol - 1) * Cell.size
+    local y = self.grid.y + (cell.layoutRow - 1) * Cell.size + (cell.layoutGroup - 1) * self.grid.groupSpace
+    return x, y
+end
+
+---@param groupNumber integer
+function IconsPane:groupHeight(groupNumber)
+    return Cell.size * math.ceil(#self.grid.cells[groupNumber] / self.grid.gridWidth)
 end
 
 function IconsPane:setSort(itemSortFunc)
@@ -315,9 +348,9 @@ IconsPane.sortOptions = {
 }
 
 function IconsPane:update()
-    if not self.native then return end
+    if not self.native then return end -- May happen on connecting gamepad
 
-    if self:isReallyVisible() then -- Avoids glitchy tooltip in game menu
+    if self:isReallyVisible() then     -- Avoids glitchy tooltip in game menu
         local vanilla_isReallyVisible = self.native.isReallyVisible
         self.native.isReallyVisible = True
         local ok, err = pcall(self.native.update, self.native)
@@ -352,6 +385,8 @@ function IconsPane:update()
 end
 
 function IconsPane:prerender()
+    if not self.native then return end -- May happen on connecting gamepad
+
     local containersWidth = self.parent.containerButtonPanel:getWidth()
     local y = self:getY()
     local controlsY = self.parent.controlsUI:getY()
@@ -406,6 +441,7 @@ function IconsPane:prerender()
 end
 
 function IconsPane:render()
+    if not self.native then return end -- May happen on connecting gamepad
     self:renderDragged()
     self.native:updateWorldObjectHighlight()
 end
@@ -563,7 +599,10 @@ function IconsPane:handleDrag(mouseDown)
         else
             self:startDragItems(mouseDown.focused)
             -- Cover smart dragging: drag out and then back
-            if self.multiSelect then self.multiSelect:reset() end
+            if self.multiSelect then
+                self.multiSelect:reset()
+                self.smartDragPullRemaining = getTimestampMs() + SMARTDRAG_PULL_DURATION
+            end
         end
     end
 
@@ -579,6 +618,7 @@ function IconsPane:startDragItems(focused)
     self.native.mouseOverOption = focused.cell.index
     self.native:onMouseDown(focused.vx, focused.vy)
     self.native.dragStarted = true
+    self.smartDragPullRemaining = nil
 end
 
 function IconsPane:onMouseUpOutside(x, y)
