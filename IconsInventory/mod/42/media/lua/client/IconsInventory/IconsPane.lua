@@ -47,6 +47,7 @@ end
 ---@field multiSelect? IconsInventory_MultiSelect
 ---@field overscrollTime integer
 ---@field smartDragPullRemaining integer
+---@field _scrollBottom? true
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
 ---@field _fakeY? number
@@ -191,6 +192,11 @@ function IconsPane:refresh()
     self:setScrollHeight(scrollHeight)
     self.vscroll:setHeight(self:getHeight())
     self:updateScrollbars()
+
+    if self._scrollBottom then
+        self:setYScroll(self:getScrollAreaHeight() - self:getScrollHeight())
+        self._scrollBottom = nil
+    end
 end
 
 ---@param focusedCell IconsInventory_Cell?
@@ -695,7 +701,7 @@ function IconsPane:onMouseWheel(del)
     if self.parent:isCycleContainerKeyDown() then return false end
 
     local yScroll = self:getYScroll()
-    local yScrollLimit = -math.max(0, self:getScrollHeight() - self:getScrollAreaHeight())
+    local yScrollLimit = math.min(0, self:getScrollAreaHeight() - self:getScrollHeight())
     local yScrollTarget = math.max(yScrollLimit, math.min(0, yScroll - (del * Cell.size)))
 
     if yScrollTarget ~= yScroll then
@@ -711,6 +717,8 @@ function IconsPane:onMouseWheel(del)
     then -- Top or bottom overscroll
         local time = getTimeInMillis()
         if time - self.overscrollTime > 300 then
+            if del < 0 then self._scrollBottom = true end
+
             local prev_isCycleContainerKeyDown = self.parent.isCycleContainerKeyDown
             self.parent.isCycleContainerKeyDown = True
             pcall(self.parent.onMouseWheel, self.parent, del)
