@@ -1,3 +1,5 @@
+local mod = require("IconsInventory/mod")
+
 ---@class IconsInventory_ISInventoryPane: ISInventoryPane
 local vanilla = {}
 
@@ -57,12 +59,17 @@ function Override:isMouseOver()
     end
 end
 
--- 1 Gesture right click for vanilla inventory
 function Override:onRightMouseDown(...)
-    return self:onRightMouseUp(...)
+    if mod.option.enableFastRightClick:getValue() then
+        return vanilla.onRightMouseUp(self, ...)
+    end
 end
 
-Override.onRightMouseUp = UIElement.onRightMouseUp
+function Override:onRightMouseUp(...)
+    if not mod.option.enableFastRightClick:getValue() then
+        return vanilla.onRightMouseUp(self, ...)
+    end
+end
 
 -- Install --
 local Prev = require("IconsInventory/PaneOverride")

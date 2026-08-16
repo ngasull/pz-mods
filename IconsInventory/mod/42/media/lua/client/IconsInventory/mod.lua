@@ -67,6 +67,13 @@ mod.option.hungerMode_portion = 1
 mod.option.hungerMode:addItem("Restored hunger value")
 mod.option.hungerMode_numbers = 2
 
+mod.option.enableFastRightClick = mod.options:addTickBox(
+    "enableFastRightClick",
+    "Enable fast right click",
+    false,
+    "Menu appears on mouse down, select entry on release. Disable if you make accidental clicks"
+)
+
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
     "Hide equipped items (needs equipment mod)",
