@@ -190,7 +190,7 @@ end
 
 function IconsPane:isDragging()
     local x, y = self:getMouseX(), self:getMouseY()
-    return self.mouseDown and math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6
+    return self.mouseDown and math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 * mod.getBaseScaling()
 end
 
 function IconsPane:isDraggingItems()

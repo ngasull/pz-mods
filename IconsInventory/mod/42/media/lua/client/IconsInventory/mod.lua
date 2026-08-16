@@ -37,27 +37,28 @@ local default = {
 mod.NATIVE_SIZE = 32 -- Native icon size
 
 -- Evaluate base and default scaling from how the games scales text in this setup
-mod.getSmallScaling = function()
+mod.getBaseScaling = function()
     local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
     return math.max(1, math.floor(0.5 + smallHeightReal * 6 / mod.NATIVE_SIZE) / 2)
 end
 
 -- Preferred size logic:
+-- - "Small" icon scaling == Base scaling
 -- - Prefer first pixel-perfect option
 -- - Increase it if resulting size is too small relatively to screen height
 local function scaleRatio(scaling) return getCore():getScreenHeight() / (scaling * mod.NATIVE_SIZE) end
-local smallScalingInt, smallFrac = math.modf(mod.getSmallScaling())
+local baseScalingInt, baseFrac = math.modf(mod.getBaseScaling())
 local preferredSize =
-    smallFrac == 0 and ( -- Small is pixel perfect: prefer it or upscale if needed
-        scaleRatio(smallScalingInt) > 40 and 2 or 1
-    ) or (               -- Small is fractional: prefer pixel perfect "Medium" or upscale if needed
-        scaleRatio(smallScalingInt + 1) > 40 and 3 or 2
+    baseFrac == 0 and ( -- Small is pixel perfect: prefer it or upscale if needed
+        scaleRatio(baseScalingInt) > 40 and 2 or 1
+    ) or (              -- Small is fractional: prefer pixel perfect "Medium" or upscale if needed
+        scaleRatio(baseScalingInt + 1) > 40 and 3 or 2
     )
 
 mod.option.iconSize = mod.options:addComboBox("iconSize", "Icon size")
-mod.option.iconSize:addItem("Small" .. (smallFrac == 0 and " (pixel perfect)" or ""), preferredSize == 1)
-mod.option.iconSize:addItem("Medium" .. (smallFrac ~= 0 and " (pixel perfect)" or ""), preferredSize == 2)
-mod.option.iconSize:addItem("Large" .. (smallFrac == 0 and " (pixel perfect)" or ""), preferredSize == 3)
+mod.option.iconSize:addItem("Small" .. (baseFrac == 0 and " (pixel perfect)" or ""), preferredSize == 1)
+mod.option.iconSize:addItem("Medium" .. (baseFrac ~= 0 and " (pixel perfect)" or ""), preferredSize == 2)
+mod.option.iconSize:addItem("Large" .. (baseFrac == 0 and " (pixel perfect)" or ""), preferredSize == 3)
 
 mod.options:addDescription(
     "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game."

@@ -1,3 +1,5 @@
+local mod = require("IconsInventory/mod")
+
 ---@class IconsInventory_ISContextMenu: ISContextMenu
 local vanilla = {}
 
@@ -12,7 +14,7 @@ function Override.get(...)
 end
 
 function Override:onRightMouseUp(...)
-    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 then
+    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
         return self:onMouseUp(...)
     else
         return vanilla.onRightMouseUp(self, ...)
@@ -20,7 +22,7 @@ function Override:onRightMouseUp(...)
 end
 
 function Override:onRightMouseUpOutside(...)
-    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 then
+    if math.abs(getMouseX() - downX) + math.abs(getMouseY() - downY) > 6 * mod.getBaseScaling() then
         return self:hideSelf()
     else
         return vanilla.onRightMouseUpOutside(self, ...)
