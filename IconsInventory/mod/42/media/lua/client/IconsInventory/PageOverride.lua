@@ -48,8 +48,8 @@ end
 
 function Override:createChildren()
     mod.init()
-    initPage(self)
     vanilla.createChildren(self)
+    initPage(self)
     self:removeChild(self.inventoryPane)
     self.inventoryPane:setVisible(false)
     self.inventoryPane:setEnabled(false)

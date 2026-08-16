@@ -10,14 +10,16 @@ local Override = {}
 
 function Override:refreshContainer()
     local pane = self.parent._IconsInventory
-
-    if not pane.native then
-        pane.native = self.parent.inventoryPane
-        self.itemSortFunc = self.itemSortFunc or ISInventoryPane.itemSortByCatInc
+    if pane then
+        if not pane.native then
+            pane.native = self.parent.inventoryPane
+            self.itemSortFunc = self.itemSortFunc or ISInventoryPane.itemSortByCatInc
+        end
+        vanilla.refreshContainer(self)
+        pane:refreshContainer()
+    else
+        vanilla.refreshContainer(self)
     end
-
-    vanilla.refreshContainer(self)
-    pane:refreshContainer()
 end
 
 function Override:getMouseX()
