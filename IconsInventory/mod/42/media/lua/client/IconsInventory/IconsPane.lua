@@ -214,8 +214,7 @@ function IconsPane:isDraggingItems()
     return self.mouseDown and self.native.dragging ~= nil and self.native.dragStarted
 end
 
-function IconsPane:isDraggingMultipleItems()
-    if not self:isDraggingItems() then return false end
+function IconsPane:areManyCellsSelected()
     local count = 0
     for _, v in pairs(self.native.selected) do
         local cell = self.pool:get(v)
@@ -356,7 +355,12 @@ IconsPane.sortOptions = {
 function IconsPane:update()
     if not self.native then return end -- May happen on connecting gamepad
 
-    if self:isReallyVisible() then     -- Avoids glitchy tooltip in game menu
+    -- Mouse up events can be missed (out-of-mod errors) - Properly fall back
+    if self.isMouseAllowed and not self.native.doController and not isMouseButtonDown(0) then
+        self:cleanMouseLeft()
+    end
+
+    if self:isReallyVisible() then -- Avoids glitchy tooltip in game menu
         local vanilla_isReallyVisible = self.native.isReallyVisible
         self.native.isReallyVisible = True
         local ok, err = pcall(self.native.update, self.native)
@@ -425,7 +429,7 @@ function IconsPane:prerender()
         self._dirty = false
     end
 
-    if self.native.dragging ~= nil and self.native.dragStarted then
+    if self:isDraggingItems() then
         self.native.draggedItems:update()
     end
 
@@ -475,7 +479,7 @@ end
 function IconsPane:onMouseUp(x, y)
     if not self.isMouseAllowed then return end
 
-    local wasDraggingSelection = self:isDraggingMultipleItems()
+    local wasDraggingSelection = self:isDraggingItems() and self:areManyCellsSelected()
     local handledClick = false
 
     if self.mouseDown and not self:isDragging() then
@@ -495,10 +499,7 @@ function IconsPane:onMouseUp(x, y)
         table.wipe(self.native.selected)
     end
 
-    if self.multiSelect then self.multiSelect:apply() end
-    if self.dragSelectionBox then self.dragSelectionBox:apply() end
-
-    self.mouseDown = nil
+    self:cleanMouseLeft()
 end
 
 ---@param mouseDown IconsInventory_IconsPane_MouseDown
@@ -628,13 +629,17 @@ function IconsPane:startDragItems(focused)
 end
 
 function IconsPane:onMouseUpOutside(x, y)
+    self:cleanMouseLeft()
+    return self.native:onMouseUpOutside(x, y)
+end
+
+function IconsPane:cleanMouseLeft()
     self.mouseDown = nil
     if self.multiSelect then
         self.multiSelect:apply()
-    elseif self.dragSelectionBox then
+    end
+    if self.dragSelectionBox then
         self.dragSelectionBox:apply()
-    else
-        return self.native:onMouseUpOutside(x, y)
     end
 end
 
