@@ -37,6 +37,7 @@ end
 
 ---@param last IconsInventory_Cell
 function MultiSelect:setTo(last)
+    if last.layoutGroup ~= self.from.layoutGroup then return end
     self.to = last
 
     table.wipe(self.pane.beingSelected)
@@ -44,18 +45,15 @@ function MultiSelect:setTo(last)
     self.pane.beingSelected[self.to] = true
 
     local isSelecting
-    local yOffset = 0
-    for _, group in ipairs(self.pane.grid.cells) do
-        for _, cell in ipairs(group) do
-            if cell == self.from then isSelecting = not isSelecting end
-            if cell == self.to then isSelecting = not isSelecting end
-            if isSelecting == false then break end
-            if isSelecting then
-                self.pane.beingSelected[cell] = true
-            end
-        end
+    for _, cell in ipairs(self.pane.grid.cells[self.from.layoutGroup]) do
+        -- Yes, both (if from == to)
+        if cell == self.from then isSelecting = not isSelecting end
+        if cell == self.to then isSelecting = not isSelecting end
+
         if isSelecting == false then break end
-        yOffset = yOffset + math.ceil(#group / self.pane.grid.gridWidth) * Cell.size + GridLayout.groupSpace
+        if isSelecting then
+            self.pane.beingSelected[cell] = true
+        end
     end
 
     local my = self.pane:getMouseY()
