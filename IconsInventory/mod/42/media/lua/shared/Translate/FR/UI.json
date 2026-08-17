@@ -1,10 +1,11 @@
 {
   "UI_IconsInventory_Onboarding_title": "Mouvements d'inventaire intelligents",
-  "UI_IconsInventory_Onboarding_body": "<GREEN> Cliquer <RGB:0.9,0.9,0.9><SPACE><SPACE> pour envoyer les objets vers l'autre fenêtre <LINE><GREEN> Maintenir clic <RGB:0.9,0.9,0.9><SPACE><SPACE> sur plusieurs objets pour les sélectionner <LINE><GREEN> Déplacer les objets <RGB:0.9,0.9,0.9><SPACE><SPACE> ailleurs comme d'habitude <LINE><GREEN> Molette <RGB:0.9,0.9,0.9><SPACE><SPACE> pour changer de conteneur <LINE><LINE><TEXT> Essayez-les maintenant ! Refuser restore les commandes traditionnelles. <LINE><LINE> Vous pouvez personnaliser à tout moment dans le menu : <LINE><RGB:0.9,0.9,0.9><SPACE><SPACE> Options > Mods > Icons Inventory",
+  "UI_IconsInventory_Onboarding_body": "<GREEN> Cliquer <RGB:0.9,0.9,0.9><SPACE><SPACE> pour looter <LINE><GREEN> Maintenir clic <RGB:0.9,0.9,0.9><SPACE><SPACE> sur plusieurs objets pour les sélectionner <LINE><GREEN> Déplacer les objets <RGB:0.9,0.9,0.9><SPACE><SPACE> ailleurs comme d'habitude <LINE><GREEN> Molette <RGB:0.9,0.9,0.9><SPACE><SPACE> pour changer de conteneur <LINE><LINE><TEXT> Essayez-les maintenant ! Refuser restore les commandes traditionnelles. <LINE><LINE> Vous pouvez personnaliser à tout moment dans le menu : <LINE><RGB:0.9,0.9,0.9><SPACE><SPACE> Options > Mods > Icons Inventory",
   "UI_IconsInventory_Onboarding_enable": "Activer",
   "UI_IconsInventory_Onboarding_reject": "Non merci",
   "UI_IconsInventory_options_clickSend": "Clic = transfert rapide",
   "UI_IconsInventory_options_clickSend_off": "Non",
+  "UI_IconsInventory_options_clickSend_loot": "Loot - Seulement dans la fenêtre de loot",
   "UI_IconsInventory_options_clickSend_safe": "Sécure - Envoyer vers les conteneurs de loot seulement si la fenêtre est ouverte",
   "UI_IconsInventory_options_clickSend_send": "Envoyer - Comme Shift+Clic, sans shift. Sauf pour les stacks",
   "UI_IconsInventory_options_enableFastRightClick": "Action contextuelle en 1 clic",

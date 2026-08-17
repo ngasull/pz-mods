@@ -102,10 +102,12 @@ mod.option.hideEquipped = mod.options:addTickBox(
 mod.option.clickSend = mod.options:addComboBox("clickSend", getText("UI_IconsInventory_options_clickSend"))
 mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_off"))
 mod.option.clickSend_off = 1
-mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_safe"), true)
-mod.option.clickSend_safe = 2
+mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_loot"), true)
+mod.option.clickSend_loot = 2
+mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_safe"))
+mod.option.clickSend_safe = 3
 mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_send"))
-mod.option.clickSend_send = 3
+mod.option.clickSend_send = 4
 
 mod.option.hungerMode = mod.options:addComboBox("hungerMode", getText("UI_IconsInventory_options_hungerMode"))
 mod.option.hungerMode:addItem(getText("UI_IconsInventory_options_hungerMode_portion"), true)

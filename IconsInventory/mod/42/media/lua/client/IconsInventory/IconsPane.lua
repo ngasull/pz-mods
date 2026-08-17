@@ -527,13 +527,14 @@ function IconsPane:handleClick(mouseDown)
                 self:toggleExpanded(self.focusedCell)
                 return true
             elseif
-                clickSend == mod.option.clickSend_send
+                (clickSend == mod.option.clickSend_loot and not self.parent.onCharacter)
                 or (clickSend == mod.option.clickSend_safe and not (
                     self.parent.onCharacter and other.isCollapsed
                 ))
+                or clickSend == mod.option.clickSend_send
             then
                 self:handleQuickSend(mouseDown.focused.cell)
-                other.collapseCounter = 0
+                other.collapseCounter = 0 -- Reset the delay before auto-closing the other window
                 return true
             end
         end

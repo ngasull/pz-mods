@@ -1,10 +1,11 @@
 {
   "UI_IconsInventory_Onboarding_title": "Smart Inventory Gestures",
-  "UI_IconsInventory_Onboarding_body": "<GREEN> Click <RGB:0.9,0.9,0.9><SPACE><SPACE> to send items to the other window <LINE><GREEN> Hold click <RGB:0.9,0.9,0.9><SPACE><SPACE> on multiple items to select them <LINE><GREEN> Move items <RGB:0.9,0.9,0.9><SPACE><SPACE> to other containers like usual <LINE><GREEN> Scroll <RGB:0.9,0.9,0.9><SPACE><SPACE> to cycle containers <LINE><LINE><TEXT> Try them right now! Refusing restores traditional gestures. <LINE><LINE> You can customize anytime in main menu: <LINE><RGB:0.9,0.9,0.9><SPACE><SPACE> Options > Mods > Icons Inventory",
+  "UI_IconsInventory_Onboarding_body": "<GREEN> Click <RGB:0.9,0.9,0.9><SPACE><SPACE> to loot <LINE><GREEN> Hold click <RGB:0.9,0.9,0.9><SPACE><SPACE> on multiple items to select them <LINE><GREEN> Move items <RGB:0.9,0.9,0.9><SPACE><SPACE> elsewhere as usual <LINE><GREEN> Scroll <RGB:0.9,0.9,0.9><SPACE><SPACE> to cycle containers <LINE><LINE><TEXT> Try them right now! Refusing restores traditional gestures. <LINE><LINE> You can customize anytime in main menu: <LINE><RGB:0.9,0.9,0.9><SPACE><SPACE> Options > Mods > Icons Inventory",
   "UI_IconsInventory_Onboarding_enable": "Enable",
   "UI_IconsInventory_Onboarding_reject": "No thanks",
   "UI_IconsInventory_options_clickSend": "Click to quick-send",
   "UI_IconsInventory_options_clickSend_off": "Off",
+  "UI_IconsInventory_options_clickSend_loot": "Loot - Only in loot window",
   "UI_IconsInventory_options_clickSend_safe": "Safe - Send to loot container only if its window is open",
   "UI_IconsInventory_options_clickSend_send": "Send - Like Shift+Click, without shift. Except for stacks",
   "UI_IconsInventory_options_enableFastRightClick": "Right Click fast mode",
