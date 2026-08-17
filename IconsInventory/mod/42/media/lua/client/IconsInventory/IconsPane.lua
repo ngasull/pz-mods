@@ -476,9 +476,11 @@ function IconsPane:onMouseDown(x, y)
         },
     }
 
-    -- Init selection painting
     if self.focusedCell and self.mouseDown.ctrl then
+        -- Init selection painting
         self.focusedCell:setSelected(not self.focusedCell:isSelected())
+    elseif not (self.focusedCell or self.mouseDown.ctrl) then
+        table.wipe(self.native.selected)
     end
 end
 
@@ -535,8 +537,6 @@ function IconsPane:handleClick(mouseDown)
                 return true
             end
         end
-    elseif not isCtrlKeyDown() then
-        table.wipe(self.native.selected)
     end
 end
 
