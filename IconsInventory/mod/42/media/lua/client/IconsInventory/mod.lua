@@ -1,4 +1,7 @@
+local V2026_08_17 = 1
+
 local mod = {
+    data = {},
     option = {},
 }
 
@@ -139,23 +142,33 @@ mod.option.maxJoypadColumns = mod.options:addSlider(
     4, 20, 1, default.maxJoypadColumns
 )
 
+mod.writeData = function()
+    local writer = getFileWriter("IconsInventory/data.cfg", true, false) ---@cast writer -nil
+    writer:write(serialize(mod.data))
+    writer:close()
+end
+
 local reader = getFileReader("IconsInventory/data.cfg", false)
 if reader then
     local ok, res = pcall(deserialize, reader:readAllAsString())
     reader:close()
     if ok then
         mod.data = res
+
+        -- Migrations
+        local prevVersion = mod.version
+
+        if not mod.data.version then
+            -- Track if the mod has run already
+            mod.data.version = V2026_08_17
+        end
+
+        if mod.version ~= prevVersion then
+            mod.writeData()
+        end
     else
         print("Couldn't read Icons Inventory data!")
     end
-else
-    mod.data = {}
-end
-
-mod.writeData = function()
-    local writer = getFileWriter("IconsInventory/data.cfg", true, false) ---@cast writer -nil
-    writer:write(serialize(mod.data))
-    writer:close()
 end
 
 if isDebugEnabled() then
