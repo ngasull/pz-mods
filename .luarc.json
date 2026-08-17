@@ -16,6 +16,6 @@
   ],
   "runtime.version": "Lua 5.1",
   "hint.enable": false,
-  "diagnostics.globals": ["ItemRarityUI"],
+  "diagnostics.globals": ["ItemRarityUI", "KnownAndCollected"],
   "diagnostics.disable": ["unnecessary-if"]
 }
