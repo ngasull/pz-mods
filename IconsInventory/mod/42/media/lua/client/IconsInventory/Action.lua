@@ -1,25 +1,35 @@
 require "TimedActions/ISInventoryTransferAction"
 
+---@type table<InventoryItem, { dest: ItemContainer, src: ItemContainer }>?
+local queuedTransfers
 
----@type table<InventoryItem, ISInventoryTransferAction>
-local queuedTransfers = setmetatable({}, { __mode = "kv" })
+local function removeFinishedTransfers()
+    local remaining = 0
+    if queuedTransfers then
+        for item, v in pairs(queuedTransfers) do
+            if item:getJobDelta() > 0 or item:getContainer() == v.dest or item:getContainer() ~= v.src then
+                queuedTransfers[item] = nil
+            else
+                remaining = remaining + 1
+            end
+        end
+    end
+    if remaining == 0 then
+        queuedTransfers = nil
+        Events.OnTick.Remove(removeFinishedTransfers)
+    end
+end
 
 local Action = {}
 
 ---@param item InventoryItem
 Action.isQueuedForTransfer = function(item)
-    local action = queuedTransfers[item]
-    if not action then return false end
-    if item:getJobDelta() > 0 then
-        queuedTransfers[item] = nil
-        return false
-    end
-    return true
+    return not not (queuedTransfers and queuedTransfers[item])
 end
 
 ---@param action ISBaseTimedAction
 local function cancelAction(action)
-    if action.Type == "ISInventoryTransferAction" then
+    if queuedTransfers and action.Type == "ISInventoryTransferAction" then
         ---@cast action +ISInventoryTransferAction
         queuedTransfers[action.item] = nil
         if action.queueList then
@@ -41,7 +51,17 @@ local QueueOverride = {}
 function QueueOverride.add(action)
     -- Kind of manual instanceof (the lattern not working here for some reason)
     if action.Type == "ISInventoryTransferAction" then
-        queuedTransfers[action.item] = action
+        ---@cast action +ISInventoryTransferAction
+
+        if not queuedTransfers then
+            queuedTransfers = {}
+            Events.OnTick.Add(removeFinishedTransfers)
+        end
+
+        queuedTransfers[action.item] = {
+            dest = action.destContainer,
+            src = action.srcContainer,
+        }
     end
     return QueueVanilla.add(action)
 end
@@ -72,7 +92,9 @@ local ActionVanilla = {}
 local ActionOverride = {}
 
 function ActionOverride:perform()
-    queuedTransfers[self.item] = nil
+    if queuedTransfers then
+        queuedTransfers[self.item] = nil
+    end
     return ActionVanilla.perform(self)
 end
 
