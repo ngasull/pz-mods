@@ -15,6 +15,8 @@ MultiSelect.__index = MultiSelect
 ---@param focused IconsInventory_IconsPane_CellDown
 function MultiSelect.handleDrag(pane, mouseDown, focused)
     if not pane.multiSelect then
+        if focused.cell:isSelected() then return false end
+
         if not mouseDown.ctrl and not mod.option.enableSmartDrag:getValue() then
             table.wipe(pane.native.selected)
         end
@@ -22,6 +24,7 @@ function MultiSelect.handleDrag(pane, mouseDown, focused)
     elseif pane.focusedCell then
         pane.multiSelect:setTo(pane.focusedCell)
     end
+    return true
 end
 
 ---@param pane IconsInventory_IconsPane

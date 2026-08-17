@@ -476,7 +476,7 @@ function IconsPane:onMouseDown(x, y)
         },
     }
 
-    if self.focusedCell and self.mouseDown.ctrl then
+    if self.focusedCell and self.mouseDown.ctrl and not self.mouseDown.shift then
         -- Init selection painting
         self.focusedCell:setSelected(not self.focusedCell:isSelected())
     elseif not (self.focusedCell or self.mouseDown.ctrl) then
@@ -501,6 +501,7 @@ function IconsPane:onMouseUp(x, y)
     if self.mouseDown
         and not self.mouseDown.ctrl
         and not self.mouseDown.shift
+        and not (self.multiSelect and mod.option.enableSmartDrag:getValue())
         and not handledClick
         and not wasDraggingSelection -- Do not clear aborted drags
     then
@@ -604,20 +605,22 @@ end
 ---@param mouseDown IconsInventory_IconsPane_MouseDown
 function IconsPane:handleDrag(mouseDown)
     if mouseDown.focused and not self:isDraggingItems() then
-        if mouseDown.shift or (mod.option.enableSmartDrag:getValue() and self:isMouseOver()) then
-            MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
+        if (mouseDown.shift or (mod.option.enableSmartDrag:getValue() and self:isMouseOver()))
+            and MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
+        then
+            -- Handled
         elseif mouseDown.ctrl then
             if self.focusedCell and self.focusedCell:isSelected() ~= mouseDown.focused.cell:isSelected() then
                 self.focusedCell:setSelected(mouseDown.focused.cell:isSelected())
             end
         else
             self:startDragItems(mouseDown.focused)
-            -- Cover smart dragging: drag out and then back
             if self.multiSelect then
-                self.multiSelect:reset()
                 self.smartDragPullRemaining = getTimestampMs() + SMARTDRAG_PULL_DURATION
             end
         end
+    elseif self.multiSelect and self:isDraggingItems() and self:isMouseOver() then
+        self:cancelDragItems()
     end
 
     if self.dragSelectionBox then
@@ -632,6 +635,12 @@ function IconsPane:startDragItems(focused)
     self.native.mouseOverOption = focused.cell.index
     self.native:onMouseDown(focused.vx, focused.vy)
     self.native.dragStarted = true
+end
+
+function IconsPane:cancelDragItems()
+    self.native.dragging = nil
+    self.native.dragStarted = false
+    self.native:onMouseUp(-1, -1)
     self.smartDragPullRemaining = nil
 end
 
@@ -643,7 +652,11 @@ end
 function IconsPane:cleanMouseLeft()
     self.mouseDown = nil
     if self.multiSelect then
-        self.multiSelect:apply()
+        if self:isMouseOver() then
+            self.multiSelect:apply()
+        else
+            self.multiSelect:reset()
+        end
     end
     if self.dragSelectionBox then
         self.dragSelectionBox:apply()

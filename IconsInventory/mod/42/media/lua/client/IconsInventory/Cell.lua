@@ -117,7 +117,7 @@ function Cell:isBeingSelected()
         self.pane.multiSelect and self.pane:isMouseOver()
         and getTimestampMs() - self.pane.multiSelect.startTime < 200
     )
-    return self.pane.beingSelected[self] and not isTooEarlyToDisplay
+    return self.pane.beingSelected[self] and not isTooEarlyToDisplay and self.pane:isMouseOver()
 end
 
 ---@param isSelected boolean
