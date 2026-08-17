@@ -41,7 +41,7 @@ mod.NATIVE_SIZE = 32 -- Native icon size
 
 -- Evaluate base and default scaling from how the games scales text in this setup
 mod.getBaseScaling = function()
-    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.Small, "I")
+    local smallHeightReal = getTextManager():MeasureStringYReal(UIFont.NewSmall, "I")
     return math.max(1, math.floor(0.5 + smallHeightReal * 6 / mod.NATIVE_SIZE) / 2)
 end
 

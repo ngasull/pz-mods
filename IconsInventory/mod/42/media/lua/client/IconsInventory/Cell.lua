@@ -18,7 +18,7 @@ local Cell = {}
 for k, v in pairs(CellRender) do Cell[k] = v end
 Cell.__index = Cell
 
-local iconFonts = { UIFont.Small, UIFont.Medium, UIFont.Large }
+local iconFonts = { UIFont.NewSmall, UIFont.NewMedium, UIFont.NewLarge }
 
 function Cell._init()
     local userSize = mod.option.iconSize:getValue()
