@@ -1,8 +1,6 @@
 local mod = require("IconsInventory/mod")
 
-if isDebugEnabled() then
-    local debugOption = mod.options:addTickBox("debug", "Debug", false)
-
+if isDebugEnabled() and mod.data.debug then
     local w = 450
     local h = 120
 
@@ -24,7 +22,7 @@ if isDebugEnabled() then
         self.minimumWidth = self.width
         self.minimumHeight = self.height
         self:setTitle("Icons Inventory debug")
-        self:setVisible(debugOption:getValue())
+        self:setVisible(true)
 
         local th = self:titleBarHeight()
         local rh = self:resizeWidgetHeight()
@@ -33,20 +31,7 @@ if isDebugEnabled() then
         self:addChild(btn)
     end
 
-    ---@type ISCollapsableWindow?
-    local debugPanel
-
-    local function init()
-        if debugOption:getValue() and not debugPanel then
-            debugPanel = DebugPanel:new()
-            debugPanel:addToUIManager()
-        elseif not debugOption:getValue() and debugPanel then
-            debugPanel:setVisible(false)
-            debugPanel:removeFromUIManager()
-            debugPanel = nil
-        end
-    end
-
-    Events.OnGameStart.Add(init)
-    mod.addApply(init)
+    Events.OnGameStart.Add(function()
+        DebugPanel:new():addToUIManager()
+    end)
 end

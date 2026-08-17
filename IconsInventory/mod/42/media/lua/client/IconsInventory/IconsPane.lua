@@ -4,6 +4,7 @@ local CellPool = require("IconsInventory/CellPool")
 local DragSelectionBox = require("IconsInventory/DragSelectionBox")
 local GridLayout = require("IconsInventory/GridLayout")
 local MultiSelect = require("IconsInventory/MultiSelect")
+local Onboarding = require("IconsInventory/Onboarding")
 
 local SMARTDRAG_PULL_DURATION = 250
 
@@ -62,6 +63,7 @@ end
 ---@param emptyPage ISInventoryPage
 function IconsPane.new(emptyPage)
     local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane) ---@cast self -ISPanel
+    local player = getSpecificPlayer(emptyPage.player)
 
     self.parent = emptyPage
     self.anchorBottom = true
@@ -72,9 +74,13 @@ function IconsPane.new(emptyPage)
     self.grid = GridLayout.new()
     self.expanded = {}
     self.pool = CellPool:new()
-    self.isMouseAllowed = getNumActivePlayers() == 1 or getSpecificPlayer(emptyPage.player):getJoypadBind() < 0
+    self.isMouseAllowed = getNumActivePlayers() == 1 or player:getJoypadBind() < 0
     self.beingSelected = {}
     self.overscrollTime = 0
+
+    if self.isMouseAllowed then
+        Onboarding.showIfShould(player)
+    end
 
     return self
 end

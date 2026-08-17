@@ -55,86 +55,112 @@ local preferredSize =
         scaleRatio(baseScalingInt + 1) > 40 and 3 or 2
     )
 
-mod.option.iconSize = mod.options:addComboBox("iconSize", "Icon size")
-mod.option.iconSize:addItem("Small" .. (baseFrac == 0 and " (pixel perfect)" or ""), preferredSize == 1)
-mod.option.iconSize:addItem("Medium" .. (baseFrac ~= 0 and " (pixel perfect)" or ""), preferredSize == 2)
-mod.option.iconSize:addItem("Large" .. (baseFrac == 0 and " (pixel perfect)" or ""), preferredSize == 3)
-
-mod.options:addDescription(
-    "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game."
+mod.option.iconSize = mod.options:addComboBox("iconSize", getText("UI_IconsInventory_options_iconSize"))
+mod.option.iconSize:addItem(
+    getText("UI_optionscreen_Small") .. (baseFrac == 0 and " (pixel perfect)" or ""),
+    preferredSize == 1
 )
+mod.option.iconSize:addItem(
+    getText("UI_optionscreen_Medium") .. (baseFrac ~= 0 and " (pixel perfect)" or ""),
+    preferredSize == 2
+)
+mod.option.iconSize:addItem(
+    getText("UI_optionscreen_Large") .. (baseFrac == 0 and " (pixel perfect)" or ""),
+    preferredSize == 3
+)
+
+mod.options:addDescription(getText("UI_IconsInventory_options_smallerHint"))
 
 mod.option.enableSmartDrag = mod.options:addTickBox(
     "enableSmartDrag",
-    "Smart dragging",
-    false,
-    "Select items without holding shift"
+    getText("UI_IconsInventory_options_enableSmartDrag"),
+    true,
+    getText("UI_IconsInventory_options_enableSmartDrag_hint")
 )
 
 mod.option.enableSmartScroll = mod.options:addTickBox(
     "enableSmartScroll",
-    "Smart container scrolling",
+    getText("UI_IconsInventory_options_enableSmartScroll"),
     true,
-    "Scrolling from Icons Inventory cycles containers"
+    getText("UI_IconsInventory_options_enableSmartScroll_hint")
 )
 
 mod.option.enableFastRightClick = mod.options:addTickBox(
     "enableFastRightClick",
-    "Right Click fast mode",
+    getText("UI_IconsInventory_options_enableFastRightClick"),
     false,
-    "Menu appears on mouse down, select entry on release. Disable if you make accidental clicks"
+    getText("UI_IconsInventory_options_enableFastRightClick_hint")
 )
 
 mod.option.hideEquipped = mod.options:addTickBox(
     "hideEquipped",
-    "Hide equipped items",
+    getText("UI_IconsInventory_options_hideEquipped"),
     false,
     "Warning: only enable if you really need this"
 )
 
-mod.option.clickSend = mod.options:addComboBox("clickSend", "Click to quick-send")
-mod.option.clickSend:addItem("Off")
+mod.option.clickSend = mod.options:addComboBox("clickSend", getText("UI_IconsInventory_options_clickSend"))
+mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_off"))
 mod.option.clickSend_off = 1
-mod.option.clickSend:addItem("Safe - Send to loot container only if its window is open", true)
+mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_safe"), true)
 mod.option.clickSend_safe = 2
-mod.option.clickSend:addItem("Send - Like Shift+Click, without shift. Except for stacks")
+mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_send"))
 mod.option.clickSend_send = 3
 
-mod.option.hungerMode = mod.options:addComboBox("hungerMode", "Restored hunger display")
-mod.option.hungerMode:addItem("Remaining portion indicator", true)
+mod.option.hungerMode = mod.options:addComboBox("hungerMode", getText("UI_IconsInventory_options_hungerMode"))
+mod.option.hungerMode:addItem(getText("UI_IconsInventory_options_hungerMode_portion"), true)
 mod.option.hungerMode_portion = 1
-mod.option.hungerMode:addItem("Restored hunger value")
+mod.option.hungerMode:addItem(getText("UI_IconsInventory_options_hungerMode_numbers"))
 mod.option.hungerMode_numbers = 2
 
-mod.options:addTitle("Smart Stacking")
+mod.options:addTitle(getText("UI_IconsInventory_options_smartStacking_title"))
 
-mod.options:addDescription("Items stack depending on their weight. Small items always stack.")
+mod.options:addDescription(getText("UI_IconsInventory_options_smartStacking_desc"))
 
 mod.option.collapseItemsUnder = mod.options:addSlider(
     "collapseItemsUnder",
-    "\"Small\" means under this weight (excluded). Default: " ..
-    tostring(default.collapseItemsUnder),
+    getText("UI_IconsInventory_options_collapseItemsUnder") .. tostring(default.collapseItemsUnder),
     0, 1, 0.05, default.collapseItemsUnder
 )
 
 mod.option.alwaysCollapseOver = mod.options:addSlider(
     "alwaysCollapseOver",
-    "Always stack above number (excluded). 0: never collapse. Default: " .. tostring(default.alwaysCollapseOver),
+    getText("UI_IconsInventory_options_alwaysCollapseOver") .. tostring(default.alwaysCollapseOver),
     0, 20, 1, default.alwaysCollapseOver
 )
 
-mod.options:addTitle("Gamepad")
+mod.options:addTitle(getText("UI_IconsInventory_options_gamepad"))
 
 mod.option.maxJoypadColumns = mod.options:addSlider(
-    "maxJoypadColumns", "Maximum columns. Default: " .. tostring(default.maxJoypadColumns),
+    "maxJoypadColumns",
+    getText("UI_IconsInventory_options_maxJoypadColumns") .. tostring(default.maxJoypadColumns),
     4, 20, 1, default.maxJoypadColumns
 )
+
+local reader = getFileReader("IconsInventory/data.cfg", false)
+if reader then
+    local ok, res = pcall(deserialize, reader:readAllAsString())
+    reader:close()
+    if ok then
+        mod.data = res
+    else
+        print("Couldn't read Icons Inventory data!")
+    end
+else
+    mod.data = {}
+end
+
+mod.writeData = function()
+    local writer = getFileWriter("IconsInventory/data.cfg", true, false) ---@cast writer -nil
+    writer:write(serialize(mod.data))
+    writer:close()
+end
 
 if isDebugEnabled() then
     local modules = {
         "integration/BetterContainers",
         "util/texture",
-        "DebugPanel",
+        "Onboarding",
         "Action",
         "DragSelectionBox",
         "MultiSelect",
