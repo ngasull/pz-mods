@@ -85,6 +85,7 @@ local CellRender = {}
 CellRender.color = {
     cannotDrop = { 1, 0, 0 },
     selected = { 1, 1, 1 },
+    beingSelected = { 0.6, 0.6, 0.6 },
     focus = { 0.25, 0.25, 0.25 },
     controllerFocus = { 0.2, 1, 1 },
 }
@@ -127,7 +128,7 @@ function CellRender:renderBackground()
         item:updateWetness()
     end
 
-    if self:isSelected() or self:isBeingSelected() then
+    if self:isSelected() then
         if self.pane:isDraggingItems() then
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
@@ -140,6 +141,10 @@ function CellRender:renderBackground()
             self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.2, r, g, b)
             self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.1, r, g, b)
         end
+    elseif self:isBeingSelected() then
+        local r, g, b = unpack(CellRender.color.beingSelected)
+        self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.2, r, g, b)
+        self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.1, r, g, b)
     elseif self:isFocused() and heat == 1 and not self:isCleanUIHighlighted() then
         local r, g, b = unpack(native.doController and CellRender.color.controllerFocus or CellRender.color.focus)
         self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, r, g, b)
