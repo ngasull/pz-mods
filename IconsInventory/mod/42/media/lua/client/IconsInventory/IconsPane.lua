@@ -229,7 +229,8 @@ function IconsPane:isDraggingItems()
     return self.mouseDown and self.native.dragging ~= nil and self.native.dragStarted
 end
 
-function IconsPane:areManyCellsSelected()
+function IconsPane:areManyCellsSelected(amount)
+    amount = amount or 2
     local count = 0
     for _, v in pairs(self.native.selected) do
         local cell = self.pool:get(v)
@@ -239,7 +240,7 @@ function IconsPane:areManyCellsSelected()
             )
         then
             count = count + 1
-            if count > 1 then return true end
+            if count >= amount then return true end
         end
     end
     return false
@@ -533,10 +534,19 @@ function IconsPane:handleClick(mouseDown)
         elseif not isCtrlKeyDown() then
             local clickSend = mod.option.clickSend:getValue()
             local other = getTheOtherPage(self.parent)
-            if mouseDown.focused.cell:isCategory()
+            if
+                mouseDown.focused.cell:isCategory()
                 and (clickSend == mod.option.clickSend_off or not mouseDown.focused.cell:isSelected())
             then
                 self:toggleExpanded(self.focusedCell)
+                return true
+            elseif
+                mod.option.enableSmartDrag:getValue()
+                and not mouseDown.focused.wasSelected
+                and self:areManyCellsSelected(1)
+            then
+                -- Smart mode: add to selected on click if there are already selected cells
+                mouseDown.focused.cell:setSelected(true)
                 return true
             elseif
                 (clickSend == mod.option.clickSend_loot and not self.parent.onCharacter)
