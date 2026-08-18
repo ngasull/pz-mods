@@ -4,6 +4,7 @@ local mod = require("IconsInventory/mod")
 ---@field pane IconsInventory_IconsPane
 ---@field from IconsInventory_Cell
 ---@field to IconsInventory_Cell
+---@field lastFocusTime integer
 local MultiSelect = {}
 MultiSelect.__index = MultiSelect
 
@@ -19,6 +20,7 @@ function MultiSelect.handleDrag(pane, mouseDown, focused)
     end
     -- Set `from` and `to` in one go
     if pane.focusedCell then
+        pane.multiSelect.lastFocusTime = getTimestampMs()
         pane.multiSelect:setTo(pane.focusedCell)
     end
 end
@@ -30,6 +32,7 @@ function MultiSelect.new(pane, start)
     self.pane = pane
     self.from = start
     self.to = start
+    self.lastFocusTime = 0
     return self
 end
 

@@ -7,6 +7,8 @@ local MultiSelect = require("IconsInventory/MultiSelect")
 local Onboarding = require("IconsInventory/Onboarding")
 
 local SMARTDRAG_PULL_DURATION = 250
+local CLICKMOVE_GRACE_MS = 300
+local LEAVE_MULTISELECT_GRACE_MS = 100
 
 local function True()
     return true
@@ -228,7 +230,7 @@ function IconsPane:isDragging()
     -- Tolerate clicking while moving (not confuse it with drag)
     local mayBeClicking = self.mouseDown.focused
         and self.mouseDown.focused.cell == self.focusedCell
-        and getTimestampMs() - self.mouseDown.dragStartTime < 300
+        and getTimestampMs() - self.mouseDown.dragStartTime < CLICKMOVE_GRACE_MS
 
     return not mayBeClicking
 end
@@ -655,13 +657,15 @@ function IconsPane:handleDrag(mouseDown)
             mouseDown.shift
             or (
                 mod.option.enableSmartDrag:getValue()
-                and self.focusedCell -- Prefer dragging when no focus
+                and (
+                    self.focusedCell -- Prefer dragging when no focus
+                    -- Tolerate leaving focus for a short time (allows ending selections after last item)
+                    or (self.multiSelect and getTimestampMs() - self.multiSelect.lastFocusTime < LEAVE_MULTISELECT_GRACE_MS)
+                )
             )
         )
     then
-        if self:isDraggingItems() then
-            self:cancelDragItems()
-        end
+        if self:isDraggingItems() then self:cancelDragItems() end
         MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
     elseif
         mouseDown.focused
