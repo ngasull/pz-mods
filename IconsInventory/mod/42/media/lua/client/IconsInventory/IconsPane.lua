@@ -46,6 +46,7 @@ end
 ---@field mouseDown? IconsInventory_IconsPane_MouseDown
 ---@field dragSelectionBox? IconsInventory_DragSelectionBox
 ---@field multiSelect? IconsInventory_MultiSelect
+---@field startHoverTime? integer
 ---@field overscrollTime integer
 ---@field smartDragPullRemaining integer
 ---@field _selectedBeforeDrag? table<IconsInventory_Cell, true>
@@ -121,7 +122,7 @@ function IconsPane:refresh()
             table.insert(vanillaItems, stack)
             local category = self.pool:cell(stack.items[1], self, #vanillaItems, stack)
 
-            if category:isCollapsed() or category:isCollapsable() then
+            if category:isCollapsable() then
                 table.insert(cells, category)
             end
 
@@ -610,6 +611,8 @@ function IconsPane:onMouseMove()
     self.native.mouseOverOption = 0
 
     if self.isMouseAllowed then
+        if not self.startHoverTime then self.startHoverTime = getTimestampMs() end
+
         local x, y = self:getMouseX(), self:getMouseY()
         self:setFocusedCell(self.grid:hitTest(x, y))
         if self:isDragging() then self:handleDrag(self.mouseDown) end
@@ -617,6 +620,11 @@ function IconsPane:onMouseMove()
 end
 
 function IconsPane:onMouseMoveOutside(dx, dy)
+    if self.startHoverTime then
+        self.startHoverTime = nil
+        self._dirty = true
+    end
+
     if self.isMouseAllowed then
         if not self.native.doController then
             self:setFocusedCell(nil)

@@ -9,6 +9,8 @@ local CellRender = require("IconsInventory/CellRender")
 ---@field stack ContextMenuItemStack
 ---@field category IconsInventory_Cell
 ---@field player IsoPlayer
+---@field _hoverState integer?
+---@field _hoverStateCollapsable boolean
 --- Current render loop's state:
 ---@field x number
 ---@field y number
@@ -78,11 +80,18 @@ function Cell:isCategory()
 end
 
 function Cell:isCollapsable()
-    local stackSize = #self.stack.items - 1
-    return not self.stack.equipped and not self.stack.inHotbar and mod.option.alwaysCollapseOver:getValue() > 0 and (
-        stackSize > mod.option.alwaysCollapseOver:getValue()
-        or stackSize > 1 and self.stack.weight / stackSize < mod.option.collapseItemsUnder:getValue()
-    )
+    if not self.pane.startHoverTime or self.pane.startHoverTime ~= self._hoverState then
+        local stackSize = #self.stack.items - 1
+        self._hoverState = self.pane.startHoverTime
+        self._hoverStateCollapsable =
+            not self.stack.equipped
+            and not self.stack.inHotbar
+            and mod.option.alwaysCollapseOver:getValue() > 0 and (
+                stackSize > mod.option.alwaysCollapseOver:getValue()
+                or stackSize > 1 and self.stack.weight / stackSize < mod.option.collapseItemsUnder:getValue()
+            )
+    end
+    return self._hoverStateCollapsable
 end
 
 function Cell:isEquipped()
@@ -99,7 +108,7 @@ function Cell:isInHotbar()
 end
 
 function Cell:isCollapsed()
-    if not self:isCategory() or self:getStackSize() < 2 then return false end
+    if self.category ~= self or self:getStackSize() < 2 then return false end
     return not self.pane.expanded[self.stack.name] and self:isCollapsable()
 end
 
