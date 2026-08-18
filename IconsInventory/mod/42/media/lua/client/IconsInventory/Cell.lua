@@ -114,13 +114,13 @@ end
 
 function Cell:isBeingSelected()
     local isTooEarlyToDisplay = mod.option.enableSmartDrag:getValue() and not isShiftKeyDown() and (
-        self.pane.multiSelect and self.pane:isMouseOver()
-        and getTimestampMs() - self.pane.multiSelect.startTime < 200
+        self.pane.mouseDown and self.pane:isMouseOver()
+        and getTimestampMs() - self.pane.mouseDown.dragStartTime < 200
     )
-    return self.pane.beingSelected[self] and not isTooEarlyToDisplay and self.pane:isMouseOver()
+    return self.pane.beingSelected[self] and not isTooEarlyToDisplay
 end
 
----@param isSelected boolean
+---@param isSelected boolean?
 function Cell:setSelected(isSelected)
     if self:isCategory() then
         -- Sync all items with category

@@ -30,8 +30,8 @@ local function getTheOtherPage(page)
     return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
 end
 
----@alias IconsInventory_IconsPane_CellDown { cell: IconsInventory_Cell, vx: number, vy: number  }
----@alias IconsInventory_IconsPane_MouseDown { x: number, y: number, ctrl: boolean, shift: boolean, focused?: IconsInventory_IconsPane_CellDown }
+---@alias IconsInventory_IconsPane_CellDown { cell: IconsInventory_Cell, wasSelected: boolean, vx: number, vy: number  }
+---@alias IconsInventory_IconsPane_MouseDown { x: number, y: number, ctrl: boolean, shift: boolean, dragStartTime: integer, focused?: IconsInventory_IconsPane_CellDown }
 
 ---@class IconsInventory_IconsPane: ISPanel
 ---@field parent ISInventoryPage
@@ -48,6 +48,7 @@ end
 ---@field multiSelect? IconsInventory_MultiSelect
 ---@field overscrollTime integer
 ---@field smartDragPullRemaining integer
+---@field _selectedBeforeDrag? table<IconsInventory_Cell, true>
 ---@field _scrollBottom? true
 ---@field _cancelMouseUp? true
 ---@field _fakeX? number
@@ -212,8 +213,16 @@ function IconsPane:setFocusedCell(focusedCell)
 end
 
 function IconsPane:isDragging()
+    if not self.mouseDown then return false end
+    if self.mouseDown.dragStartTime > -1 then return true end
+
     local x, y = self:getMouseX(), self:getMouseY()
-    return self.mouseDown and math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 * mod.getBaseScaling()
+    if math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 * mod.getBaseScaling() then
+        self.mouseDown.dragStartTime = getTimestampMs()
+        return true
+    else
+        return false
+    end
 end
 
 function IconsPane:isDraggingItems()
@@ -469,16 +478,18 @@ function IconsPane:onMouseDown(x, y)
         y = y,
         ctrl = isCtrlKeyDown(),
         shift = isShiftKeyDown(),
+        dragStartTime = -1,
         focused = self.focusedCell and {
             cell = self.focusedCell,
+            wasSelected = self.focusedCell:isSelected(),
             vx = self.native:getMouseX(),
             vy = self.native:getMouseY(),
         },
     }
 
-    if self.focusedCell and self.mouseDown.ctrl and not self.mouseDown.shift then
+    if self.mouseDown.focused and self.mouseDown.ctrl and not self.mouseDown.shift then
         -- Init selection painting
-        self.focusedCell:setSelected(not self.focusedCell:isSelected())
+        self.mouseDown.focused.cell:setSelected(not self.mouseDown.focused.wasSelected)
     elseif not (self.focusedCell or self.mouseDown.ctrl) then
         table.wipe(self.native.selected)
     end
@@ -604,49 +615,85 @@ end
 
 ---@param mouseDown IconsInventory_IconsPane_MouseDown
 function IconsPane:handleDrag(mouseDown)
-    if mouseDown.focused and not self:isDraggingItems() then
-        if (mouseDown.shift or (mod.option.enableSmartDrag:getValue() and self:isMouseOver()))
-            and MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
-        then
-            -- Handled
-        elseif mouseDown.ctrl then
-            if self.focusedCell and self.focusedCell:isSelected() ~= mouseDown.focused.cell:isSelected() then
-                self.focusedCell:setSelected(mouseDown.focused.cell:isSelected())
-            end
-        else
-            self:startDragItems(mouseDown.focused)
-            if self.multiSelect then
-                self.smartDragPullRemaining = getTimestampMs() + SMARTDRAG_PULL_DURATION
-            end
+    -- Make linear exclusive cases (fall back) - Key modifiers have priority
+    if
+        mouseDown.ctrl
+        and mouseDown.focused
+    then
+        if self.focusedCell and self.focusedCell:isSelected() ~= not mouseDown.focused.wasSelected then
+            self.focusedCell:setSelected(not mouseDown.focused.wasSelected)
         end
-    elseif self.multiSelect and self:isDraggingItems() and self:isMouseOver() then
-        self:cancelDragItems()
-    end
-
-    if self.dragSelectionBox then
+    elseif
+        mouseDown.focused
+        and not mouseDown.focused.wasSelected -- Prefer dragging selected
+        and (
+            mouseDown.shift
+            or (
+                mod.option.enableSmartDrag:getValue()
+                and self.focusedCell -- Prefer dragging when no focus
+            )
+        )
+    then
+        if self:isDraggingItems() then
+            self:cancelDragItems()
+        end
+        MultiSelect.handleDrag(self, mouseDown, mouseDown.focused)
+    elseif
+        mouseDown.focused
+        and not self:isDraggingItems()
+    then
+        self:startDragItems(mouseDown.focused)
+        if self.multiSelect then
+            self.multiSelect:reset()
+            self.smartDragPullRemaining = getTimestampMs() + SMARTDRAG_PULL_DURATION
+        end
+    elseif
+        self.dragSelectionBox
+    then
         self.dragSelectionBox:update()
-    elseif not mouseDown.focused and not mouseDown.shift then
+    elseif
+        not mouseDown.focused
+        and not mouseDown.shift
+    then
         self.dragSelectionBox = DragSelectionBox.new(self, mouseDown.x, mouseDown.y)
     end
 end
 
 ---@param focused IconsInventory_IconsPane_CellDown
 function IconsPane:startDragItems(focused)
+    -- Store current selection: vanilla dragging relies on `selected`
+    if not focused.wasSelected then -- If user explicitly drags selection: never store
+        self._selectedBeforeDrag = {}
+        for _, v in pairs(self.native.selected) do
+            local cell = self.pool:get(v)
+            self._selectedBeforeDrag[cell] = true
+        end
+    end
+
     self.native.mouseOverOption = focused.cell.index
     self.native:onMouseDown(focused.vx, focused.vy)
     self.native.dragStarted = true
 end
 
 function IconsPane:cancelDragItems()
+    self.smartDragPullRemaining = nil
     self.native.dragging = nil
     self.native.dragStarted = false
     self.native:onMouseUp(-1, -1)
-    self.smartDragPullRemaining = nil
+
+    -- Restore previously selected *cells*
+    if self._selectedBeforeDrag then
+        table.wipe(self.native.selected)
+        for _, group in ipairs(self.grid.cells) do
+            for _, cell in ipairs(group) do
+                cell:setSelected(self._selectedBeforeDrag[cell])
+            end
+        end
+    end
 end
 
 function IconsPane:onMouseUpOutside(x, y)
     self:cleanMouseLeft()
-    return self.native:onMouseUpOutside(x, y)
 end
 
 function IconsPane:cleanMouseLeft()
