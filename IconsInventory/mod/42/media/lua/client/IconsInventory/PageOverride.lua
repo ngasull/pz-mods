@@ -351,7 +351,7 @@ end)
 
 -- Install --
 Override._vanilla = vanilla
-local Prev = require("IconsInventory/PageOverride")
+local Prev = isDebugEnabled() and require("IconsInventory/PageOverride")
 for k in pairs(Override) do
     if not Prev then
         vanilla[k] = ISInventoryPage[k]

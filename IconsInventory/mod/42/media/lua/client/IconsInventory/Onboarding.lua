@@ -96,7 +96,7 @@ function Onboarding:close()
     mod.writeData()
 end
 
-local Prev = require("IconsInventory/Onboarding")
+local Prev = isDebugEnabled() and require("IconsInventory/Onboarding")
 if Prev then
     Onboarding.showIfShould(getPlayer())
 end

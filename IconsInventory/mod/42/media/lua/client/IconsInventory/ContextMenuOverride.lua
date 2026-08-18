@@ -31,7 +31,7 @@ end
 
 -- Install --
 Override._vanilla = vanilla
-local Prev = require("IconsInventory/ContextMenuOverride")
+local Prev = isDebugEnabled() and require("IconsInventory/ContextMenuOverride")
 for k in pairs(Override) do
     if not Prev then
         vanilla[k] = ISContextMenu[k]

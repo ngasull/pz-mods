@@ -75,7 +75,7 @@ end
 
 -- Install --
 Override._vanilla = vanilla
-local Prev = require("IconsInventory/PaneOverride")
+local Prev = isDebugEnabled() and require("IconsInventory/PaneOverride")
 for k in pairs(Override) do
     if not Prev then
         vanilla[k] = ISInventoryPane[k]

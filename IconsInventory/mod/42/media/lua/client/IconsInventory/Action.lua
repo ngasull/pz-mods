@@ -118,7 +118,7 @@ Action._clean = function()
     end
 end
 
-local Prev = require("IconsInventory/Action")
+local Prev = isDebugEnabled() and require("IconsInventory/Action")
 if Prev then Prev._clean() end
 install()
 
