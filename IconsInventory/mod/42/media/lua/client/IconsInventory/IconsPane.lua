@@ -60,7 +60,7 @@ local IconsPane = ISPanel:derive("IconsInventory_IconsPane")
 IconsPane.__index = IconsPane
 
 function IconsPane._init()
-    IconsPane.minXPadding = 2 * Cell.padding
+    IconsPane.minXPadding = 20 * mod.getBaseScaling()
     IconsPane.yPadding = Cell.padding
 end
 
