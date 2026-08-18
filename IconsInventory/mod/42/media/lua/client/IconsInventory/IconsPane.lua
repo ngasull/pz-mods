@@ -214,15 +214,22 @@ end
 
 function IconsPane:isDragging()
     if not self.mouseDown then return false end
-    if self.mouseDown.dragStartTime > -1 then return true end
 
-    local x, y = self:getMouseX(), self:getMouseY()
-    if math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 * mod.getBaseScaling() then
-        self.mouseDown.dragStartTime = getTimestampMs()
-        return true
-    else
-        return false
+    if self.mouseDown.dragStartTime < 0 then
+        local x, y = self:getMouseX(), self:getMouseY()
+        if math.abs(x - self.mouseDown.x) + math.abs(y - self.mouseDown.y) > 6 * mod.getBaseScaling() then
+            self.mouseDown.dragStartTime = getTimestampMs()
+        else
+            return false
+        end
     end
+
+    -- Tolerate clicking while moving (not confuse it with drag)
+    local mayBeClicking = self.mouseDown.focused
+        and self.mouseDown.focused.cell == self.focusedCell
+        and getTimestampMs() - self.mouseDown.dragStartTime < 300
+
+    return not mayBeClicking
 end
 
 function IconsPane:isDraggingItems()
