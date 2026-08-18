@@ -80,16 +80,22 @@ function Cell:isCategory()
 end
 
 function Cell:isCollapsable()
+    -- Don't change collapsed appearance as long as mouse is over the pane
     if not self.pane.startHoverTime or self.pane.startHoverTime ~= self._hoverState then
         local stackSize = #self.stack.items - 1
         self._hoverState = self.pane.startHoverTime
-        self._hoverStateCollapsable =
+        self._hoverStateCollapsable = -- Actual collapsable logic
             not self.stack.equipped
             and not self.stack.inHotbar
             and mod.option.alwaysCollapseOver:getValue() > 0 and (
                 stackSize > mod.option.alwaysCollapseOver:getValue()
                 or stackSize > 1 and self.stack.weight / stackSize < mod.option.collapseItemsUnder:getValue()
             )
+    elseif -- Exception: collapsed 1-stacks should never show expandable
+    -- (ie: 2 collapsed slices of bread > prepare 1 sandwich > would show a collapsed 1-stack of slice)
+        not self.pane.expanded[self.stack.name] and self:getStackSize() < 2
+    then
+        self._hoverStateCollapsable = false
     end
     return self._hoverStateCollapsable
 end
