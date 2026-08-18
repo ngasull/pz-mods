@@ -547,14 +547,14 @@ function IconsPane:handleClick(mouseDown)
             then
                 self:toggleExpanded(self.focusedCell)
                 return true
-            elseif
-                mod.option.enableSmartDrag:getValue()
-                and not mouseDown.focused.wasSelected
-                and self:areManyCellsSelected(1)
-            then
-                -- Smart mode: add to selected on click if there are already selected cells
-                mouseDown.focused.cell:setSelected(true)
-                return true
+                -- May not be an actual good idea: interferes with click to loot
+                -- elseif -- Smart mode: add to selected on click if there are already selected cells
+                --     mod.option.enableSmartDrag:getValue()
+                --     and not mouseDown.focused.wasSelected
+                --     and self:areManyCellsSelected(1)
+                -- then
+                --     mouseDown.focused.cell:setSelected(true)
+                --     return true
             elseif
                 (clickSend == mod.option.clickSend_loot and not self.parent.onCharacter)
                 or (clickSend == mod.option.clickSend_safe and not (
