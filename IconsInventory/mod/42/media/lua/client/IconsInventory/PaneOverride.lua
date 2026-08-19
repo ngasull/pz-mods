@@ -73,6 +73,16 @@ function Override:onRightMouseUp(...)
     end
 end
 
+-- Overriden for broader mod compatibility that would call this method
+function Override:doJoypadExpandCollapse()
+    local pane = self.parent._IconsInventory
+    if pane and pane:isVisible() then
+        pane:toggleExpanded(pane.focusedCell)
+    else
+        return vanilla.doJoypadExpandCollapse(self)
+    end
+end
+
 -- Install --
 Override._vanilla = vanilla
 local Prev = isDebugEnabled() and require("IconsInventory/PaneOverride")
