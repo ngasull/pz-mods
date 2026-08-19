@@ -270,7 +270,7 @@ function Override:onJoypadDirDown(joypadData)
         self._IconsInventory_pressedBumper = nil
     end
 
-    if not isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
+    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
         if pane:isVisible() then
             if pane.focusedCell then
                 local rows = pane.grid:getRows()
@@ -303,7 +303,7 @@ function Override:onJoypadDirUp(joypadData)
         self._IconsInventory_pressedBumper = nil
     end
 
-    if not isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
+    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
         if pane:isVisible() then
             if pane.focusedCell then
                 local rows = pane.grid:getRows()
