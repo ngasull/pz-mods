@@ -351,6 +351,7 @@ function Override:onJoypadDown(button)
             return
         end
         if pane.focusedCell and pane.focusedCell:isCategory() then
+            -- Call our own implementation of `doJoypadExpandCollapse` in PaneOverride
             self.inventoryPane:doJoypadExpandCollapse()
         end
     else
