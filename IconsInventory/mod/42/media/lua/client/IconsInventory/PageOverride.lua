@@ -19,6 +19,31 @@ local function focusTheOtherPage(self, col)
     setJoypadFocus(self.player, otherPage)
 end
 
+-- Logical gamepad action
+local function isCancelAction(button)
+    return button == (
+        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CancelAction:getJoypadButton() or Joypad.BButton
+    )
+end
+
+local function isCycleTabsLeftAction(button)
+    return button == (
+        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CycleTabsLeft:getJoypadButton() or Joypad.LBumper
+    )
+end
+
+local function isCycleTabsRightAction(button)
+    return button == (
+        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CycleTabsRight:getJoypadButton() or Joypad.RBumper
+    )
+end
+
+local function isInteractAction(button)
+    return button == (
+        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.Interact:getJoypadButton() or Joypad.AButton
+    )
+end
+
 ---@class ISInventoryPage
 local vanilla = {}
 
@@ -185,7 +210,7 @@ function Override:onJoypadDirRight()
     if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
-    else
+    elseif pane:isVisible() then
         local row, col = 1, 1 -- Find first leftmost cell if any
         if pane.focusedCell then
             row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
@@ -200,6 +225,8 @@ function Override:onJoypadDirRight()
                 pane:setFocusedCell(pane.grid:getCellAt(row, col))
             end
         end
+    elseif self.onCharacter then
+        focusTheOtherPage(self)
     end
 end
 
@@ -210,7 +237,7 @@ function Override:onJoypadDirLeft()
     if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
         focusTheOtherPage(self)
         self._IconsInventory_pressedBumper = nil
-    else
+    elseif pane:isVisible() then
         local row, col = 1, -1 -- Find first rightmost cell if any
         if pane.focusedCell then
             row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
@@ -225,10 +252,12 @@ function Override:onJoypadDirLeft()
                 pane:setFocusedCell(pane.grid:getCellAt(row, col))
             end
         end
+    elseif not self.onCharacter then
+        focusTheOtherPage(self, -1)
     end
 end
 
-function Override:onJoypadDirDown()
+function Override:onJoypadDirDown(joypadData)
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -241,23 +270,27 @@ function Override:onJoypadDirDown()
         self._IconsInventory_pressedBumper = nil
     end
 
-    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        if pane.focusedCell then
-            local rows = pane.grid:getRows()
-            local nextRow = rows[pane.focusedCell.layoutRow + 1]
-            pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)])
-        else
-            -- Find first upmost cell if any
-            pane:setFocusedCell(pane.grid:getCellAt(1, 1))
-        end
+    if not isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
+        if pane:isVisible() then
+            if pane.focusedCell then
+                local rows = pane.grid:getRows()
+                local nextRow = rows[pane.focusedCell.layoutRow + 1]
+                pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)])
+            else
+                -- Find first upmost cell if any
+                pane:setFocusedCell(pane.grid:getCellAt(1, 1))
+            end
 
-        if not pane.focusedCell then
-            self:selectNextContainer()
+            if not pane.focusedCell then
+                self:selectNextContainer()
+            end
+        else
+            return vanilla.onJoypadDirDown(self, joypadData)
         end
     end
 end
 
-function Override:onJoypadDirUp()
+function Override:onJoypadDirUp(joypadData)
     local pane = self._IconsInventory
     local joypad = getSpecificPlayer(self.player):getJoypadBind()
 
@@ -270,18 +303,22 @@ function Override:onJoypadDirUp()
         self._IconsInventory_pressedBumper = nil
     end
 
-    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        if pane.focusedCell then
-            local rows = pane.grid:getRows()
-            local prevRow = rows[pane.focusedCell.layoutRow - 1]
-            pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)])
-        else
-            -- Get first downmost cell if any
-            pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
-        end
+    if not isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
+        if pane:isVisible() then
+            if pane.focusedCell then
+                local rows = pane.grid:getRows()
+                local prevRow = rows[pane.focusedCell.layoutRow - 1]
+                pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)])
+            else
+                -- Get first downmost cell if any
+                pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
+            end
 
-        if not pane.focusedCell then
-            self:selectPrevContainer()
+            if not pane.focusedCell then
+                self:selectPrevContainer()
+            end
+        else
+            return vanilla.onJoypadDirUp(self, joypadData)
         end
     end
 end
@@ -289,14 +326,14 @@ end
 function Override:onJoypadDown(button)
     local pane = self._IconsInventory
 
-    if button == Joypad.LBumper or button == Joypad.RBumper then
+    if isCycleTabsLeftAction(button) or isCycleTabsRightAction(button) then
         -- If re-pressed before update
         if self._IconsInventory_pressedBumper ~= nil then
             vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
         end
 
         self._IconsInventory_pressedBumper = button
-    elseif button == Joypad.AButton and pane.focusedCell then
+    elseif isInteractAction(button) and pane.focusedCell and pane:isVisible() then
         IconsPane.stubContextMenuXY(
             function()
                 local x = pane:getAbsoluteX() + pane.grid.x
@@ -307,7 +344,7 @@ function Override:onJoypadDown(button)
             end,
             vanilla.onJoypadDown, self, button
         )
-    elseif button == Joypad.BButton then
+    elseif isCancelAction(button) and pane:isVisible() then
         local player = getSpecificPlayer(self.player)
         if isPlayerDoingActionThatCanBeCancelled(player) then
             stopDoingActionThatCanBeCancelled(player)
