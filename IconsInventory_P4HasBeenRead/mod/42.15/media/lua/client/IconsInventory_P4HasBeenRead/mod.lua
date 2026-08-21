@@ -5,13 +5,13 @@ local P4HasBeenRead = _IconsInventory_P4HasBeenRead
 
 -- [NOTICE]
 -- The source code below is the basicaly same as the P4HasBeenRead code for Build 42.15.
--- Would love to see them expose a modders API but copying/pastadapting is required so far.P4HasBeenRead.textureBookNR = getTexture("media/ui/P4HasBeenRead_Book_NR.png")
-P4HasBeenRead.textureBookNR = getTexture("media/ui/P4HasBeenRead_Book_NR.png")
-P4HasBeenRead.textureBookNC = getTexture("media/ui/P4HasBeenRead_Book_NC.png")
-P4HasBeenRead.textureBookAR = getTexture("media/ui/P4HasBeenRead_Book_AR.png")
-P4HasBeenRead.textureBookSMM = getTexture("media/ui/P4HasBeenRead_Book_SM_Marked.png")
-P4HasBeenRead.textureBookSMU = getTexture("media/ui/P4HasBeenRead_Book_SM_Unmarked.png")
-P4HasBeenRead.textureBookCT = getTexture("media/ui/P4HasBeenRead_Book_CT.png")
+-- Would love to see them expose a modders API but copying/pastadapting is required so far.
+P4HasBeenRead.textureBookNR = getTexture("media/ui/P4HasBeenRead_Book_NR-3x.png")
+P4HasBeenRead.textureBookNC = getTexture("media/ui/P4HasBeenRead_Book_NC-3x.png")
+P4HasBeenRead.textureBookAR = getTexture("media/ui/P4HasBeenRead_Book_AR-3x.png")
+P4HasBeenRead.textureBookSMM = getTexture("media/ui/P4HasBeenRead_Book_SM_Marked-3x.png")
+P4HasBeenRead.textureBookSMU = getTexture("media/ui/P4HasBeenRead_Book_SM_Unmarked-3x.png")
+P4HasBeenRead.textureBookCT = getTexture("media/ui/P4HasBeenRead_Book_CT-3x.png")
 
 P4HasBeenRead.notReadTexture = nil
 P4HasBeenRead.notCompletedTexture = nil
@@ -21,11 +21,6 @@ P4HasBeenRead.unmarkedTexture = nil
 P4HasBeenRead.currentTargetTexture = nil
 P4HasBeenRead.hasVisibleTextures = false
 P4HasBeenRead.hasStatusTextures = false
-
-P4HasBeenRead.Messages_ToDoAutoMark = getText("UI_P4HasBeenRead_Messages_ToDoAutoMark")
-P4HasBeenRead.Messages_ToDoNotAutoMark = getText("UI_P4HasBeenRead_Messages_ToDoNotAutoMark")
-P4HasBeenRead.ContextMenu_ToDoAutoMark = getText("ContextMenu_P4HasBeenRead_ToDoAutoMark")
-P4HasBeenRead.ContextMenu_ToDoNotAutoMark = getText("ContextMenu_P4HasBeenRead_ToDoNotAutoMark")
 
 P4HasBeenRead.effectiveCodes = { "CRP", "COO", "FRM", "DOC", "ELC", "MTL", "MEC", "TAI", "FIS", "TRA", "FOR", "HUS",
     "FKN", "BLA", "POT", "RCP", "BAA", "BUA", "SBU", "LBA", "SBA", "SPE", "AIM", "REL", "SPR", "LFT", "NIM", "SNE" }
@@ -55,45 +50,6 @@ P4HasBeenRead.getModData = function(player)
         modData.P4HasBeenRead.markedMap = {}
     end
     return modData.P4HasBeenRead
-end
-
-P4HasBeenRead.marked = function(type, player, noTransmit)
-    P4HasBeenRead.getModData(player).markedMap[type] = true
-    if not noTransmit then
-        player:transmitModData()
-    end
-end
-
-P4HasBeenRead.markedAll = function(types, player)
-    for i, v in ipairs(types) do
-        P4HasBeenRead.marked(v, player, true)
-    end
-    player:transmitModData()
-end
-
-P4HasBeenRead.unmarked = function(type, player, noTransmit)
-    P4HasBeenRead.getModData(player).markedMap[type] = nil
-    if not noTransmit then
-        player:transmitModData()
-    end
-end
-
-P4HasBeenRead.unmarkedAll = function(types, player)
-    for i, v in ipairs(types) do
-        P4HasBeenRead.unmarked(v, player, true)
-    end
-    player:transmitModData()
-end
-
-P4HasBeenRead.toggleDoNotAutoMark = function(player)
-    local modData = P4HasBeenRead.getModData(player)
-    modData.doNotAutoMark = not modData.doNotAutoMark
-    player:transmitModData()
-    if modData.doNotAutoMark then
-        P4HasBeenRead.showInfo(player, P4HasBeenRead.Messages_ToDoNotAutoMark)
-    else
-        P4HasBeenRead.showInfo(player, P4HasBeenRead.Messages_ToDoAutoMark)
-    end
 end
 
 -- *****************************************************************************
@@ -381,10 +337,6 @@ P4HasBeenRead.getRecipeResourceFullType = function(item, type)
     end
 end
 
-P4HasBeenRead.showInfo = function(player, message)
-    player:Say(message, 0.607, 0.717, 1.000, UIFont.Dialogue, 15, "radio")
-end
-
 local Cell_renderDetails = Cell.renderDetails
 
 function Cell:renderDetails()
@@ -406,6 +358,7 @@ function Cell:renderDetails()
         if tex ~= nil then
             local halfPadding = Cell.padding / 2
             local scaling = 0.5 + Cell.scaling * 0.5 -- Looks really ugly when too upscaled
+            scaling = scaling / 3                    -- Textures are x3 upscaled
             local mainSize = P4HasBeenRead.textureBookNR:getHeight() * scaling
             local yOffset = Cell.size - Cell.subAlign - mainSize / 2
 
