@@ -25,12 +25,15 @@ end
 ---@param stack ContextMenuItemStack
 local function stackKey(stack)
     local container = stack.items[1]:getContainer()
-    if not CellPool._containerIds[container] then
+    local id = CellPool._containerIds[container]
+    if not id then
         -- Found no better to identify containers thus far
-        CellPool._containerIds[container] = tostring(CellPool._nextContainerID)
+        id = tostring(CellPool._nextContainerID)
+        CellPool._containerIds[container] = id
         CellPool._nextContainerID = CellPool._nextContainerID + 1
     end
-    return CellPool._containerIds[container] .. stack.name
+    -- Do not trust access to the weak table here: use local variables (Drumz reported nil concat here)
+    return id .. stack.name
 end
 
 ---@param item InventoryItem
