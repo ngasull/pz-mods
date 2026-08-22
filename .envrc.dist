@@ -1,1 +1,7 @@
 use flake
+
+export WSL_HOST_USER="$USER"
+export PZ_STEAM_SOURCE="/mnt/c/Program Files (x86)/Steam/steamapps/common/ProjectZomboid/media/lua"
+export PZ_SOURCE="/home/$USER/dev/pz-source"
+export PZ_MODS="/home/$USER/dev/pz-mods"
+export PZ_HOST="/mnt/c/Users/$WSL_HOST_USER/Zomboid"
