@@ -60,6 +60,7 @@ local poisonIcon = getTexture("media/ui/SkullPoison.png")
 local favoriteStar = getTexture("media/ui/FavoriteStar.png")
 local noFavoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/nocraft.png")
 local favoriteRecipeInputStar = getTexture("media/ui/inventoryPanes/craftok.png")
+local tickMarkIcon = getTexture("media/ui/Tick_Mark-10.png")
 
 local bookNumberByLvl = {
     [1] = "I",
@@ -343,7 +344,7 @@ function CellRender:renderDetails()
     end
 
     if ISInventoryPane:isLiteratureRead(self.player, item) or item:hasBeenSeen(self.player) or item:hasBeenHeard(self.player) or self.player:hasReadMap(item) then
-        self:renderSubIcon(getTexture("media/ui/Tick_Mark-10.png"), subIconSize, subIconSize);
+        self:renderSubIcon(tickMarkIcon, subIconSize, subIconSize);
     end
 
     local fluidContainer = item:getFluidContainer() or
