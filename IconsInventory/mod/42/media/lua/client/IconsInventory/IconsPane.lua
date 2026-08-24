@@ -101,6 +101,7 @@ function IconsPane:refreshContainer()
         self:cleanMouseLeft() -- Ex.: cycle containers while dragging
     end
 
+    self:bringToTop()
     self._dirty = true
 end
 
@@ -291,12 +292,12 @@ function IconsPane:renderBase()
 end
 
 function IconsPane:renderDragged()
-    local isDragging = self:isDraggingItems()
-    local draggedCells = {} ---@type IconsInventory_Cell[]
+    self.native.draggedItems:update()
 
+    local draggedCells = {} ---@type IconsInventory_Cell[]
     for _, group in ipairs(self.grid.cells) do
         for _, cell in ipairs(group) do
-            if cell:isSelected() and isDragging then
+            if cell:isSelected() then
                 table.insert(draggedCells, cell)
             end
         end
@@ -491,10 +492,6 @@ function IconsPane:prerender()
         self._dirty = false
     end
 
-    if self:isDraggingItems() then
-        self.native.draggedItems:update()
-    end
-
     -- Render regular content
 
     -- See ISScrollBar.lua: they are not sure themselves
@@ -514,7 +511,9 @@ end
 
 function IconsPane:render()
     if not self.native then return end -- May happen on connecting gamepad
-    self:renderDragged()
+    if self:isDraggingItems() then
+        self:renderDragged()
+    end
     self.native:updateWorldObjectHighlight()
 end
 
