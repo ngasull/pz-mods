@@ -98,6 +98,7 @@ function IconsPane:refreshContainer()
     if self.native.inventory ~= self.prevContainer then
         self.prevContainer = self.native.inventory
         table.wipe(self.expanded)
+        self:cleanMouseLeft() -- Ex.: cycle containers while dragging
     end
 
     self._dirty = true
