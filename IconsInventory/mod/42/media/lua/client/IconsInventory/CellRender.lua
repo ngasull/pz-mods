@@ -286,24 +286,10 @@ function CellRender:renderDetails()
             or (item:isbDangerousUncooked() and not item:isCooked())
         )
 
-        local displayNumbers = false
-        if not isBeingCooked and isNourishing and mod.option.hungerMode:getValue() == mod.option.hungerMode_numbers
+        local displayNumbers = not isBeingCooked and isNourishing
+            and mod.option.hungerMode:getValue() == mod.option.hungerMode_numbers
             and not item:isSpice()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
-        then
-            displayNumbers = true
-            local str = tostring(math.floor(0.5 - item:getHungerChange() * 100))
-            ui:drawTextRight(
-                str,
-                self.x + cellSize - subPadding - self.padSubIcon,
-                self.y + subAlign - fontHeight / 2,
-                item:isFresh() and 0 or 0.75,
-                item:isFresh() and 1 or 0.75,
-                0,
-                0.7, font
-            )
-            self.padSubIcon = self.padSubIcon + getTextManager():MeasureStringX(font, str) + subPadding
-        end
 
         if item:isFrozen() then
             self:renderSubIcon(frozenIcon, subIconSize, subIconSize)
@@ -325,9 +311,19 @@ function CellRender:renderDetails()
         end
 
         if not isBeingCooked then
-            -- Remaining portion ring
-            -- `getHungChange` is an internal value, `getHungerChange` is displayed value
-            if not displayNumbers and item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
+            if displayNumbers then
+                ui:drawText(
+                    tostring(math.floor(0.5 - item:getHungerChange() * 100)),
+                    self.x + subPadding,
+                    self.y + cellSize - subAlign - fontHeight / 2,
+                    item:isFresh() and 0 or 0.75,
+                    item:isFresh() and 1 or 0.75,
+                    0,
+                    0.7, font
+                )
+            elseif item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
+                -- Remaining portion ring
+                -- `getHungChange` is an internal value, `getHungerChange` is displayed value
                 self:renderRing(ringGood, item:getHungChange() / item:getBaseHunger())
                 return
             end
