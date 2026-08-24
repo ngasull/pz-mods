@@ -1,48 +1,5 @@
 local mod = require("IconsInventory/mod")
-local Cell = require("IconsInventory/Cell")
 local IconsPane = require("IconsInventory/IconsPane")
-local BetterContainers = require("IconsInventory/integration/BetterContainers")
-
----@param self ISInventoryPage
----@return ISInventoryPage
-local function getTheOtherPage(self)
-    return self.onCharacter and getPlayerLoot(self.player) or getPlayerInventory(self.player)
-end
-
----@param self ISInventoryPage
----@param col? integer
-local function focusTheOtherPage(self, col)
-    local otherPage = getTheOtherPage(self)
-    local otherMod = otherPage._IconsInventory
-    local otherCell = otherMod.grid:getCellAt(1, col or 1)
-    otherMod:setFocusedCell(otherCell)
-    setJoypadFocus(self.player, otherPage)
-end
-
--- Logical gamepad action
-local function isCancelAction(button)
-    return button == (
-        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CancelAction:getJoypadButton() or Joypad.BButton
-    )
-end
-
-local function isCycleTabsLeftAction(button)
-    return button == (
-        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CycleTabsLeft:getJoypadButton() or Joypad.LBumper
-    )
-end
-
-local function isCycleTabsRightAction(button)
-    return button == (
-        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.CycleTabsRight:getJoypadButton() or Joypad.RBumper
-    )
-end
-
-local function isInteractAction(button)
-    return button == (
-        CharacterJoypadButtonBinding and CharacterJoypadButtonBinding.Interact:getJoypadButton() or Joypad.AButton
-    )
-end
 
 ---@class ISInventoryPage
 local vanilla = {}
@@ -52,84 +9,65 @@ local vanilla = {}
 ---@field player integer De facto player ID (not in Umbrella)
 ---@field _IconsInventory IconsInventory_IconsPane
 ---@field _IconsInventory_init? true
----@field _IconsInventory_pressedBumper integer?
----@field _IconsInventory_bcSearchStrip? ISPanel
----@field _IconsInventory_bcSearchEntry? ISTextBox
----@field _IconsInventory_bcSyncOk? true
 local Override = {}
 
----@param self ISInventoryPage
-local function initPage(self)
-    local prevPane = self._IconsInventory
-    self._IconsInventory = IconsPane.new(self)
-    self:addChild(self._IconsInventory)
+function Override:addChild(otherElement)
+    if getmetatable(otherElement) == ISInventoryPane then
+        -- Allow re-adding inventoryPane as an apply hook
+        local wasListMode = false
+        if self._IconsInventory then
+            wasListMode = not self._IconsInventory:isVisible()
+            self:removeChild(self._IconsInventory)
+            self._IconsInventory:removeFromUIManager()
+        end
 
-    if prevPane then
-        self._IconsInventory:setY(prevPane:getY())
-        self._IconsInventory:setVisible(prevPane:isVisible())
-        self._IconsInventory:setEnabled(prevPane:isEnabled())
+        mod.init()
+        self._IconsInventory = IconsPane.new(self, otherElement)
+        self._IconsInventory.parent = self
+
+        if wasListMode then
+            self._IconsInventory:setVisible(false)
+            self._IconsInventory:setEnabled(false)
+        else
+            vanilla.addChild(self, self._IconsInventory)
+            otherElement.parent = self
+            otherElement:setVisible(false)
+            otherElement:setEnabled(false)
+        end
+
+        if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
+            local h = math.max(
+                math.floor(self.height / 2),
+                math.floor(getCore():getScreenHeight() / 4))
+            self:setHeight(h)
+            self:setY(getCore():getScreenHeight() - h)
+        end
+
+        return otherElement
+    else
+        return vanilla.addChild(self, otherElement)
     end
-end
-
-function Override:createChildren()
-    mod.init()
-    vanilla.createChildren(self)
-    initPage(self)
-    self:removeChild(self.inventoryPane)
-    self.inventoryPane:setVisible(false)
-    self.inventoryPane:setEnabled(false)
-    self.inventoryPane:removeFromUIManager()
 end
 
 function Override:update()
     vanilla.update(self)
 
-    if not self._IconsInventory_init then
-        if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
-            local h = math.max(
-                math.floor(self:getHeight() / 2),
-                math.floor(getCore():getScreenHeight() / 4))
-            self:setHeight(h)
-            self:setY(getCore():getScreenHeight() - h)
-
-            if self.inventoryPane.toolRender then
-                self.inventoryPane.toolRender:setOwner(self._IconsInventory)
-            end
-        end
-
-        self._IconsInventory_init = true
-    end
-
     -- Support CleanUI (keep checking, they init randomly on controller connect)
-    if self.controlsUI:getY() < self.inventoryPane:getY() and self._IconsInventory:getY() ~= self.inventoryPane:getY() then
-        self._IconsInventory:setY(self.inventoryPane:getY())
+    if self._IconsInventory.y ~= self.inventoryPane.y then
+        self._IconsInventory:setY(self.inventoryPane.y)
     end
-
-    if self._IconsInventory_pressedBumper then
-        local joypad = getSpecificPlayer(self.player):getJoypadBind()
-
-        -- onJoypadUp is not working: do it manually
-        if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-            self._IconsInventory_pressedBumper = nil
-            vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
-        end
-    end
-
-    BetterContainers.stealBetterSearch(self)
 end
 
 function Override:prerender()
     local pane = self._IconsInventory
 
-    -- Draw static header above drawable area for mods (ie: BetterContainers) pushing down the grid (clipped by stencil otherwise)
-    if pane.y > self:titleBarHeight() then
-        self:drawRect(1, self:titleBarHeight(),
-            self.width - 2, pane.y - self:titleBarHeight(),
-            1, 0, 0, 0)
-        self:drawRect(
-            1, pane.y - 1,
-            self.width - 2, 1,
-            0.2, 1, 1, 1)
+    -- Draw static header above drawable area for mods (ie: BetterContainers)
+    local th = self:titleBarHeight()
+    local pageModHeight = pane.y - th
+    local mh = pageModHeight + pane.modsHeaderHeight
+    if mh > 0 then
+        self:drawRect(1, th, self.width - 2, mh, 1, 0, 0, 0)
+        self:drawRect(1, th + mh - 1, self.width - 2, 1, 0.2, 1, 1, 1)
     end
 
     vanilla.prerender(self)
@@ -138,13 +76,13 @@ end
 -- Vanilla collapses unpinned windows on any outside click; drags were exempt via ISMouseDrag.
 -- Icons interactions are clicks, so exempt the sibling window too. (thanks @armaku)
 function Override:onMouseDownOutside(...)
-    local other = getTheOtherPage(self)
+    local other = self._IconsInventory:getTheOtherPage()
     if other and other:isReallyVisible() and other:isMouseOver() then return end
     return vanilla.onMouseDownOutside(self, ...)
 end
 
 function Override:onRightMouseDownOutside(...)
-    local other = getTheOtherPage(self)
+    local other = self._IconsInventory:getTheOtherPage()
     if other and other:isReallyVisible() and other:isMouseOver() then return end
     return vanilla.onRightMouseDownOutside(self, ...)
 end
@@ -162,9 +100,9 @@ local function switchToList(self)
         end
         self.inventoryPane:setVisible(true)
         self.inventoryPane:setEnabled(true)
-        self.inventoryPane:setWidth(self._IconsInventory:getWidth())
+        self.inventoryPane:setWidth(self._IconsInventory.width)
         ISInventoryPane.collapseAll(self.inventoryPane, self.inventoryPane.collapseAll)
-        self:addChild(self.inventoryPane)
+        vanilla.addChild(self, self.inventoryPane)
     end
 end
 
@@ -180,7 +118,7 @@ local function switchToIcons(self)
         self._IconsInventory:setVisible(true)
         self._IconsInventory:setEnabled(true)
         self._IconsInventory:refreshContainer()
-        self:addChild(self._IconsInventory)
+        vanilla.addChild(self, self._IconsInventory)
     end
 end
 
@@ -203,192 +141,17 @@ function Override:onRightMouseDown(x, y)
     end
 end
 
-function Override:onJoypadDirRight()
-    local pane = self._IconsInventory
-    local joypad = getSpecificPlayer(self.player):getJoypadBind()
-
-    if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
-        focusTheOtherPage(self)
-        self._IconsInventory_pressedBumper = nil
-    elseif pane:isVisible() then
-        local row, col = 1, 1 -- Find first leftmost cell if any
-        if pane.focusedCell then
-            row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
-        end
-
-        pane:setFocusedCell(pane.grid:getCellAt(row, col + 1))
-
-        if not pane.focusedCell then
-            if self.onCharacter then
-                focusTheOtherPage(self, 1)
-            else
-                pane:setFocusedCell(pane.grid:getCellAt(row, col))
-            end
-        end
-    elseif self.onCharacter then
-        focusTheOtherPage(self)
-    end
-end
-
-function Override:onJoypadDirLeft()
-    local pane = self._IconsInventory
-    local joypad = getSpecificPlayer(self.player):getJoypadBind()
-
-    if isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad) then
-        focusTheOtherPage(self)
-        self._IconsInventory_pressedBumper = nil
-    elseif pane:isVisible() then
-        local row, col = 1, -1 -- Find first rightmost cell if any
-        if pane.focusedCell then
-            row, col = pane.focusedCell.layoutRow, pane.focusedCell.layoutCol
-        end
-
-        pane:setFocusedCell(pane.grid:getCellAt(row, col - 1))
-
-        if not pane.focusedCell then
-            if not self.onCharacter then
-                focusTheOtherPage(self, -1)
-            else
-                pane:setFocusedCell(pane.grid:getCellAt(row, col))
-            end
-        end
-    elseif not self.onCharacter then
-        focusTheOtherPage(self, -1)
-    end
-end
-
-function Override:onJoypadDirDown(joypadData)
-    local pane = self._IconsInventory
-    local joypad = getSpecificPlayer(self.player):getJoypadBind()
-
-    if isJoypadLBPressed(joypad) then
-        getPlayerInventory(self.player):selectNextContainer()
-        self._IconsInventory_pressedBumper = nil
-    end
-    if isJoypadRBPressed(joypad) then
-        getPlayerLoot(self.player):selectNextContainer()
-        self._IconsInventory_pressedBumper = nil
-    end
-
-    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        if pane:isVisible() then
-            if pane.focusedCell then
-                local rows = pane.grid:getRows()
-                local nextRow = rows[pane.focusedCell.layoutRow + 1]
-                pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)])
-            else
-                -- Find first upmost cell if any
-                pane:setFocusedCell(pane.grid:getCellAt(1, 1))
-            end
-
-            if not pane.focusedCell then
-                self:selectNextContainer()
-            end
-        else
-            return vanilla.onJoypadDirDown(self, joypadData)
-        end
-    end
-end
-
-function Override:onJoypadDirUp(joypadData)
-    local pane = self._IconsInventory
-    local joypad = getSpecificPlayer(self.player):getJoypadBind()
-
-    if isJoypadLBPressed(joypad) then
-        getPlayerInventory(self.player):selectPrevContainer()
-        self._IconsInventory_pressedBumper = nil
-    end
-    if isJoypadRBPressed(joypad) then
-        getPlayerLoot(self.player):selectPrevContainer()
-        self._IconsInventory_pressedBumper = nil
-    end
-
-    if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
-        if pane:isVisible() then
-            if pane.focusedCell then
-                local rows = pane.grid:getRows()
-                local prevRow = rows[pane.focusedCell.layoutRow - 1]
-                pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)])
-            else
-                -- Get first downmost cell if any
-                pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
-            end
-
-            if not pane.focusedCell then
-                self:selectPrevContainer()
-            end
-        else
-            return vanilla.onJoypadDirUp(self, joypadData)
-        end
-    end
-end
-
-function Override:onJoypadDown(button)
-    local pane = self._IconsInventory
-
-    if isCycleTabsLeftAction(button) or isCycleTabsRightAction(button) then
-        -- If re-pressed before update
-        if self._IconsInventory_pressedBumper ~= nil then
-            vanilla.onJoypadDown(self, self._IconsInventory_pressedBumper)
-        end
-
-        self._IconsInventory_pressedBumper = button
-    elseif isInteractAction(button) and pane.focusedCell and pane:isVisible() then
-        IconsPane.stubContextMenuXY(
-            function()
-                local x = pane:getAbsoluteX() + pane.grid.x
-                    + (pane.focusedCell.layoutCol - 1) * Cell.size
-                local y = pane:getAbsoluteY() + pane.grid.y + pane.native:getYScroll()
-                    + pane.focusedCell.layoutRow * Cell.size
-                return x, y
-            end,
-            vanilla.onJoypadDown, self, button
-        )
-    elseif isCancelAction(button) and pane:isVisible() then
-        local player = getSpecificPlayer(self.player)
-        if isPlayerDoingActionThatCanBeCancelled(player) then
-            stopDoingActionThatCanBeCancelled(player)
-            return
-        end
-        if pane.focusedCell and pane.focusedCell:isCategory() then
-            -- Call our own implementation of `doJoypadExpandCollapse` in PaneOverride
-            self.inventoryPane:doJoypadExpandCollapse()
-        end
-    else
-        return vanilla.onJoypadDown(self, button)
-    end
-end
-
----@param page ISInventoryPage
-local function applyPage(page)
-    if page._IconsInventory then -- More resilient to what other mods might do
-        page:removeChild(page._IconsInventory)
-        page._IconsInventory:removeFromUIManager()
-        initPage(page)
-        page.inventoryPane:refreshContainer()
-
-        -- if not isReload then
-        page._IconsInventory_bcSyncOk = nil
-        -- end
-    else
-        initPage(page)
-        page:removeChild(page.inventoryPane)
-        page.inventoryPane:removeFromUIManager()
-    end
-end
-
 mod.addApply(function()
     for i = 0, getNumActivePlayers() - 1 do
         local pd = getPlayerData(i)
         if pd then
-            applyPage(pd.playerInventory)
-            applyPage(pd.lootInventory)
+            pd.playerInventory:addChild(pd.playerInventory.inventoryPane)
+            pd.lootInventory:addChild(pd.lootInventory.inventoryPane)
         end
     end
 end)
 
 -- Install --
-Override._vanilla = vanilla
 local Prev = isDebugEnabled() and require("IconsInventory/PageOverride")
 for k in pairs(Override) do
     if not Prev then
@@ -401,4 +164,5 @@ for k in pairs(Override) do
     end
 end
 
+Override._vanilla = vanilla
 return Override

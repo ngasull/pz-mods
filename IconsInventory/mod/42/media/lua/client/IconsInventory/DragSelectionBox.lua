@@ -23,8 +23,8 @@ end
 
 function DragSelectionBox:update()
     local mx, my = self.pane:getMouseX(), self.pane:getMouseY()
-    self.x1 = math.max(0, math.min(self.pane:getWidth(), mx))
-    self.y1 = math.max(0, math.min(self.pane:getHeight(), my))
+    self.x1 = math.max(0, math.min(self.pane.width, mx))
+    self.y1 = math.max(0, math.min(self.pane.height, my))
 
     table.wipe(self.pane.beingSelected)
 
@@ -50,8 +50,8 @@ function DragSelectionBox:update()
     local scroll = self.pane:getYScroll()
     if self.y1 + scroll < 0 then
         self.pane:setYScroll(-self.y1)
-    elseif self.y1 + scroll > self.pane:getHeight() then
-        self.pane:setYScroll(self.pane:getHeight() - self.y1)
+    elseif self.y1 + scroll > self.pane.height then
+        self.pane:setYScroll(self.pane.height - self.y1)
     end
 end
 

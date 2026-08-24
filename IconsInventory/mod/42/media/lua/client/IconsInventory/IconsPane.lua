@@ -5,6 +5,7 @@ local DragSelectionBox = require("IconsInventory/DragSelectionBox")
 local GridLayout = require("IconsInventory/GridLayout")
 local MultiSelect = require("IconsInventory/MultiSelect")
 local Onboarding = require("IconsInventory/Onboarding")
+local BetterContainers = require("IconsInventory/integration/BetterContainers")
 
 local SMARTDRAG_PULL_DURATION = 250
 local CLICKMOVE_GRACE_MS = 300
@@ -26,12 +27,6 @@ local function isSelectAllPossible(page)
     return true
 end
 
----@param page ISInventoryPage
----@return ISInventoryPage
-local function getTheOtherPage(page)
-    return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
-end
-
 ---@alias IconsInventory_IconsPane_CellDown { cell: IconsInventory_Cell, wasSelected: boolean, vx: number, vy: number  }
 ---@alias IconsInventory_IconsPane_MouseDown { x: number, y: number, ctrl: boolean, shift: boolean, dragStartTime: integer, focused?: IconsInventory_IconsPane_CellDown }
 
@@ -51,6 +46,7 @@ end
 ---@field startHoverTime? integer
 ---@field overscrollTime integer
 ---@field smartDragPullRemaining integer
+---@field modsHeaderHeight number
 ---@field _selectedBeforeDrag? table<IconsInventory_Cell, true>
 ---@field _scrollBottom? true
 ---@field _cancelMouseUp? true
@@ -65,11 +61,13 @@ function IconsPane._init()
 end
 
 ---@param emptyPage ISInventoryPage
-function IconsPane.new(emptyPage)
+---@param native ISInventoryPane
+function IconsPane.new(emptyPage, native)
     local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane) ---@cast self -ISPanel
     local player = getSpecificPlayer(emptyPage.player)
 
     self.parent = emptyPage
+    self.native = native
     self.anchorBottom = true
     self.anchorLeft = true
     self.anchorRight = true
@@ -81,6 +79,9 @@ function IconsPane.new(emptyPage)
     self.isMouseAllowed = getNumActivePlayers() == 1 or player:getJoypadBind() < 0
     self.beingSelected = {}
     self.overscrollTime = 0
+    self.modsHeaderHeight = 0
+
+    native.itemSortFunc = native.itemSortFunc or ISInventoryPane.itemSortByCatInc
 
     if self.isMouseAllowed then
         Onboarding.showIfShould(player)
@@ -173,8 +174,8 @@ function IconsPane:refresh()
 
     self.grid:set(groups, gridWidth)
     -- Make sure it's an integer to avoid half-pixel renders
-    self.grid.x = math.floor(0.49 + (self:getWidth() - self.grid.gridWidth * Cell.size) / 2)
-    self.grid.y = IconsPane.yPadding
+    self.grid.x = math.floor(0.49 + (self.width - self.grid.gridWidth * Cell.size) / 2)
+    self.grid.y = self.modsHeaderHeight + IconsPane.yPadding
 
     -- If focusedCell is has not been forwarded (by Cell.new)
     if self.focusedCell == prevFocused then
@@ -200,7 +201,7 @@ function IconsPane:refresh()
     end
 
     self:setScrollHeight(scrollHeight)
-    self.vscroll:setHeight(self:getHeight())
+    self.vscroll:setHeight(self.height)
     self:updateScrollbars()
 
     if self._scrollBottom then
@@ -265,7 +266,7 @@ function IconsPane:renderBase()
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
-            self:drawRect(0, self.grid.y - IconsPane.yPadding, self:getWidth(), groupHeight - 1, 0.5, 0, 0, 0)
+            self:drawRect(0, self.grid.y - IconsPane.yPadding, self.width, groupHeight - 1, 0.5, 0, 0, 0)
         end
 
         for _, cell in ipairs(group) do
@@ -412,33 +413,35 @@ function IconsPane:update()
             end
         end
     else
-        getCore():setIsSelectingAll(isCtrlKeyDown() and isSelectAllPossible(getTheOtherPage(self.parent)))
+        getCore():setIsSelectingAll(isCtrlKeyDown() and isSelectAllPossible(self:getTheOtherPage()))
     end
 
     if self.native.doController and self.native.toolRender and self.native.toolRender.anchorBottomLeft then
         self.native.toolRender.anchorBottomLeft.x = self:getAbsoluteX() + self.grid.x
     end
+
+    BetterContainers.stealBetterSearch(self)
 end
 
 function IconsPane:prerender()
     if not self.native then return end -- May happen on connecting gamepad
 
-    local containersWidth = self.parent.containerButtonPanel:getWidth()
-    local y = self:getY()
-    local controlsY = self.parent.controlsUI:getY()
+    local containersWidth = self.parent.containerButtonPanel.width
+    local y = self.y
+    local controls = self.parent.controlsUI -- Mods might remove them
     -- Round target dimensions: floating point fails comparisons afterwards
-    local desiredWidth = math.floor(0.49 + self.parent:getWidth() - containersWidth)
-    local desiredHeight = math.floor(0.49 + 1 + self.parent:getHeight() - y
-        - (controlsY > y and self.parent.controlsUI:getHeight() or 0) - (self.parent.resizeWidget2
-            and self.parent.resizeWidget2:getHeight()
-            or 0))
+    local desiredWidth = math.floor(0.49 + self.parent.width - containersWidth)
+    local desiredHeight = math.floor(0.49 + 1 + self.parent.height - y
+        - (controls and controls.y > y and controls.height or 0)
+        - ISCollapsableWindow:resizeWidgetHeight()
+    )
 
     if self.x ~= self.native.x then self:setX(self.native.x) end
 
-    if self:getWidth() ~= desiredWidth then
+    if self.width ~= desiredWidth then
         self:setWidth(desiredWidth)
     end
-    if self:getHeight() ~= desiredHeight then
+    if self.height ~= desiredHeight then
         self:setHeight(desiredHeight)
     end
 
@@ -465,10 +468,10 @@ function IconsPane:prerender()
     local realVScrollWidth = self.vscroll.width - 2
     -- -2 to overlap/merge outer border
     local visibleScrollBarWidth = self:isVScrollBarVisible() and realVScrollWidth - 2 or 0
-    self.vscroll:setX(self:getWidth() - realVScrollWidth)
+    self.vscroll:setX(self.width - realVScrollWidth)
 
     -- Height -1 to avoid removing controlsUI line
-    self:setStencilRect(0, 0, self:getWidth() - visibleScrollBarWidth, self:getHeight() - 1)
+    self:setStencilRect(0, 0, self.width - visibleScrollBarWidth, self.height - 1)
     self:renderBase()
     if self.dragSelectionBox then self.dragSelectionBox:render() end
     self:clearStencilRect()
@@ -543,7 +546,7 @@ function IconsPane:handleClick(mouseDown)
             return true
         elseif not isCtrlKeyDown() then
             local clickSend = mod.option.clickSend:getValue()
-            local other = getTheOtherPage(self.parent)
+            local other = self:getTheOtherPage()
             if
                 mouseDown.focused.cell:isCategory()
                 and (clickSend == mod.option.clickSend_off or not mouseDown.focused.cell:isSelected())
@@ -852,6 +855,12 @@ function IconsPane:updateSmoothScrolling()
         self.smoothScrollTargetY = nil
         self.smoothScrollY = nil
     end
+end
+
+---@return ISInventoryPage
+function IconsPane:getTheOtherPage()
+    local page = self.parent
+    return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)
 end
 
 function IconsPane:onResize()

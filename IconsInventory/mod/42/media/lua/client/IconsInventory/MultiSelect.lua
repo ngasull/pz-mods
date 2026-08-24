@@ -61,8 +61,8 @@ function MultiSelect:setTo(last)
     local scroll = self.pane:getYScroll()
     if my + scroll < 0 then
         self.pane:setYScroll(math.max(0, my))
-    elseif my + scroll > self.pane:getHeight() then
-        self.pane:setYScroll(math.min(self.pane:getHeight(), my))
+    elseif my + scroll > self.pane.height then
+        self.pane:setYScroll(math.min(self.pane.height, my))
     end
 end
 

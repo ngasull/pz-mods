@@ -1,29 +1,40 @@
 local BetterContainers = {}
 
----@param page ISInventoryPage
-local function removeBetterSearch(page)
-    if page._IconsInventory_bcSearchStrip and page._IconsInventory_bcSearchEntry then
-        page._IconsInventory_bcSearchStrip:removeChild(page._IconsInventory_bcSearchEntry)
-        page:removeChild(page._IconsInventory_bcSearchStrip)
-        page._IconsInventory_bcSearchStrip:removeFromUIManager()
-        page._IconsInventory_bcSearchEntry:removeFromUIManager()
-        page._IconsInventory_bcSearchStrip = nil
-        page._IconsInventory_bcSearchEntry = nil
-        page._IconsInventory:setY(page:titleBarHeight())
+---@class IconsInventory_IconsPane
+---@field _bcSearchStrip? ISPanel
+---@field _bcSearchEntry? ISTextEntryBox
+---@field _bcSyncOk? true
+
+---@class ISInventoryPane
+---@field bcSearchStrip? ISPanel BetterContainers-managed strip
+---@field bcSearchEntry? ISTextEntryBox BetterContainers-managed search
+---@field _bcBaseHeaderHgt? number
+---@field _bcSearchApplied? boolean
+
+---@param pane IconsInventory_IconsPane
+local function removeBetterSearch(pane)
+    if pane._bcSearchStrip and pane._bcSearchEntry then
+        pane.modsHeaderHeight = pane.modsHeaderHeight - pane._bcSearchStrip.height
+        pane._bcSearchStrip:removeChild(pane._bcSearchEntry)
+        pane:removeChild(pane._bcSearchStrip)
+        pane._bcSearchStrip:removeFromUIManager()
+        pane._bcSearchEntry:removeFromUIManager()
+        pane._bcSearchStrip = nil
+        pane._bcSearchEntry = nil
     end
 end
 
----@param page ISInventoryPage
-function BetterContainers.stealBetterSearch(page)
-    local pane = page._IconsInventory
-    local native = page.inventoryPane
+---@param pane IconsInventory_IconsPane
+function BetterContainers.stealBetterSearch(pane)
+    local native = pane.native
 
-    if not page._IconsInventory_bcSyncOk then
-        removeBetterSearch(page)
+    -- if not pane._bcSyncOk or not native.bcSearchStrip ~= not pane._bcSearchStrip then
+    if not pane._bcSyncOk then
+        removeBetterSearch(pane)
 
         if native.bcSearchStrip and native.bcSearchEntry then
-            page._IconsInventory_bcSearchStrip = native.bcSearchStrip
-            page._IconsInventory_bcSearchEntry = native.bcSearchEntry
+            pane._bcSearchStrip = native.bcSearchStrip
+            pane._bcSearchEntry = native.bcSearchEntry
 
             native:removeChild(native.bcSearchStrip)
             native.bcSearchStrip = nil
@@ -36,17 +47,18 @@ function BetterContainers.stealBetterSearch(page)
             if native.typeHeader then native.typeHeader:setY(0) end
             native._bcSearchApplied = false
 
-            page:addChild(page._IconsInventory_bcSearchStrip)
-            page._IconsInventory_bcSearchStrip:setY(pane.y + page._IconsInventory_bcSearchStrip.y)
-            pane:setY(pane.y + page._IconsInventory_bcSearchStrip:getHeight())
-            pane:setHeight(pane:getHeight() - page._IconsInventory_bcSearchStrip:getHeight())
+            pane:addChild(pane._bcSearchStrip)
+            pane._bcSearchStrip:setX(0)
+            pane._bcSearchStrip:setY(pane.modsHeaderHeight)
+            pane.modsHeaderHeight = pane.modsHeaderHeight + pane._bcSearchStrip.height
+            pane:refreshContainer()
         end
 
-        page._IconsInventory_bcSyncOk = true
+        pane._bcSyncOk = true
     end
 
-    if page._IconsInventory_bcSearchStrip and page._IconsInventory_bcSearchStrip.x ~= pane.x then
-        page._IconsInventory_bcSearchStrip:setX(pane.x)
+    if pane._bcSearchStrip and pane._bcSearchStrip.x ~= pane.grid.x then
+        pane._bcSearchStrip:setX(pane.grid.x)
     end
 end
 

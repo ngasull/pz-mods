@@ -30,7 +30,6 @@ function Override:onRightMouseUpOutside(...)
 end
 
 -- Install --
-Override._vanilla = vanilla
 local Prev = isDebugEnabled() and require("IconsInventory/ContextMenuOverride")
 for k in pairs(Override) do
     if not Prev then
@@ -43,4 +42,5 @@ for k in pairs(Override) do
     end
 end
 
+Override._vanilla = vanilla
 return Override

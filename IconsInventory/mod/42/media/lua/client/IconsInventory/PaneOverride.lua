@@ -11,10 +11,6 @@ local Override = {}
 function Override:refreshContainer()
     local pane = self.parent._IconsInventory
     if pane then
-        if not pane.native then
-            pane.native = self.parent.inventoryPane
-            self.itemSortFunc = self.itemSortFunc or ISInventoryPane.itemSortByCatInc
-        end
         vanilla.refreshContainer(self)
         pane:refreshContainer()
     else
@@ -84,7 +80,6 @@ function Override:doJoypadExpandCollapse()
 end
 
 -- Install --
-Override._vanilla = vanilla
 local Prev = isDebugEnabled() and require("IconsInventory/PaneOverride")
 for k in pairs(Override) do
     if not Prev then
@@ -97,4 +92,5 @@ for k in pairs(Override) do
     end
 end
 
+Override._vanilla = vanilla
 return Override

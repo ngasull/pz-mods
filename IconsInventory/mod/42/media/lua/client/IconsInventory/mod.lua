@@ -185,6 +185,7 @@ if isDebugEnabled() then
         "GridLayout",
         "IconsPane",
         "PaneOverride",
+        "JoypadPageOverride",
         "PageOverride",
         "ContextMenuOverride",
     }
