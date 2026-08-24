@@ -51,6 +51,7 @@ end
 local wetIcon = getTexture("media/ui/Entity/SlotStatus/wet_24.png")
 local clockIcon = getTexture("media/ui/speedControls/Wait_Off.png")
 local maggots = InventoryItem.new("", "", "Maggots", "Item_Insect_Maggots")
+local research = getTexture("media/ui/Properties/InventoryProperty_Research.png")
 
 local equippedIcon = getTexture("media/ui/icon.png")
 local equippedInHotbar = getTexture("media/ui/iconInHotbar.png")
@@ -368,6 +369,13 @@ function CellRender:renderDetails()
         )
     end
 
+    if mod.option.showResearchable.value then
+        local scriptItem = item:getScriptItem()
+        if scriptItem and item:hasResearchableRecipes() and scriptItem:getResearchableRecipes(self.player, true):size() > 0 then
+            self:renderSupIcon(research, subIconSize, subIconSize, 0.7)
+        end
+    end
+
     --- Condition circle
     fractionFromNative = nil
     ringFromNative = nil
@@ -406,13 +414,41 @@ end
 ---@param g? number
 ---@param b? number
 function CellRender:renderSubIcon(icon, w, h, a, r, g, b)
-    if not w then w = icon:getWidth() end
-    if not h then h = icon:getHeight() end
+    if w or h then
+        w = w or h or icon:getHeight()
+        h = w
+    else
+        w, h = icon:getWidth(), icon:getHeight()
+    end
     self.pane:drawTextureScaled(icon,
         self.x + cellSize - w - self.padSubIcon,
         self.y + cellSize - subAlign - h / 2,
-        w, h, a or 1, r or 1, g or 1, b or 1);
+        w, h, a or 1, r or 1, g or 1, b or 1
+    )
     self.padSubIcon = self.padSubIcon + w + subPadding
+end
+
+---@param icon Texture
+---@param w? integer
+---@param h? integer
+---@param a? number
+---@param r? number
+---@param g? number
+---@param b? number
+function CellRender:renderSupIcon(icon, w, h, a, r, g, b)
+    if w or h then
+        w = w or h or icon:getHeight()
+        h = w
+    else
+        w, h = icon:getWidth(), icon:getHeight()
+    end
+    local iconRatio = 1
+    self.pane:drawTextureScaled(
+        icon,
+        self.x + cellSize - subAlign * iconRatio - w / 2,
+        self.y + subAlign * iconRatio - h / 2,
+        w, h, a or 1, r or 1, g or 1, b or 1
+    )
 end
 
 ---@param ring Texture[]
