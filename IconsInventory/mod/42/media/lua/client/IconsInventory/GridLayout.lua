@@ -31,31 +31,6 @@ function GridLayout.new()
     return self
 end
 
----@return T?, integer, integer
-function GridLayout:hitTest(mx, my)
-    mx = mx - self.x
-    my = my - self.y
-    if mx >= 0 and my >= 0 then
-        local candidateColumn = math.floor(mx / Cell.size)
-
-        if candidateColumn < self.gridWidth then
-            for i, group in ipairs(self.cells) do
-                local candidateRow = math.floor(my / Cell.size)
-                local groupRowCount = math.ceil(#group / self.gridWidth)
-                if candidateRow < groupRowCount then
-                    local candidate = candidateRow * self.gridWidth + candidateColumn
-                    if candidate < #group then
-                        return group[candidate + 1], i, candidate + 1
-                    else
-                        return
-                    end
-                end
-                my = my - groupRowCount * Cell.size - GridLayout.groupSpace
-            end
-        end
-    end
-end
-
 ---@param cells T[][]
 ---@param gridWidth integer
 function GridLayout:set(cells, gridWidth)

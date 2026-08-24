@@ -158,7 +158,10 @@ function IconsPane:refresh()
     -- Display-only: the native backend keeps every cell, so indices and selection stay intact
     local hideEquipped = self.parent.onCharacter and mod.option.hideEquipped:getValue()
 
-    local groups = { cells }
+    local groups = {}
+    if #cells > 0 then
+        table.insert(groups, cells)
+    end
     if hotbarCells and not hideEquipped then
         table.insert(groups, hotbarCells)
     end
@@ -266,7 +269,10 @@ function IconsPane:renderBase()
 
         -- Make held items view stand out
         if #self.grid.cells > 1 and g == 1 and self.parent.onCharacter then
-            self:drawRect(0, self.grid.y - IconsPane.yPadding, self.width, groupHeight - 1, 0.5, 0, 0, 0)
+            local firstGroupCell = self.grid.cells[1][1]
+            if not (firstGroupCell:isInEquippedGroup() or firstGroupCell:isInHotbar()) then
+                self:drawRect(0, self.grid.y - IconsPane.yPadding, self.width, groupHeight - 1, 0.5, 0, 0, 0)
+            end
         end
 
         for _, cell in ipairs(group) do
@@ -327,6 +333,32 @@ function IconsPane:layoutCell(cell)
     local x = self.grid.x + (cell.layoutCol - 1) * Cell.size
     local y = self.grid.y + (cell.layoutRow - 1) * Cell.size + (cell.layoutGroup - 1) * self.grid.groupSpace
     return x, y
+end
+
+---@return IconsInventory_Cell?, integer, integer
+function IconsPane:hitTest(mx, my)
+    mx = mx - self.grid.x
+    my = my - self.grid.y
+    if mx >= 0 and my >= 0 then
+        local gridWidth = self.grid.gridWidth
+        local candidateColumn = math.floor(mx / Cell.size)
+
+        if candidateColumn < gridWidth then
+            for i, group in ipairs(self.grid.cells) do
+                local candidateRow = math.floor(my / Cell.size)
+                local groupRowCount = math.ceil(#group / gridWidth)
+                if candidateRow < groupRowCount then
+                    local candidate = candidateRow * gridWidth + candidateColumn
+                    if candidate < #group then
+                        return group[candidate + 1], i, candidate + 1
+                    else
+                        return
+                    end
+                end
+                my = my - groupRowCount * Cell.size - GridLayout.groupSpace
+            end
+        end
+    end
 end
 
 ---@param groupNumber integer
@@ -619,7 +651,7 @@ function IconsPane:onMouseMove()
         if not self.startHoverTime then self.startHoverTime = getTimestampMs() end
 
         local x, y = self:getMouseX(), self:getMouseY()
-        self:setFocusedCell(self.grid:hitTest(x, y))
+        self:setFocusedCell(self:hitTest(x, y))
         if self:isDragging() then self:handleDrag(self.mouseDown) end
     end
 end
