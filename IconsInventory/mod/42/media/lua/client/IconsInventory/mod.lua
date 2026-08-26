@@ -104,6 +104,12 @@ mod.option.hideEquipped = mod.options:addTickBox(
     "Warning: only enable if you really need this"
 )
 
+mod.option.showResearchable = mod.options:addTickBox(
+    "showResearchable",
+    getText("UI_IconsInventory_options_showResearchable"),
+    true
+)
+
 mod.option.clickSend = mod.options:addComboBox("clickSend", getText("UI_IconsInventory_options_clickSend"))
 mod.option.clickSend:addItem(getText("UI_IconsInventory_options_clickSend_off"))
 mod.option.clickSend_off = 1

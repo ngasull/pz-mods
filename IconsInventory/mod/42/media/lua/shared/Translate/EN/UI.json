@@ -19,6 +19,7 @@
   "UI_IconsInventory_options_hungerMode_portion": "Remaining portion indicator",
   "UI_IconsInventory_options_hungerMode_numbers": "Restored hunger value",
   "UI_IconsInventory_options_iconSize": "Icon size",
+  "UI_IconsInventory_options_showResearchable": "Show researchable icon",
   "UI_IconsInventory_options_smallerHint": "For smaller size go in UI/Interface menu and reduce the game's main font size. Needs relaunching the game.",
 
   "UI_IconsInventory_options_smartStacking_title": "Smart Stacking",

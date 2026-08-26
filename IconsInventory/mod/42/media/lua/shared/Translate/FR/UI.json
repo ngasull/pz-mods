@@ -19,6 +19,7 @@
   "UI_IconsInventory_options_hungerMode_portion": "Indicateur proportionnel",
   "UI_IconsInventory_options_hungerMode_numbers": "Valeur vanilla",
   "UI_IconsInventory_options_iconSize": "Taille des icônes",
+  "UI_IconsInventory_options_showResearchable": "Afficher l'icône recherchable",
   "UI_IconsInventory_options_smallerHint": "Pour une taille plus petite, aller dans le menu Interface et réduire la taille générale de la police du jeu. Puis relancer la partie.",
 
   "UI_IconsInventory_options_smartStacking_title": "Stacking intelligent",
