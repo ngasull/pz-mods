@@ -93,7 +93,7 @@ function Onboarding:close()
     self:removeFromUIManager()
     Onboarding.instance = nil
     mod.data.onboardingSeen = true
-    mod.writeData()
+    mod.meta:save()
 end
 
 local Prev = isDebugEnabled() and require("IconsInventory/Onboarding")

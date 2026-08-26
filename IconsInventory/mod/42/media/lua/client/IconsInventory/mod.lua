@@ -1,3 +1,5 @@
+local MetaModData = require("IconsInventory/util/metaModData")
+
 local V2026_08_17 = 1
 
 local mod = {
@@ -142,39 +144,29 @@ mod.option.maxJoypadColumns = mod.options:addSlider(
     4, 20, 1, default.maxJoypadColumns
 )
 
-mod.writeData = function()
-    local writer = getFileWriter("IconsInventory/data.cfg", true, false) ---@cast writer -nil
-    writer:write(serialize(mod.data))
-    writer:close()
-end
+local ok, err = pcall(function()
+    mod.meta = MetaModData.load("data")
+    mod.data = mod.meta.data
 
-local reader = getFileReader("IconsInventory/data.cfg", false)
-if reader then
-    local ok, res = pcall(deserialize, reader:readAllAsString())
-    reader:close()
-    if ok then
-        mod.data = res
+    -- Migrations
+    local prevVersion = mod.data.version
 
-        -- Migrations
-        local prevVersion = mod.version
-
-        if not mod.data.version then
-            -- Track if the mod has run already
-            mod.data.version = V2026_08_17
-        end
-
-        if mod.version ~= prevVersion then
-            mod.writeData()
-        end
-    else
-        print("Couldn't read Icons Inventory data!")
+    if not mod.data.version then
+        -- Track if the mod has run already
+        mod.data.version = V2026_08_17
     end
-end
+
+    if mod.data.version ~= prevVersion then
+        mod.meta:save()
+    end
+end)
+if not ok then print(err) end
 
 if isDebugEnabled() then
     local modules = {
         "integration/BetterContainers",
         "util/texture",
+        "util/metaModData",
         "Onboarding",
         "Action",
         "DragSelectionBox",
