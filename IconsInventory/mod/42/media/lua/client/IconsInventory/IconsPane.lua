@@ -75,7 +75,7 @@ function IconsPane.new(emptyPage, native)
 
     self.grid = GridLayout.new()
     self.expanded = {}
-    self.pool = CellPool:new()
+    self.pool = CellPool.new(player)
     self.isMouseAllowed = getNumActivePlayers() == 1 or player:getJoypadBind() < 0
     self.beingSelected = {}
     self.overscrollTime = 0
@@ -730,7 +730,9 @@ function IconsPane:startDragItems(focused)
         self._selectedBeforeDrag = {}
         for _, v in pairs(self.native.selected) do
             local cell = self.pool:get(v)
-            self._selectedBeforeDrag[cell] = true
+            if cell then
+                self._selectedBeforeDrag[cell] = true
+            end
         end
     end
 
