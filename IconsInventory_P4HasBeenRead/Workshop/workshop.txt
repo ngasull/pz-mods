@@ -1,0 +1,6 @@
+version=1
+id=3728125014
+title=Icons Inventory x Has Been Read compatibility
+description=Integrates [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2544353492]Has Been Read[/url] into [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3718412967]Icons inventory[/url].
+tags=Build 42;Interface;QoL
+visibility=public

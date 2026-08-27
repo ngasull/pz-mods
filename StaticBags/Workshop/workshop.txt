@@ -1,0 +1,20 @@
+version=1
+id=3719850950
+title=Static Bags
+description=The bags you carry won't move any more 🔒
+description=
+description=Enforces equipped bags to keep the same position based on the body part it's on.
+description=
+description=Mod's default should feel natural, just subscribe and you're good to go! Otherwise go in options > mods to customize.
+description=
+description=[b][u]That's all.[/u][/b]
+description=
+description=If you like Better Containers but you think it changes the interface too much, this mod is for you!
+description=
+description=[h2]See also[/h2]
+description=[list]
+description=[*]Side-By-Side Containers
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3718412967]Icons inventory[/url]
+description=[/list]
+tags=Build 42;Interface
+visibility=public

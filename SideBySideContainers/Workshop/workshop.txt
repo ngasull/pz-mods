@@ -1,0 +1,18 @@
+version=1
+id=3719852082
+title=Side-By-Side Containers
+description=Put loot containers on the left side.
+description=
+description=You can also make container icons bigger and select left or right for each window in options > mods.
+description=
+description=[b][u]That's all.[/u][/b]
+description=
+description=If you like Better Containers but you think it changes the interface too much, this mod is for you!
+description=
+description=[h2]See also[/h2]
+description=[list]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3719850950]Static bags[/url]
+description=[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3718412967]Icons inventory[/url]
+description=[/list]
+tags=Build 42;Interface
+visibility=public

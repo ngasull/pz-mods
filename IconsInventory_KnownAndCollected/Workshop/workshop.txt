@@ -1,0 +1,6 @@
+version=1
+id=3728123654
+title=Icons Inventory x Known And Collected compatibility
+description=Integrates [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2881764317]Known And Collected[/url] into [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3718412967]Icons inventory[/url].
+tags=Build 42;Interface;QoL
+visibility=public
