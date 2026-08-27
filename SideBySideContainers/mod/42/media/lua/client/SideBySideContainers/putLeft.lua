@@ -14,7 +14,7 @@ end
 local function initPage(self)
     if shallMoveLeft(self) then
         if self.containerButtonPanel.anchorRight then
-            self.inventoryPane:setX(self.containerButtonPanel:getWidth())
+            self.inventoryPane:setX(self.containerButtonPanel.width)
             self.containerButtonPanel:setAnchorLeft(true)
             self.containerButtonPanel:setAnchorRight(false)
             -- Yep :D this allows reacting to onInventoryContainerSizeChanged
@@ -37,7 +37,7 @@ local function initPage(self)
             self.containerButtonPanel:setAnchorLeft(false)
             self.containerButtonPanel:setAnchorRight(true)
             self.containerButtonPanel.setX = ISUIElement.setX
-            self.containerButtonPanel:setX(self:getWidth() - self.containerButtonPanel:getWidth())
+            self.containerButtonPanel:setX(self.width - self.containerButtonPanel.width)
             self.onMouseWheel = ISInventoryPage.onMouseWheel
         end
     end
@@ -63,8 +63,8 @@ end
 
 -- Intercept drawRect and drawRectBorder for container button panel
 function Override:drawRect(x, y, w, h, a, r, g, b)
-    local sidePanelWidth = self.containerButtonPanel:getWidth()
-    if shallMoveLeft(self) and w == sidePanelWidth and x == self:getWidth() - sidePanelWidth then
+    local sidePanelWidth = self.containerButtonPanel.width
+    if shallMoveLeft(self) and w == sidePanelWidth and x == self.width - sidePanelWidth then
         return vanilla.drawRect(self, 0, y, w, h, a, r, g, b)
     else
         return vanilla.drawRect(self, x, y, w, h, a, r, g, b)
@@ -72,8 +72,8 @@ function Override:drawRect(x, y, w, h, a, r, g, b)
 end
 
 function Override:drawRectBorder(x, y, w, h, a, r, g, b)
-    local sidePanelWidth = self.containerButtonPanel:getWidth()
-    if shallMoveLeft(self) and w == sidePanelWidth and x == self:getWidth() - sidePanelWidth then
+    local sidePanelWidth = self.containerButtonPanel.width
+    if shallMoveLeft(self) and w == sidePanelWidth and x == self.width - sidePanelWidth then
         return vanilla.drawRectBorder(self, 0, y, w, h, a, r, g, b)
     else
         return vanilla.drawRectBorder(self, x, y, w, h, a, r, g, b)

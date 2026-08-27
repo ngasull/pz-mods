@@ -50,7 +50,7 @@ function Override:refreshBackpacks()
             self._StaticBags_overridenChoices[button.inventory] = i
         end
 
-        local y = self.backpacks[1]:getY()
+        local y = self.backpacks[1].y
         local player = getSpecificPlayer(self.player)
         local wornItems = player:getWornItems()
         local primary = player:getPrimaryHandItem()
@@ -79,7 +79,7 @@ function Override:refreshBackpacks()
 
         for _, button in ipairs(self.backpacks) do
             button:setY(y)
-            y = y + button:getHeight()
+            y = y + button.height
         end
     end
 end
