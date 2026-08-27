@@ -9,7 +9,7 @@
     let ctx = canvas.getContext("2d")
     let a
 
-    let drawSlice = (i, name, color) => {
+    let drawSlice = (i, color) => {
         ctx.strokeStyle = color;
         ctx.lineWidth = thickness
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -18,16 +18,12 @@
         ctx.stroke();
         let a = document.createElement("a")
         a.href = canvas.toDataURL("image/png")
-        a.download = `ring-${name}-${i}.png`
+        a.download = `ring-${i}.png`
         a.dispatchEvent(new MouseEvent("click"))
     }
 
     for (let i = 0; i < steps; i++) {
-        drawSlice(i + 1, "good", '#00ff00cc')
-        await new Promise(resolve => setTimeout(resolve, 200))
-    }
-    for (let j = 0; j < steps; j++) {
-        drawSlice(j + 1, "bad", '#ff0000cc')
+        drawSlice(i + 1, '#ffffffcc')
         await new Promise(resolve => setTimeout(resolve, 200))
     }
 

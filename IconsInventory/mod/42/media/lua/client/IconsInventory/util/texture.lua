@@ -17,7 +17,11 @@ end
 ---@param quarters integer
 ---@param w number
 ---@param h number
-local function rotateQuarters(ui, tex, centerX, centerY, quarters, w, h)
+---@param r number
+---@param g number
+---@param b number
+---@param a number
+local function rotateQuarters(ui, tex, centerX, centerY, quarters, w, h, r, g, b, a)
     local rx, ry = w / 2, h / 2
     corners[1][1], corners[1][2] = centerX - rx, centerY - ry
     corners[2][1], corners[2][2] = centerX + rx, centerY - ry
@@ -29,7 +33,7 @@ local function rotateQuarters(ui, tex, centerX, centerY, quarters, w, h)
     local br = corners[1 + modulo(2 + quarters, 4)]
     local bl = corners[1 + modulo(3 + quarters, 4)]
 
-    ui:drawTextureAllPoint(tex, tl[1], tl[2], tr[1], tr[2], br[1], br[2], bl[1], bl[2], 1, 1, 1, 1)
+    ui:drawTextureAllPoint(tex, tl[1], tl[2], tr[1], tr[2], br[1], br[2], bl[1], bl[2], r, g, b, a)
 end
 
 ---@param ui ISUIElement
@@ -39,15 +43,23 @@ end
 ---@param angle number
 ---@param w? number
 ---@param h? number
-function texture.drawAngle(ui, tex, centerX, centerY, angle, w, h)
+---@param r? number
+---@param g? number
+---@param b? number
+---@param a? number
+function texture.drawAngle(ui, tex, centerX, centerY, angle, w, h, r, g, b, a)
     centerX = ui:getAbsoluteX() + ui:getXScroll() + centerX
     centerY = ui:getAbsoluteY() + ui:getYScroll() + centerY
     w = w or tex:getWidth()
     h = h or tex:getHeight()
+    r = r or 1
+    g = g or 1
+    b = b or 1
+    a = a or 1
 
     if angle % 90 == 0 then
         -- Optimise quarter angle rotations as we do a lot of them to draw ring
-        return rotateQuarters(ui, tex, centerX, centerY, math.floor(angle / 90), w, h)
+        return rotateQuarters(ui, tex, centerX, centerY, math.floor(angle / 90), w, h, r, g, b, a)
     end
 
     -- DrawTextureAngle can't scale: same corner math at ring size, fed to the
@@ -63,7 +75,7 @@ function texture.drawAngle(ui, tex, centerX, centerY, angle, w, h)
         centerX - wCos - hSin, centerY + hCos - wSin,
         centerX - wCos + hSin, centerY - hCos - wSin,
         centerX + wCos + hSin, centerY - hCos + wSin,
-        1, 1, 1, 1
+        r, g, b, a
     )
 end
 

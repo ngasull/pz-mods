@@ -16,12 +16,29 @@ local cellSize ---@type  integer
 
 local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
 local ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-separator.png")
-local ringGood = {} ---@type Texture[]
-local ringBad = {} ---@type Texture[]
+local ring = {} ---@type Texture[]
 for i = 1, 16 do
-    ringGood[i] = getTexture("media/ui/IconsInventory/ring/ring-good-" .. tostring(i) .. ".png")
-    ringBad[i] = getTexture("media/ui/IconsInventory/ring/ring-bad-" .. tostring(i) .. ".png")
+    ring[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. tostring(i) .. ".png")
 end
+
+---@alias IconsInventory_Cell_RingColor { r: number, g: number, b: number }
+local green = { r = 0, g = 1, b = 0 }
+local stale = { r = 0.75, g = 0.75, b = 0 }
+
+local cola = { r = .3, g = .15, b = .1 }
+local cyan = { r = .5, g = .8, b = .8 }
+local orange = { r = .8, g = .4, b = 0 }
+local yellow = { r = 1, g = 1, b = 0 }
+local white = { r = 1, g = 1, b = 1 }
+
+local drinkColor = {
+    Bleach = white,
+    Cola = cola,
+    ColaDiet = cola,
+    GingerAle = orange,
+    Petrol = yellow,
+    SodaPineapple = yellow,
+}
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
@@ -73,12 +90,12 @@ local bookNumberByLvl = {
 
 ---@type number
 local fractionFromNative
----@type Texture[]
+---@type IconsInventory_Cell_RingColor
 local ringFromNative
 
 local function capture_drawProgressBar(self, x, y, w, h, f, fg)
     fractionFromNative = f
-    ringFromNative = fg.r > fg.g and ringBad or ringGood
+    ringFromNative = fg
 end
 
 ---@class IconsInventory_Cell
@@ -255,6 +272,7 @@ end
 function CellRender:renderDetails()
     local item = self.item
     local ui = self.pane
+    local fluidContainer = item:getFluidContainer()
 
     self:renderContrast()
     self:renderItem(
@@ -307,7 +325,7 @@ function CellRender:renderDetails()
                     0.8, subIconSize, subIconSize)
                 self.padSubIcon = self.padSubIcon + subIconSize + subPadding
             elseif not displayNumbers then
-                self:renderSubIcon(clockIcon, subIconSize, subIconSize, 0.5, 0.75, 0.75, 0)
+                self:renderSubIcon(clockIcon, subIconSize, subIconSize, 0.5, unpack(stale))
             end
         end
 
@@ -325,13 +343,18 @@ function CellRender:renderDetails()
             elseif item:getBaseHunger() ~= 0.0 and item:getHungChange() ~= 0.0 then
                 -- Remaining portion ring
                 -- `getHungChange` is an internal value, `getHungerChange` is displayed value
-                self:renderRing(ringGood, item:getHungChange() / item:getBaseHunger())
+                local ratio = item:getHungChange() / item:getBaseHunger()
+                if ratio < 1 then self:renderRing(green, ratio) end
                 return
             end
 
             -- Return early to avoid the ring as well
             if isNourishing then return end
         end
+    elseif fluidContainer and fluidContainer:getFilledRatio() > 0 then
+        local primaryFluid = fluidContainer:getPrimaryFluid()
+        local dc = primaryFluid and drinkColor[primaryFluid:getFluidTypeString()]
+        self:renderRing(dc or cyan, fluidContainer:getFilledRatio())
     elseif instanceof(item, "Clothing") and (
             item:getBodyLocation() == "Shoes" and item:getWetness() > 60
             or item:getWetness() > 10
@@ -344,8 +367,8 @@ function CellRender:renderDetails()
         self:renderSubIcon(tickMarkIcon, subIconSize, subIconSize);
     end
 
-    local fluidContainer = item:getFluidContainer() or
-        (item:getWorldItem() and item:getWorldItem():getFluidContainer());
+    -- local fluidContainer = fuildContainer or
+    --     (item:getWorldItem() and item:getWorldItem():getFluidContainer());
     if fluidContainer ~= nil and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue() and (not fluidContainer:isEmpty()) and (fluidContainer:contains(Fluid.Bleach) or (fluidContainer:contains(Fluid.TaintedWater) and fluidContainer:getPoisonRatio() > 0.1)) then
         self:renderSubIcon(poisonIcon, subIconSize, subIconSize);
     end
@@ -392,16 +415,16 @@ function CellRender:renderDetails()
 
     if fractionFromNative then
         if instanceof(item, "Drainable") and not item:hasTag(ItemTag.HIDE_REMAINING) then
-            self:renderRingUses(ringFromNative or ringGood, item:getCurrentUses(),
-                item:getMaxUses())
-        else
-            self:renderRing(ringFromNative or ringGood, fractionFromNative)
+            self:renderRingUses(ringFromNative or green, item:getCurrentUses(), item:getMaxUses())
+        elseif fractionFromNative < 1 then
+            self:renderRing(ringFromNative or green, fractionFromNative)
         end
     elseif item:getCategory() == "Literature" and item:getNumberOfPages() > 0 and item:getAlreadyReadPages() > 0 then
         local skillBook = SkillBook[item:getSkillTrained()]
         if skillBook and self.player:getPerkLevel(skillBook.perk) < item:getMaxLevelTrained()
         then -- Not a skill book or player has level low enough to read it
-            self:renderRing(ringGood, item:getAlreadyReadPages() / item:getNumberOfPages())
+            local ratio = item:getAlreadyReadPages() / item:getNumberOfPages()
+            if ratio < 1 then self:renderRing(green, ratio) end
         end
     end
 end
@@ -451,11 +474,9 @@ function CellRender:renderSupIcon(icon, w, h, a, r, g, b)
     )
 end
 
----@param ring Texture[]
+---@param color IconsInventory_Cell_RingColor
 ---@param fraction number
-function CellRender:renderRing(ring, fraction)
-    if fraction >= 1 then return false end
-
+function CellRender:renderRing(color, fraction)
     local centerX = self.x + subAlign
     local centerY = self.y + cellSize - subAlign
 
@@ -465,23 +486,31 @@ function CellRender:renderRing(ring, fraction)
 
     local angle = 0
     while fraction >= 0.25 do
-        texture.drawAngle(self.pane, ring[#ringGood], centerX, centerY, angle, ringDiameter, ringDiameter)
+        texture.drawAngle(
+            self.pane, ring[#ring], centerX, centerY, angle,
+            ringDiameter, ringDiameter, color.r, color.g, color.b
+        )
         fraction = fraction - 0.25
         angle = angle - 90
     end
 
-    local step = math.floor(fraction * 4 * #ringGood + 0.499)
+    local step = math.floor(fraction * 4 * #ring + 0.499)
     if step > 0 then
-        texture.drawAngle(self.pane, ring[step], centerX, centerY, angle, ringDiameter, ringDiameter)
+        texture.drawAngle(
+            self.pane, ring[step], centerX, centerY, angle,
+            ringDiameter, ringDiameter, color.r, color.g, color.b
+        )
     end
-    return true
 end
 
----@param ring Texture[]
 ---@param current number
 ---@param max number
-function CellRender:renderRingUses(ring, current, max)
-    if self:renderRing(ring, current / max) and max < 20 then
+---@param color IconsInventory_Cell_RingColor
+function CellRender:renderRingUses(color, current, max)
+    if current >= max then return end
+
+    self:renderRing(color, current / max)
+    if max < 20 then
         local centerX = self.x + subAlign
         local centerY = self.y + cellSize - subAlign
         local step = 360 / max
