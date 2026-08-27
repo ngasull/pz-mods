@@ -1,0 +1,11 @@
+- feat: show researchable icon
+- fix: display hunger values like would be ring
+- fix: forbid dragging while cycling containers (for now)
+- fix: dragged render on first apply and more consistent in general
+- fix: encode meta mod data manually after upstream breaking changes + roll ini versions to avoid corruption
+- fix: remove first group when empty to simply fix phantom inventory area
+- fix: make CellPool more reliable
+- chore: stability fixes, compatibility, clarity, small performance gains
+- chore: add missing IDs in mods descriptions
+- chore: restore warning about BetterContainers needing loaded before
+- doc: credit Drumz
