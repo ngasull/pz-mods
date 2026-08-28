@@ -25,12 +25,12 @@ local iconFonts = { UIFont.NewSmall, UIFont.NewMedium, UIFont.NewLarge }
 function Cell._init()
     local userSize = mod.option.iconSize:getValue()
     local font = iconFonts[userSize]
-    Cell.scaling = mod.getBaseScaling() + 0.5 * (userSize - 1)
+    Cell.scaling = mod.forcedScaling or mod.getBaseScaling() + 0.5 * (userSize - 1)
     Cell.iconSize = math.floor(mod.NATIVE_SIZE * Cell.scaling)
     Cell.padding = math.floor(4 * Cell.scaling)
     Cell.size = Cell.iconSize + 2 * Cell.padding
     -- Offset to which sub-infos center should be aligned
-    Cell.subAlign = math.floor(Cell.padding / 2 + 6 * mod.getBaseScaling())
+    Cell.subAlign = math.floor(.5 + 2 * Cell.padding)
 
     -- Without touching scaling, reduce font if it seems too big
     while userSize > 1 and getTextManager():MeasureStringYReal(font, "I") > Cell.iconSize / 3 do

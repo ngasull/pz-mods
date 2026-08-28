@@ -79,4 +79,17 @@ function texture.drawAngle(ui, tex, centerX, centerY, angle, w, h, r, g, b, a)
     )
 end
 
+---@param tex Texture
+---@param s number
+function texture.fitInSquare(tex, s)
+    local h, w = tex:getHeight(), tex:getWidth()
+    local rs, f = math.modf(s / h)
+    if rs == 0 then
+        rs = 1 / math.floor(0.99 + 1 / f) -- Find the first integral fraction of the size
+    elseif f >= .5 then
+        rs = rs + .5
+    end
+    return w * rs, h * rs
+end
+
 return texture

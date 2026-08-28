@@ -2,6 +2,7 @@ local Cell = require("IconsInventory/Cell")
 local SeedSeasonIndicator = require("SeedSeasonIndicator")
 
 local BASE_SIZE = 11
+local TARGET_SIZE = 16 -- Otherwise too small on higher scalings
 local tickMarkName = getTexture("media/ui/Tick_Mark-10.png"):getName()
 
 ---@class IconsInventory_Cell
@@ -15,15 +16,7 @@ function Override:renderItem(x, y, w, h, gray)
 
     local seasonIcon = SeedSeasonIndicator.getIconForItem(self.player, self.item)
     if seasonIcon then
-        local iconRatio = w / Cell.iconSize
-        local scaling = 0.25 + Cell.scaling * 0.75 -- Attune scaling
-        local tw, th = BASE_SIZE * scaling, BASE_SIZE * scaling
-        self.pane:drawTextureScaled(
-            seasonIcon,
-            self.x + Cell.size - Cell.subAlign * iconRatio - tw / 2,
-            self.y + Cell.subAlign * iconRatio - th / 2,
-            tw, th, gray and 0.5 or 1
-        )
+        self:renderSupIcon(seasonIcon, TARGET_SIZE)
         self._IconsInventory_SeedSeasonIndicator = true
     end
 

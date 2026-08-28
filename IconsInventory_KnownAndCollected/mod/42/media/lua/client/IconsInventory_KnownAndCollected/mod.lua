@@ -117,42 +117,41 @@ local function render(self)
         end
 
         if unCollected or unKnown or unKnownUnfinished or unPlayed or unKnownUnavailable or unKnownMap or unCollectedStack or unKnownMapStack or isMap or unKnownFlier or unKnownEntertainment then
-            local scaling = 0.5 + Cell.scaling * 0.5  -- Looks really ugly when too upscaled
-            local tS = math.floor(0.5 + 11 * scaling) -- kac icons size
+            local scaling = 0.5 + Cell.scaling * 0.5 -- Looks really ugly when too upscaled
 
             if unCollected then
                 if not (isMap and isStack) or self:isCollapsed() then
-                    local w = KnownAndCollected.textures.collected:getWidth() * scaling
-                    local centerX = self.x + Cell.size + 2 - w / 2
-                    local centerY = self.y + Cell.size + 2 - w / 2
-                    texture.drawAngle(ui, KnownAndCollected.textures.collected, centerX, centerY, -90)
+                    local s = KnownAndCollected.textures.collected:getWidth() * scaling
+                    local centerX = self.x + Cell.size + 2 - s / 2
+                    local centerY = self.y + Cell.size + 2 - s / 2
+                    texture.drawAngle(ui, KnownAndCollected.textures.collected, centerX, centerY, -90, s, s)
                 end
             elseif unCollectedStack then
                 if self:isCollapsed() then
-                    local w = KnownAndCollected.textures.collectedFolded:getWidth() * scaling
-                    local centerX = self.x + Cell.size + 2 - w / 2
-                    local centerY = self.y + Cell.size + 2 - w / 2
-                    texture.drawAngle(ui, KnownAndCollected.textures.collectedFolded, centerX, centerY, -90)
+                    local s = KnownAndCollected.textures.collectedFolded:getWidth() * scaling
+                    local centerX = self.x + Cell.size + 2 - s / 2
+                    local centerY = self.y + Cell.size + 2 - s / 2
+                    texture.drawAngle(ui, KnownAndCollected.textures.collectedFolded, centerX, centerY, -90, s, s)
                 end
             end
 
             if not isStack then
                 if unKnown then
-                    self:renderSubIcon(KnownAndCollected.textures.unknown, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unknown)
                 elseif unKnownUnfinished then
-                    self:renderSubIcon(KnownAndCollected.textures.unKnownUnfinished, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unKnownUnfinished)
                 elseif unKnownUnavailable then
-                    self:renderSubIcon(KnownAndCollected.textures.unavailable, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unavailable)
                 elseif unPlayed then
-                    self:renderSubIcon(KnownAndCollected.textures.media, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.media)
                 elseif unKnownMap then
-                    self:renderSubIcon(KnownAndCollected.textures.unKnownMap, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unKnownMap)
                 elseif unKnownMapStack then
-                    self:renderSubIcon(KnownAndCollected.textures.unKnownMapFolded, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unKnownMapFolded)
                 elseif unKnownFlier then
-                    self:renderSubIcon(KnownAndCollected.textures.unKnownFlier, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unKnownFlier)
                 elseif unKnownEntertainment then
-                    self:renderSubIcon(KnownAndCollected.textures.unKnownEntertainment, tS, tS)
+                    self:renderSubIcon(KnownAndCollected.textures.unKnownEntertainment)
                 end
             end
         end

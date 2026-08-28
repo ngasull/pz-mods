@@ -1,29 +1,40 @@
 (async () => {
-    let scaling = 3
     let steps = 12
-    let radius = 5 * scaling
-    let thickness = 2 * scaling
+    let hsize = 15
+    let thickness = 8
+    let outline = 1
     let canvas = document.createElement("canvas")
-    canvas.width = 2 * radius
-    canvas.height = 2 * radius
+    canvas.width = 2 * hsize
+    canvas.height = 2 * hsize
     let ctx = canvas.getContext("2d")
     let a
 
-    let drawSlice = (i, color) => {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = thickness
+    let drawSlice = (i) => {
+        const r = hsize - thickness / 2 - 1
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Outline / BG
         ctx.beginPath();
-        ctx.arc(radius, radius, radius - thickness / 2 - 0.5, -Math.PI / 2 - (i / steps) * Math.PI / 2, -Math.PI / 2);
+        ctx.strokeStyle = '#000000dd';
+        ctx.lineWidth = thickness
+        ctx.arc(hsize, hsize, r, -Math.PI, -Math.PI / 2);
         ctx.stroke();
+
+        // Ring
+        ctx.beginPath();
+        ctx.strokeStyle = '#ffffffcc';
+        ctx.lineWidth = thickness - 2 * outline
+        ctx.arc(hsize, hsize, r, -Math.PI / 2 - (i / steps) * Math.PI / 2, -Math.PI / 2);
+        ctx.stroke();
+
         let a = document.createElement("a")
         a.href = canvas.toDataURL("image/png")
         a.download = `ring-${i}.png`
         a.dispatchEvent(new MouseEvent("click"))
     }
 
-    for (let i = 0; i < steps; i++) {
-        drawSlice(i + 1, '#ffffffcc')
+    for (let i = 0; i <= steps; i++) {
+        drawSlice(i)
         await new Promise(resolve => setTimeout(resolve, 200))
     }
 
@@ -31,23 +42,12 @@
     ctx.lineWidth = 1
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
-    ctx.moveTo(radius, 0);
-    ctx.lineTo(radius, thickness + 1);
+    ctx.moveTo(hsize, 0);
+    ctx.lineTo(hsize, thickness + 1);
     ctx.stroke();
     a = document.createElement("a")
     a.href = canvas.toDataURL("image/png")
     a.download = `ring-separator.png`
-    a.dispatchEvent(new MouseEvent("click"))
-
-    ctx.strokeStyle = '#000000dd';
-    ctx.lineWidth = thickness
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
-    ctx.arc(radius, radius, radius - thickness / 2 - 0.5, 0, 2 * Math.PI);
-    ctx.stroke();
-    a = document.createElement("a")
-    a.href = canvas.toDataURL("image/png")
-    a.download = `ring-bg.png`
     a.dispatchEvent(new MouseEvent("click"))
 
     let softBgSize = 64

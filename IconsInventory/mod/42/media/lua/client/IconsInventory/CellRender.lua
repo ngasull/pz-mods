@@ -7,15 +7,14 @@ local scaling ---@type number
 local iconSize ---@type integer
 local padding ---@type integer
 local subIconSize ---@type integer
-local equippedIconSize ---@type integer
 local ringRadius ---@type number
 local ringDiameter ---@type integer
 local subAlign ---@type number
 local subPadding ---@type number
 local cellSize ---@type  integer
 
-local ringBg = getTexture("media/ui/IconsInventory/ring/ring-bg.png")
 local ringSeparator = getTexture("media/ui/IconsInventory/ring/ring-separator.png")
+local ring0 = getTexture("media/ui/IconsInventory/ring/ring-0.png")
 local ring = {} ---@type Texture[]
 for i = 1, 16 do
     ring[i] = getTexture("media/ui/IconsInventory/ring/ring-" .. tostring(i) .. ".png")
@@ -25,20 +24,8 @@ end
 local green = { r = 0, g = 1, b = 0 }
 local stale = { r = 0.75, g = 0.75, b = 0 }
 
-local cola = { r = .3, g = .15, b = .1 }
 local cyan = { r = .5, g = .8, b = .8 }
-local orange = { r = .8, g = .4, b = 0 }
-local yellow = { r = 1, g = 1, b = 0 }
-local white = { r = 1, g = 1, b = 1 }
-
-local drinkColor = {
-    Bleach = white,
-    Cola = cola,
-    ColaDiet = cola,
-    GingerAle = orange,
-    Petrol = yellow,
-    SodaPineapple = yellow,
-}
+local colorBuf = {} ---@type IconsInventory_Cell_RingColor
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
@@ -57,21 +44,22 @@ local function refreshDimensions(Cell)
     fontHeight = tm:MeasureStringY(Cell.font, "I")
 
     subPadding = padding / 2
-    subIconSize = math.floor(8 * scaling + 0.5)
-    equippedIconSize = math.floor(7 * scaling + 0.5)
+    subIconSize = math.floor(12 * scaling + 0.5)
 
-    ringRadius = 5 * scaling                        -- Can be fractional
-    ringDiameter = math.floor(0.5 + ringRadius * 2) -- Not fractional (pixel rendering)
+    ringRadius = math.max(7.5, ring[1]:getHeight() * scaling / 6) -- Can be fractional - Force a not-too-small ring
+    ringDiameter = math.floor(0.49 + 2 * ringRadius)              -- Not fractional (pixel rendering)
 end
 
 -- Added by Icons Inventory
 local wetIcon = getTexture("media/ui/Entity/SlotStatus/wet_24.png")
 local clockIcon = getTexture("media/ui/speedControls/Wait_Off.png")
 local maggots = InventoryItem.new("", "", "Maggots", "Item_Insect_Maggots")
-local research = getTexture("media/ui/Properties/InventoryProperty_Research.png")
+local research16 = getTexture("media/ui/Properties/InventoryProperty_Research_16.png")
+local research32 = getTexture("media/ui/Properties/InventoryProperty_Research.png")
 
 local equippedIcon = getTexture("media/ui/icon.png")
 local equippedInHotbar = getTexture("media/ui/iconInHotbar.png")
+local equippedIconSize = equippedIcon:getHeight()
 local brokenIcon = getTexture("media/ui/icon_broken.png")
 local frozenIcon = getTexture("media/ui/icon_frozen.png")
 local poisonIcon = getTexture("media/ui/SkullPoison.png")
@@ -245,10 +233,9 @@ function CellRender:renderItem(x, y, w, h, gray)
 end
 
 function CellRender:renderStack()
-    local scaledIconSize = self:isCollapsed() and iconSize or 0.5 * iconSize
-    local scaledPadding = (cellSize - scaledIconSize) / 2
-    local scaledHalfPadding = scaledPadding / 2
-    local scaledAlign = scaledHalfPadding + ringRadius
+    local ratio = self:isCollapsed() and 1 or 0.5
+    local scaledIconSize = ratio * iconSize
+    local scaledPadding = padding + (iconSize - scaledIconSize) / 2
 
     local unwanted = self.item:isUnwanted(self.player)
     local trgb, ta = 1.0, 1.0
@@ -263,8 +250,8 @@ function CellRender:renderStack()
 
     self.pane:drawTextRight(
         tostring(self:getStackSize()),
-        self.x + cellSize - scaledHalfPadding - self.padSubIcon,
-        self.y + cellSize - scaledAlign - fontHeight * 0.55, -- Font isn't perfectly centered
+        self.x + cellSize - scaledPadding / 2 - self.padSubIcon,
+        self.y + cellSize - subAlign - fontHeight * 0.5, -- Font isn't perfectly centered
         trgb, trgb, trgb, ta, font
     )
 end
@@ -284,15 +271,15 @@ function CellRender:renderDetails()
     -- This section is copy/pastadapted from ISInventoryPane:renderdetails
 
     if self:isEquipped() then
-        self:renderSubIcon(equippedIcon, equippedIconSize, equippedIconSize)
+        self:renderSubIcon(equippedIcon, equippedIconSize * (scaling > 1 and 1.5 or 1.25))
     end
 
     if self:isInHotbar() then
-        self:renderSubIcon(equippedInHotbar, equippedIconSize, equippedIconSize);
+        self:renderSubIcon(equippedInHotbar, equippedIconSize * (scaling > 1 and 1.5 or 1.25));
     end
 
     if item:isBroken() then
-        self:renderSubIcon(brokenIcon, subIconSize, subIconSize)
+        self:renderSubIcon(brokenIcon)
     end
 
     if instanceof(item, "Food") then
@@ -311,11 +298,11 @@ function CellRender:renderDetails()
             and item:getUnhappyChange() < 30 -- Frozen good food seem to give 30 unhappy
 
         if item:isFrozen() then
-            self:renderSubIcon(frozenIcon, subIconSize, subIconSize)
+            self:renderSubIcon(frozenIcon)
         end
 
         if (item:isTainted() and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue()) or self.player:isKnownPoison(item) then
-            self:renderSubIcon(poisonIcon, subIconSize, subIconSize)
+            self:renderSubIcon(poisonIcon)
         elseif not item:isFresh() then
             if item:isRotten() then
                 ISInventoryItem.renderItemIcon(
@@ -325,7 +312,7 @@ function CellRender:renderDetails()
                     0.8, subIconSize, subIconSize)
                 self.padSubIcon = self.padSubIcon + subIconSize + subPadding
             elseif not displayNumbers then
-                self:renderSubIcon(clockIcon, subIconSize, subIconSize, 0.5, unpack(stale))
+                self:renderSubIcon(clockIcon, 16, 0.5, unpack(stale))
             end
         end
 
@@ -352,33 +339,43 @@ function CellRender:renderDetails()
             if isNourishing then return end
         end
     elseif fluidContainer and fluidContainer:getFilledRatio() > 0 then
-        local primaryFluid = fluidContainer:getPrimaryFluid()
-        local dc = primaryFluid and drinkColor[primaryFluid:getFluidTypeString()]
-        self:renderRing(dc or cyan, fluidContainer:getFilledRatio())
+        local color = cyan
+        local c = fluidContainer:getColor()
+        if c then
+            local r, g, b = c:getRedFloat(), c:getGreenFloat(), c:getBlueFloat()
+            local sum, min = r + g + b, 1
+            if sum < min then
+                local enhance = (min - sum) / 3
+                r = r + enhance
+                g = g + enhance
+                b = b + enhance
+            end
+            colorBuf.r, colorBuf.g, colorBuf.b = r, g, b
+            color = colorBuf
+        end
+        self:renderRing(color, fluidContainer:getFilledRatio())
     elseif instanceof(item, "Clothing") and (
             item:getBodyLocation() == "Shoes" and item:getWetness() > 60
             or item:getWetness() > 10
         )
     then
-        self:renderSubIcon(wetIcon, subIconSize, subIconSize, 0.6, 0.0, 0.6, 1);
+        self:renderSubIcon(wetIcon, 12, 0.6, 0.0, 0.6, 1);
     end
 
     if ISInventoryPane:isLiteratureRead(self.player, item) or item:hasBeenSeen(self.player) or item:hasBeenHeard(self.player) or self.player:hasReadMap(item) then
-        self:renderSubIcon(tickMarkIcon, subIconSize, subIconSize);
+        self:renderSubIcon(tickMarkIcon);
     end
 
-    -- local fluidContainer = fuildContainer or
-    --     (item:getWorldItem() and item:getWorldItem():getFluidContainer());
     if fluidContainer ~= nil and getSandboxOptions():getOptionByName("EnableTaintedWaterText"):getValue() and (not fluidContainer:isEmpty()) and (fluidContainer:contains(Fluid.Bleach) or (fluidContainer:contains(Fluid.TaintedWater) and fluidContainer:getPoisonRatio() > 0.1)) then
-        self:renderSubIcon(poisonIcon, subIconSize, subIconSize);
+        self:renderSubIcon(poisonIcon);
     end
 
     if item:isFavorite() then
-        self:renderSubIcon(favoriteStar, subIconSize, subIconSize)
+        self:renderSubIcon(favoriteStar)
     elseif item:isNoRecipes(self.player) then
-        self:renderSubIcon(noFavoriteRecipeInputStar, subIconSize, subIconSize)
+        self:renderSubIcon(noFavoriteRecipeInputStar, 16)
     elseif item:isFavouriteRecipeInput(self.player) then
-        self:renderSubIcon(favoriteRecipeInputStar, subIconSize, subIconSize)
+        self:renderSubIcon(favoriteRecipeInputStar, 16)
     end
 
     local bookNumber = item:getCategory() == "Literature"
@@ -395,7 +392,8 @@ function CellRender:renderDetails()
     if mod.option.showResearchable.value then
         local scriptItem = item:getScriptItem()
         if scriptItem and item:hasResearchableRecipes() and scriptItem:getResearchableRecipes(self.player, true):size() > 0 then
-            self:renderSupIcon(research, subIconSize, subIconSize, 0.7)
+            local icon = scaling > 1 and research32 or research16
+            self:renderSupIcon(icon, 16, 0.7)
         end
     end
 
@@ -430,19 +428,16 @@ function CellRender:renderDetails()
 end
 
 ---@param icon Texture
----@param w? integer
----@param h? integer
+---@param size? number
 ---@param a? number
 ---@param r? number
 ---@param g? number
 ---@param b? number
-function CellRender:renderSubIcon(icon, w, h, a, r, g, b)
-    if w or h then
-        w = w or h or icon:getHeight()
-        h = w
-    else
-        w, h = icon:getWidth(), icon:getHeight()
-    end
+function CellRender:renderSubIcon(icon, size, a, r, g, b)
+    size = (size or icon:getHeight()) * scaling
+    if scaling > 1 then size = size * .75 end
+    local w, h = texture.fitInSquare(icon, size)
+
     self.pane:drawTextureScaled(icon,
         self.x + cellSize - w - self.padSubIcon,
         self.y + cellSize - subAlign - h / 2,
@@ -452,19 +447,16 @@ function CellRender:renderSubIcon(icon, w, h, a, r, g, b)
 end
 
 ---@param icon Texture
----@param w? integer
----@param h? integer
+---@param size? integer
 ---@param a? number
 ---@param r? number
 ---@param g? number
 ---@param b? number
-function CellRender:renderSupIcon(icon, w, h, a, r, g, b)
-    if w or h then
-        w = w or h or icon:getHeight()
-        h = w
-    else
-        w, h = icon:getWidth(), icon:getHeight()
-    end
+function CellRender:renderSupIcon(icon, size, a, r, g, b)
+    size = (size or icon:getHeight()) * scaling
+    if scaling > 1 then size = size * .75 end
+    local w, h = texture.fitInSquare(icon, size)
+
     local iconRatio = 1
     self.pane:drawTextureScaled(
         icon,
@@ -477,29 +469,20 @@ end
 ---@param color IconsInventory_Cell_RingColor
 ---@param fraction number
 function CellRender:renderRing(color, fraction)
+    if fraction <= 0 then return end
+
     local centerX = self.x + subAlign
     local centerY = self.y + cellSize - subAlign
 
-    self.pane:drawTextureScaled(ringBg,
-        centerX - ringRadius, centerY - ringRadius,
-        ringDiameter, ringDiameter, 1)
-
-    local angle = 0
-    while fraction >= 0.25 do
+    for angle = 0, -270, -90 do
+        local step = fraction >= 0.25 and #ring
+            or math.floor(fraction * 4 * #ring + 0.499)
         texture.drawAngle(
-            self.pane, ring[#ring], centerX, centerY, angle,
-            ringDiameter, ringDiameter, color.r, color.g, color.b
+            self.pane, step > 0 and ring[step] or ring0,
+            centerX, centerY, angle, ringDiameter, ringDiameter,
+            color.r, color.g, color.b
         )
-        fraction = fraction - 0.25
-        angle = angle - 90
-    end
-
-    local step = math.floor(fraction * 4 * #ring + 0.499)
-    if step > 0 then
-        texture.drawAngle(
-            self.pane, ring[step], centerX, centerY, angle,
-            ringDiameter, ringDiameter, color.r, color.g, color.b
-        )
+        fraction = math.max(0, fraction - 0.25)
     end
 end
 
