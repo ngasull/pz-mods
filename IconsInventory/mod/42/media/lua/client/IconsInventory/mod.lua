@@ -3,16 +3,18 @@ local MetaModData = require("IconsInventory/util/metaModData")
 local V2026_08_17 = 1
 
 local mod = {
+    initAt = -1,
     data = {},
     option = {},
 }
 
 local isInit = false
-mod.init = function()
-    if not isInit then
+mod.init = function(forceInit)
+    if not isInit or forceInit then
         require("IconsInventory/Cell")._init()
         require("IconsInventory/GridLayout")._init()
         require("IconsInventory/IconsPane")._init()
+        mod.initAt = getTimestampMs()
         isInit = true
     end
 end
@@ -26,8 +28,7 @@ end
 mod.options = PZAPI.ModOptions:create("IconsInventory", "Icons Inventory")
 
 mod.options.apply = function()
-    isInit = false
-    mod.init()
+    mod.init(true)
     for _, apply in ipairs(applies) do
         apply()
     end
@@ -190,7 +191,6 @@ if isDebugEnabled() then
 
     -- ! -- Add mod last or don't load other mods in development
     mod.reload = function()
-        isInit = false
         table.wipe(applies)
 
         for _, m in ipairs(modules) do
@@ -203,7 +203,7 @@ if isDebugEnabled() then
             end
         end
 
-        mod.init()
+        mod.init(true)
     end
 end
 

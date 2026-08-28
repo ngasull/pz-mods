@@ -21,7 +21,6 @@ function Override:addChild(otherElement)
             self._IconsInventory:removeFromUIManager()
         end
 
-        mod.init()
         self._IconsInventory = IconsPane.new(self, otherElement)
         self._IconsInventory.parent = self
 

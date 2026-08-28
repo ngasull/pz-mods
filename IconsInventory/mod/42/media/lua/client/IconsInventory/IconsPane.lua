@@ -47,6 +47,7 @@ end
 ---@field overscrollTime integer
 ---@field smartDragPullRemaining integer
 ---@field modsHeaderHeight number
+---@field _refreshedAt integer
 ---@field _selectedBeforeDrag? table<IconsInventory_Cell, true>
 ---@field _scrollBottom? true
 ---@field _cancelMouseUp? true
@@ -63,6 +64,7 @@ end
 ---@param emptyPage ISInventoryPage
 ---@param native ISInventoryPane
 function IconsPane.new(emptyPage, native)
+    mod.init()
     local self = setmetatable(ISPanel:new(0, emptyPage:titleBarHeight(), 1, 1), IconsPane) ---@cast self -ISPanel
     local player = getSpecificPlayer(emptyPage.player)
 
@@ -80,6 +82,7 @@ function IconsPane.new(emptyPage, native)
     self.beingSelected = {}
     self.overscrollTime = 0
     self.modsHeaderHeight = 0
+    self._refreshedAt = -1
 
     native.itemSortFunc = native.itemSortFunc or ISInventoryPane.itemSortByCatInc
 
@@ -213,6 +216,8 @@ function IconsPane:refresh()
         self:setYScroll(self:getScrollAreaHeight() - self:getScrollHeight())
         self._scrollBottom = nil
     end
+
+    self._refreshedAt = getTimestampMs()
 end
 
 ---@param focusedCell IconsInventory_Cell?
@@ -487,7 +492,7 @@ function IconsPane:prerender()
         self.native:refreshContainer()
     end
 
-    if self._dirty then
+    if self._dirty or self._refreshedAt < mod.initAt then
         self:refresh()
         self._dirty = false
     end
