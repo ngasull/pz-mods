@@ -1,0 +1,4 @@
+- feat: use ring as colored liquid indicator
+- feat: rework all indicators to render algorithmically crisp and aligned.
+- chore: minor improvements over avoiding useless getters
+- doc: new workshop art
