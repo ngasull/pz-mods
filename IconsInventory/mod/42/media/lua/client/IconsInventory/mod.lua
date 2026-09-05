@@ -186,6 +186,7 @@ if isDebugEnabled() then
         "PaneOverride",
         "JoypadPageOverride",
         "PageOverride",
+        "ISPlayerDataObject",
         "ContextMenuOverride",
     }
 
