@@ -11,6 +11,21 @@ local vanilla = {}
 ---@field _IconsInventory_init? true
 local Override = {}
 
+function Override:initialise(...)
+    -- Customize dimensions before createChildren, otherwise the UI manager's mouse events are de-sync'd from them
+    pcall(function()
+        if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
+            local h = math.max(
+                math.floor(self.height / 2),
+                math.floor(getCore():getScreenHeight() / 4))
+            self:setHeight(h)
+            self:setY(getCore():getScreenHeight() - h)
+        end
+    end)
+
+    return vanilla.initialise(self, ...)
+end
+
 function Override:addChild(otherElement)
     if getmetatable(otherElement) == ISInventoryPane then
         -- Allow re-adding inventoryPane as an apply hook
@@ -32,14 +47,6 @@ function Override:addChild(otherElement)
             otherElement.parent = self
             otherElement:setVisible(false)
             otherElement:setEnabled(false)
-        end
-
-        if getSpecificPlayer(self.player):getJoypadBind() ~= -1 then
-            local h = math.max(
-                math.floor(self.height / 2),
-                math.floor(getCore():getScreenHeight() / 4))
-            self:setHeight(h)
-            self:setY(getCore():getScreenHeight() - h)
         end
 
         return otherElement
