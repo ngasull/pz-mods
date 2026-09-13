@@ -896,7 +896,7 @@ function IconsPane:updateSmoothScrolling()
     end
 end
 
----@return ISInventoryPage
+---@return IconsInventory_PageOverride
 function IconsPane:getTheOtherPage()
     local page = self.parent
     return page.onCharacter and getPlayerLoot(page.player) or getPlayerInventory(page.player)

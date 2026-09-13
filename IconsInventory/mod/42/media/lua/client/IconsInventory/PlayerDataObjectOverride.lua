@@ -1,7 +1,7 @@
 ---@class ISPlayerDataObject
 local vanilla = {}
 
----@class ISPlayerDataObject
+---@class IconsInventory_PlayerDataObjectOverride
 local Override = {}
 
 function Override:placeInventoryScreens(...)

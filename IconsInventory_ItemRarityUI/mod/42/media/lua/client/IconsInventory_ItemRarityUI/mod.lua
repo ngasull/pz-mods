@@ -18,7 +18,7 @@ table.insert(IconsPane.sortOptions, {
 ---@class IconsInventory_Cell
 local vanilla = {}
 
----@class IconsInventory_Cell
+---@class IconsInventory_Cell_override: IconsInventory_Cell
 local Override = {}
 
 function Override:renderBackground()

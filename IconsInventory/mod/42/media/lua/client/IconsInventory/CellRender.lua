@@ -29,10 +29,10 @@ local colorBuf = {} ---@type IconsInventory_Cell_RingColor
 
 local softBg = getTexture("media/ui/IconsInventory/soft-bg.png")
 
----@param Cell IconsInventory_Cell
-local function refreshDimensions(Cell)
-    if font == Cell.font and scaling == Cell.scaling then return end
+---@class IconsInventory_Cell
+local Cell = {}
 
+local function refreshDimensions()
     font = Cell.font
     scaling = Cell.scaling
     iconSize = Cell.iconSize
@@ -86,10 +86,7 @@ local function capture_drawProgressBar(self, x, y, w, h, f, fg)
     ringFromNative = fg
 end
 
----@class IconsInventory_Cell
-local CellRender = {}
-
-CellRender.color = {
+Cell.color = {
     cannotDrop = { 1, 0, 0 },
     selected = { 1, 1, 1 },
     beingSelected = { 0.6, 0.6, 0.6 },
@@ -100,8 +97,10 @@ CellRender.color = {
 -- Internal rendering API
 ---@param x number
 ---@param y number
-function CellRender:renderAt(x, y)
-    refreshDimensions(self)
+function Cell:renderAt(x, y)
+    if font ~= Cell.font or scaling ~= Cell.scaling then
+        refreshDimensions()
+    end
     self.x = x
     self.y = y
     self.padSubIcon = subPadding
@@ -109,7 +108,7 @@ function CellRender:renderAt(x, y)
 end
 
 -- Moddable rendering API
-function CellRender:render()
+function Cell:render()
     self:renderBackground()
 
     if self:isCategory() then
@@ -120,7 +119,7 @@ function CellRender:render()
 end
 
 -- See ISInventoryPane:renderdetails
-function CellRender:renderBackground()
+function Cell:renderBackground()
     local drewColoredBg = false
     local item = self.item
     local native = self.pane.native
@@ -140,20 +139,20 @@ function CellRender:renderBackground()
             if self:isCollapsed() and native.draggedItems:cannotDropAnyItem()
                 or not self:isCollapsed() and native.draggedItems:cannotDropItem(item)
             then
-                self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, unpack(CellRender.color.cannotDrop))
+                self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, unpack(Cell.color.cannotDrop))
                 drewColoredBg = true
             end
         else
-            local r, g, b = unpack(CellRender.color.selected)
+            local r, g, b = unpack(Cell.color.selected)
             self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.2, r, g, b)
             self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.1, r, g, b)
         end
     elseif self:isBeingSelected() then
-        local r, g, b = unpack(CellRender.color.beingSelected)
+        local r, g, b = unpack(Cell.color.beingSelected)
         self.pane:drawRect(self.x, self.y, cellSize - 1, cellSize - 1, 0.2, r, g, b)
         self.pane:drawRectBorder(self.x, self.y, cellSize, cellSize, 0.1, r, g, b)
     elseif self:isFocused() and heat == 1 and not self:isCleanUIHighlighted() then
-        local r, g, b = unpack(native.doController and CellRender.color.controllerFocus or CellRender.color.focus)
+        local r, g, b = unpack(native.doController and Cell.color.controllerFocus or Cell.color.focus)
         self.pane:drawRect(self.x, self.y, cellSize, cellSize, 0.2, r, g, b)
     elseif native.highlightItem and native.highlightItem == item:getType() then
         if not native.blinkAlpha then native.blinkAlpha = 0.5; end
@@ -205,12 +204,12 @@ function CellRender:renderBackground()
 end
 
 ---@param delta number
-function CellRender:renderJob(delta)
+function Cell:renderJob(delta)
     self.pane:drawRect(self.x, self.y + (1 - delta) * cellSize, cellSize, delta * cellSize,
         0.2, 0.4, 1.0, 0.3);
 end
 
-function CellRender:renderQueued()
+function Cell:renderQueued()
     local animDuration = 1000
     local animDelta = math.fmod(getTimeInMillis(), animDuration) / animDuration;
     local blinkStrength = 2 * math.abs(animDelta - 0.5)
@@ -219,7 +218,7 @@ function CellRender:renderQueued()
 end
 
 -- Some icons are almost invisible (like Car keys)
-function CellRender:renderContrast()
+function Cell:renderContrast()
     self.pane:drawTextureScaled(softBg, self.x + padding, self.y + padding, iconSize, iconSize, 1, 0.2, 0.2, 0.2)
 end
 
@@ -228,11 +227,11 @@ end
 ---@param w number
 ---@param h number
 ---@param gray? boolean
-function CellRender:renderItem(x, y, w, h, gray)
+function Cell:renderItem(x, y, w, h, gray)
     ISInventoryItem.renderItemIcon(self.pane, self.item, x, y, gray and 0.5 or 1, w, h)
 end
 
-function CellRender:renderStack()
+function Cell:renderStack()
     local ratio = self:isCollapsed() and 1 or 0.5
     local scaledIconSize = ratio * iconSize
     local scaledPadding = padding + (iconSize - scaledIconSize) / 2
@@ -256,7 +255,7 @@ function CellRender:renderStack()
     )
 end
 
-function CellRender:renderDetails()
+function Cell:renderDetails()
     local item = self.item
     local ui = self.pane
     local fluidContainer = item:getFluidContainer()
@@ -433,7 +432,7 @@ end
 ---@param r? number
 ---@param g? number
 ---@param b? number
-function CellRender:renderSubIcon(icon, size, a, r, g, b)
+function Cell:renderSubIcon(icon, size, a, r, g, b)
     size = (size or icon:getHeight()) * scaling
     if scaling > 1 then size = size * .75 end
     local w, h = texture.fitInSquare(icon, size)
@@ -452,7 +451,7 @@ end
 ---@param r? number
 ---@param g? number
 ---@param b? number
-function CellRender:renderSupIcon(icon, size, a, r, g, b)
+function Cell:renderSupIcon(icon, size, a, r, g, b)
     size = (size or icon:getHeight()) * scaling
     if scaling > 1 then size = size * .75 end
     local w, h = texture.fitInSquare(icon, size)
@@ -468,7 +467,7 @@ end
 
 ---@param color IconsInventory_Cell_RingColor
 ---@param fraction number
-function CellRender:renderRing(color, fraction)
+function Cell:renderRing(color, fraction)
     if fraction <= 0 then return end
 
     local centerX = self.x + subAlign
@@ -489,7 +488,7 @@ end
 ---@param current number
 ---@param max number
 ---@param color IconsInventory_Cell_RingColor
-function CellRender:renderRingUses(color, current, max)
+function Cell:renderRingUses(color, current, max)
     if current >= max then return end
 
     self:renderRing(color, current / max)
@@ -503,4 +502,4 @@ function CellRender:renderRingUses(color, current, max)
     end
 end
 
-return CellRender
+return Cell

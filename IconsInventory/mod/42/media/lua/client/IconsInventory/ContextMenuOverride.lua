@@ -3,7 +3,7 @@ local mod = require("IconsInventory/mod")
 ---@class ISContextMenu
 local vanilla = {}
 
----@class ISContextMenu
+---@class IconsInventory_ContextMenuOverride: ISContextMenu
 local Override = {}
 
 local downX, downY = 0, 0

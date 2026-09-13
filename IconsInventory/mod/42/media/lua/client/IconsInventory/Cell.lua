@@ -1,6 +1,5 @@
 local mod = require("IconsInventory/mod")
 local Action = require("IconsInventory/Action")
-local CellRender = require("IconsInventory/CellRender")
 
 ---@class IconsInventory_Cell: IconsInventory_GridLayout_Located
 ---@field pane IconsInventory_IconsPane
@@ -15,9 +14,7 @@ local CellRender = require("IconsInventory/CellRender")
 ---@field x number
 ---@field y number
 ---@field padSubIcon number
-local Cell = {}
-
-for k, v in pairs(CellRender) do Cell[k] = v end
+local Cell = require("IconsInventory/CellRender") -- They are the same, split in 2 files
 Cell.__index = Cell
 
 local iconFonts = { UIFont.NewSmall, UIFont.NewMedium, UIFont.NewLarge }

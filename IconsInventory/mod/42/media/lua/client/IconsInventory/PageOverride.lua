@@ -4,7 +4,7 @@ local IconsPane = require("IconsInventory/IconsPane")
 ---@class ISInventoryPage
 local vanilla = {}
 
----@class ISInventoryPage
+---@class IconsInventory_PageOverride: ISInventoryPage
 ---@field parent ISInventoryPage
 ---@field player integer De facto player ID (not in Umbrella)
 ---@field _IconsInventory IconsInventory_IconsPane
@@ -78,7 +78,7 @@ function Override:onRightMouseDownOutside(...)
     return vanilla.onRightMouseDownOutside(self, ...)
 end
 
----@param self ISInventoryPage
+---@param self IconsInventory_PageOverride
 local function switchToList(self)
     if self._IconsInventory:isVisible() then
         self:removeChild(self._IconsInventory)
@@ -97,7 +97,7 @@ local function switchToList(self)
     end
 end
 
----@param self ISInventoryPage
+---@param self IconsInventory_PageOverride
 local function switchToIcons(self)
     if not self._IconsInventory:isVisible() then
         self:removeChild(self.inventoryPane)

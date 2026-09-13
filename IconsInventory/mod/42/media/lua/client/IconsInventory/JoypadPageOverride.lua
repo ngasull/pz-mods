@@ -1,7 +1,7 @@
 local Cell = require("IconsInventory/Cell")
 local IconsPane = require("IconsInventory/IconsPane")
 
----@param self ISInventoryPage
+---@param self IconsInventory_JoypadPageOverride
 ---@param col? integer
 local function focusTheOtherPage(self, col)
     local otherPage = self._IconsInventory:getTheOtherPage()
@@ -39,7 +39,7 @@ end
 ---@class ISInventoryPage
 local vanilla = {}
 
----@class ISInventoryPage
+---@class IconsInventory_JoypadPageOverride:IconsInventory_PageOverride
 ---@field _IconsInventory_pressedBumper JoypadButton?
 local Override = {}
 
