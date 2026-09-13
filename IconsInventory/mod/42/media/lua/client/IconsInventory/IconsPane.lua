@@ -445,8 +445,10 @@ function IconsPane:update()
             table.wipe(self.native.selected)
             for _, row in ipairs(self.grid.cells) do
                 for _, cell in ipairs(row) do
-                    if not (cell:isInEquippedGroup() or cell:isInHotbar()) then
-                        self.native.selected[cell.index] = cell:getListItem()
+                    if (cell:isCategory() or not cell:isCollapsable()) -- Small optimisation to skip whole category selected checks on each update tick
+                        and not (cell:isInEquippedGroup() or cell:isInHotbar())
+                    then
+                        cell:setSelected(true)
                     end
                 end
             end
