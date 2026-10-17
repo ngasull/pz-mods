@@ -1,0 +1,2 @@
+fix: Ctrl+A now selects collapsed items (thanks FasdeSnow!)
+chore: rework override types to avoid overlaps and CellRender to explicit Cell

@@ -1,0 +1,3 @@
+- fix gamepad UI resizing
+- optimize gamepad UI size for comfort
+- improve compatibility with gamepad UI mods
