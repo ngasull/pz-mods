@@ -151,6 +151,13 @@ mod.option.maxJoypadColumns = mod.options:addSlider(
     4, 20, 1, default.maxJoypadColumns
 )
 
+mod.option.enableDpadContainerCycling = mod.options:addTickBox(
+    "enableDpadContainerCycling",
+    getText("UI_IconsInventory_options_enableDpadContainerCycling"),
+    true,
+    getText("UI_IconsInventory_options_enableDpadContainerCycling_hint")
+)
+
 local ok, err = pcall(function()
     mod.meta = MetaModData.load("data")
     mod.data = mod.meta.data

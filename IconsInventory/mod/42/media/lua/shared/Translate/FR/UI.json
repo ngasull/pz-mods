@@ -8,6 +8,8 @@
   "UI_IconsInventory_options_clickSend_loot": "Loot - Seulement dans la fenêtre de loot",
   "UI_IconsInventory_options_clickSend_safe": "Sécure - Envoyer vers les conteneurs de loot seulement si la fenêtre est ouverte",
   "UI_IconsInventory_options_clickSend_send": "Envoyer - Comme Shift+Clic, sans shift. Sauf pour les stacks",
+  "UI_IconsInventory_options_enableDpadContainerCycling": "Navigation à la croix directionnelle",
+  "UI_IconsInventory_options_enableDpadContainerCycling_hint": "Haut sur la 1ère ligne pour aller au conteneur précédent, bas sur la dernière au suivant",
   "UI_IconsInventory_options_enableFastRightClick": "Action contextuelle en 1 clic",
   "UI_IconsInventory_options_enableFastRightClick_hint": "Le menu apparaît en appuyant, sélectionne l'entrée en relâchant. Désactiver en cas de clics accidentels",
   "UI_IconsInventory_options_enableSmartDrag": "Déplacement intelligent",

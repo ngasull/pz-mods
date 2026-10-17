@@ -1,3 +1,4 @@
+local mod = require("IconsInventory/mod")
 local Cell = require("IconsInventory/Cell")
 local IconsPane = require("IconsInventory/IconsPane")
 
@@ -126,16 +127,20 @@ function Override:onJoypadDirDown(joypadData)
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
         if pane:isVisible() then
+            local nextCell
+
             if pane.focusedCell then
                 local rows = pane.grid:getRows()
                 local nextRow = rows[pane.focusedCell.layoutRow + 1]
-                pane:setFocusedCell(nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)])
+                nextCell = nextRow and nextRow[math.min(#nextRow, pane.focusedCell.layoutCol)]
             else
                 -- Find first upmost cell if any
-                pane:setFocusedCell(pane.grid:getCellAt(1, 1))
+                nextCell = pane.grid:getCellAt(1, 1)
             end
 
-            if not pane.focusedCell then
+            if nextCell then
+                pane:setFocusedCell(nextCell)
+            elseif mod.option.enableDpadContainerCycling:getValue() then
                 self:selectNextContainer()
             end
         else
@@ -159,16 +164,20 @@ function Override:onJoypadDirUp(joypadData)
 
     if not (isJoypadLBPressed(joypad) or isJoypadRBPressed(joypad)) then
         if pane:isVisible() then
+            local nextCell
+
             if pane.focusedCell then
                 local rows = pane.grid:getRows()
                 local prevRow = rows[pane.focusedCell.layoutRow - 1]
-                pane:setFocusedCell(prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)])
+                nextCell = prevRow and prevRow[math.min(#prevRow, pane.focusedCell.layoutCol)]
             else
                 -- Get first downmost cell if any
-                pane:setFocusedCell(pane.grid:getCellAt(-1, 1))
+                nextCell = pane.grid:getCellAt(-1, 1)
             end
 
-            if not pane.focusedCell then
+            if nextCell then
+                pane:setFocusedCell(nextCell)
+            elseif mod.option.enableDpadContainerCycling:getValue() then
                 self:selectPrevContainer()
             end
         else

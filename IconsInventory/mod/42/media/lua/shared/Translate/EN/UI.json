@@ -8,6 +8,8 @@
   "UI_IconsInventory_options_clickSend_loot": "Loot - Only in loot window",
   "UI_IconsInventory_options_clickSend_safe": "Safe - Send to loot container only if its window is open",
   "UI_IconsInventory_options_clickSend_send": "Send - Like Shift+Click, without shift. Except for stacks",
+  "UI_IconsInventory_options_enableDpadContainerCycling": "DPad container cycling",
+  "UI_IconsInventory_options_enableDpadContainerCycling_hint": "Up on first row to go to previous, down on last to go next",
   "UI_IconsInventory_options_enableFastRightClick": "Right Click fast mode",
   "UI_IconsInventory_options_enableFastRightClick_hint": "Menu appears on mouse down, select entry on release. Disable if you make accidental clicks",
   "UI_IconsInventory_options_enableSmartDrag": "Smart move",
